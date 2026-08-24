@@ -33,9 +33,7 @@ class UserPresetWindow : public Component,
                          public juce::Button::Listener
 {
   public:
-    /// Constructor.
     UserPresetWindow(KnownPluginList* knownPlugins);
-    /// Destructor.
     ~UserPresetWindow() override;
 
     void paint(Graphics& g) override;
@@ -47,14 +45,12 @@ class UserPresetWindow : public Component,
     class PresetItem : public TreeViewItem
     {
       public:
-        /// Constructor.
         PresetItem(const File& preset) :
             name(preset.getFileNameWithoutExtension()),
             presetFile(preset)
         {
         }
 
-        /// Destructor.
         ~PresetItem() override = default;
 
         /// Returns true, obviously.
@@ -103,7 +99,6 @@ class UserPresetWindow : public Component,
     class PluginItem : public TreeViewItem
     {
       public:
-        /// Constructor.
         PluginItem(const File& plugin) :
             name(plugin.getFileName()),
             pluginDir(plugin)
@@ -112,7 +107,6 @@ class UserPresetWindow : public Component,
             setOpen(true);
         }
 
-        /// Destructor.
         ~PluginItem() override = default;
 
         /// Returns true, obviously.
@@ -153,14 +147,12 @@ class UserPresetWindow : public Component,
     class RootItem : public TreeViewItem
     {
       public:
-        /// Constructor.
         RootItem()
         {
             setLinesDrawnForSubItems(false);
             setOpen(true);
         }
 
-        /// Destructor.
         ~RootItem() override = default;
 
         /// Returns true, obviously.

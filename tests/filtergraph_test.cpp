@@ -1,16 +1,14 @@
-/**
- * @file filtergraph_test.cpp
- * @brief Unit tests for FilterGraph/IFilterGraph interface operations
- *
- * Tests cover:
- * 1. Node management (add/remove/query)
- * 2. Connection management (add/remove/query)
- * 3. Position management
- * 4. Infrastructure node detection
- * 5. Boundary conditions and mutation testing
- *
- * Note: These tests use mock objects to verify logic without JUCE audio initialization.
- */
+/// Unit tests for FilterGraph/IFilterGraph interface operations.
+///
+/// Tests cover:
+/// 1. Node management (add/remove/query)
+/// 2. Connection management (add/remove/query)
+/// 3. Position management
+/// 4. Infrastructure node detection
+/// 5. Boundary conditions and mutation testing
+///
+/// Note: These tests use mock objects to verify logic without JUCE audio
+/// initialization.
 
 #include <algorithm>
 #include <catch2/catch_test_macros.hpp>
@@ -18,10 +16,7 @@
 #include <string>
 #include <vector>
 
-// =============================================================================
-// Mock Types (mirrors IFilterGraph interface)
-// =============================================================================
-
+// Mock Types (mirrors IFilterGraph interface)`n
 struct MockNodeID
 {
     uint32_t uid;
@@ -81,9 +76,7 @@ class MockFilterGraph
         connections.push_back({audioInputNode, 1, audioOutputNode, 1});
     }
 
-    // ==========================================================================
     // Node Management
-    // ==========================================================================
 
     int getNumFilters() const { return static_cast<int>(nodes.size()); }
 
@@ -133,9 +126,7 @@ class MockFilterGraph
 
     bool nodeExists(MockNodeID id) const { return getNode(id) != nullptr; }
 
-    // ==========================================================================
     // Connection Management
-    // ==========================================================================
 
     bool addConnection(MockNodeID srcId, int srcChannel, MockNodeID dstId, int dstChannel)
     {
@@ -192,9 +183,7 @@ class MockFilterGraph
 
     int getNumConnections() const { return static_cast<int>(connections.size()); }
 
-    // ==========================================================================
     // Position Management
-    // ==========================================================================
 
     void setNodePosition(MockNodeID id, double x, double y)
     {
@@ -216,9 +205,7 @@ class MockFilterGraph
         return false;
     }
 
-    // ==========================================================================
     // Infrastructure Detection
-    // ==========================================================================
 
     bool isHiddenInfrastructureNode(MockNodeID id) const
     {
@@ -227,10 +214,7 @@ class MockFilterGraph
     }
 };
 
-// =============================================================================
-// Node Management Tests
-// =============================================================================
-
+// Node Management Tests`n
 TEST_CASE("FilterGraph Node Management", "[filtergraph][nodes]")
 {
     MockFilterGraph graph;
@@ -301,10 +285,7 @@ TEST_CASE("FilterGraph Node Management", "[filtergraph][nodes]")
     }
 }
 
-// =============================================================================
-// Connection Management Tests
-// =============================================================================
-
+// Connection Management Tests`n
 TEST_CASE("FilterGraph Connection Management", "[filtergraph][connections]")
 {
     MockFilterGraph graph;
@@ -428,10 +409,7 @@ TEST_CASE("FilterGraph Connection Management", "[filtergraph][connections]")
     }
 }
 
-// =============================================================================
-// Position Management Tests
-// =============================================================================
-
+// Position Management Tests`n
 TEST_CASE("FilterGraph Position Management", "[filtergraph][position]")
 {
     MockFilterGraph graph;
@@ -468,10 +446,7 @@ TEST_CASE("FilterGraph Position Management", "[filtergraph][position]")
     }
 }
 
-// =============================================================================
-// Infrastructure Detection Tests
-// =============================================================================
-
+// Infrastructure Detection Tests`n
 TEST_CASE("FilterGraph Infrastructure Detection", "[filtergraph][infrastructure]")
 {
     MockFilterGraph graph;
@@ -496,10 +471,7 @@ TEST_CASE("FilterGraph Infrastructure Detection", "[filtergraph][infrastructure]
     }
 }
 
-// =============================================================================
-// Mutation Testing
-// =============================================================================
-
+// Mutation Testing`n
 TEST_CASE("FilterGraph Mutation Testing", "[filtergraph][mutation]")
 {
     SECTION("OFF-BY-ONE: Node count after add/remove")

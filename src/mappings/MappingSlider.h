@@ -38,7 +38,6 @@ public:
     /// setMappingSliderStyle(), setRange(), etc.
     explicit MappingSlider(const String& componentName = {});
 
-    /// Destructor.
     ~MappingSlider() override;
 
     /// The types of slider available.
@@ -199,7 +198,6 @@ public:
     class JUCE_API Listener
     {
     public:
-        /// Destructor.
         virtual ~Listener() {}
 
         /// Called when the slider's value is changed.

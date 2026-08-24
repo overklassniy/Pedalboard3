@@ -1,4 +1,4 @@
-﻿// PluginComponent.cpp - Component representing a plugin/filter in the graph.
+// PluginComponent.cpp - Component representing a plugin/filter in the graph.
 //
 // This file is part of Pedalboard3, an audio plugin host.
 // Copyright (c) 2009 Niall Moody.
@@ -36,7 +36,6 @@
 class NiallsGenericEditor : public juce::GenericAudioProcessorEditor
 {
   public:
-    /// Constructor.
     NiallsGenericEditor(AudioProcessor * const owner) :
         juce::GenericAudioProcessorEditor(owner)
     {

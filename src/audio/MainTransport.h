@@ -35,7 +35,6 @@
 class MainTransport : public ChangeBroadcaster
 {
   public:
-    /// Destructor.
     ~MainTransport();
 
     /// Registers a transport with this singleton.

@@ -36,9 +36,7 @@ class LooperControl : public Component,
                       public juce::Button::Listener
 {
   public:
-    /// Constructor.
     LooperControl(LooperProcessor* proc, AudioThumbnail* thumbnail);
-    /// Destructor.
     ~LooperControl() override;
 
     /// Called when the user selects a sound file.

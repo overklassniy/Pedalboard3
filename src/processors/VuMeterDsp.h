@@ -24,6 +24,11 @@
 #include <cmath>
 
 
+/// True VU meter DSP with 300ms integration time (IEC 60268-17).
+///
+/// Implements a critically damped 2-pole lowpass filter at ~3.5 Hz to
+/// achieve the VU standard ballistics. The process() method is called
+/// from the audio thread, and read() is called from the UI thread.
 class VuMeterDsp
 {
   public:

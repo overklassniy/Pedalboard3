@@ -26,6 +26,7 @@ class BlacklistListModel : public ListBoxModel
   public:
     BlacklistListModel() { refresh(); }
 
+    /// Reloads the blacklist from PluginBlacklist and updates the list.
     void refresh();
 
     int getNumRows() override { return items.size(); }

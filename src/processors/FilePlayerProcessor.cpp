@@ -67,10 +67,9 @@ void FilePlayerProcessor::setFile(const File& phil)
     soundFileSource.reset();
 
     //Get a format manager and set it up with the basic types (wav and aiff).
-    /*AudioFormatManager formatManager;
-    formatManager.registerBasicFormats();
-
-    AudioFormatReader *reader = formatManager.createReaderFor(phil);*/
+    //AudioFormatManager formatManager;
+    //formatManager.registerBasicFormats();
+    //AudioFormatReader *reader = formatManager.createReaderFor(phil);
     AudioFormatReader *reader = AudioFormatManagerSingleton::getInstance().createReaderFor(phil);
 
     if(reader != 0)

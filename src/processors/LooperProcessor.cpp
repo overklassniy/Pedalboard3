@@ -105,10 +105,10 @@ LooperProcessor::~LooperProcessor()
 void LooperProcessor::setFile(const File& phil)
 {
     int i;
-    /*WavAudioFormat wavFormat;
-    StringPairArray metadata;
-    AudioFormatWriter *writer;
-    FileOutputStream *philStream;*/
+    //WavAudioFormat wavFormat;
+    //StringPairArray metadata;
+    //AudioFormatWriter *writer;
+    //FileOutputStream *philStream;
 
     if(recording)
     {
@@ -147,42 +147,39 @@ void LooperProcessor::setFile(const File& phil)
         loopBuffer.remove(i);
 
     //So we overwrite any previous file.
-    /*if(soundFile.existsAsFile())
-    {
-        if(!soundFile.deleteFile())
-        {
-            AlertWindow::showMessageBox(AlertWindow::WarningIcon,
-                                        "Could not delete existing file",
-                                        "Have you got the file open elsewhere? (e.g. in another File Player)");
-
-            soundFile = File();
-        }
-    }
-
-    if(soundFile != File())
-    {
-        philStream = new FileOutputStream(soundFile);
-
-        writer = wavFormat.createWriterFor(philStream,
-                                           currentRate,
-                                           2,
-                                           16,
-                                           metadata,
-                                           0);
-        if(!writer)
-        {
-            delete philStream;
-            soundFile = File();
-            threadWriter = 0;
-        }
-        else
-        {
-            threadWriter = new AudioFormatWriter::ThreadedWriter(writer,
-                                                                 AudioThumbnailCacheSingleton::getInstance(),
-                                                                 16384);
-            //threadWriter->setDataReceiver(&thumbnail);
-        }
-    }*/
+    //if(soundFile.existsAsFile())
+    //{
+    //    if(!soundFile.deleteFile())
+    //    {
+    //        AlertWindow::showMessageBox(AlertWindow::WarningIcon,
+    //                                    "Could not delete existing file",
+    //                                    "Have you got the file open elsewhere? (e.g. in another File Player)");
+    //        soundFile = File();
+    //    }
+    //}
+    //if(soundFile != File())
+    //{
+    //    philStream = new FileOutputStream(soundFile);
+    //    writer = wavFormat.createWriterFor(philStream,
+    //                                       currentRate,
+    //                                       2,
+    //                                       16,
+    //                                       metadata,
+    //                                       0);
+    //    if(!writer)
+    //    {
+    //        delete philStream;
+    //        soundFile = File();
+    //        threadWriter = 0;
+    //    }
+    //    else
+    //    {
+    //        threadWriter = new AudioFormatWriter::ThreadedWriter(writer,
+    //                                                             AudioThumbnailCacheSingleton::getInstance(),
+    //                                                             16384);
+    //        //threadWriter->setDataReceiver(&thumbnail);
+    //    }
+    //}
 }
 
 double LooperProcessor::getReadPosition() const
@@ -218,8 +215,8 @@ void LooperProcessor::handleAsyncUpdate()
         }
     };
 
-    /*if(control)
-        control->clearDisplay();*/
+    //if(control)
+    //    control->clearDisplay();
     thumbnail.reset(2, getSampleRate());
 
     setFile(soundFile);

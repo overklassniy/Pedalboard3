@@ -43,8 +43,11 @@ class FilterGraph : public FileBasedDocument
     /// Returns the underlying AudioProcessorGraph.
     AudioProcessorGraph& getGraph() { return graph; }
 
+    /// Returns the number of filters (plugins) in the graph.
     int getNumFilters() const;
+    /// Returns the node at the given index.
     AudioProcessorGraph::Node::Ptr getNode(int index) const;
+    /// Returns the node with the given UID, or nullptr if not found.
     AudioProcessorGraph::Node::Ptr getNodeForId(AudioProcessorGraph::NodeID uid) const;
 
     /// Adds a plugin from a PluginDescription at the given canvas position.
@@ -95,6 +98,7 @@ class FilterGraph : public FileBasedDocument
     void restoreFromXml(const XmlElement& xml);
 
     // FileBasedDocument overrides
+    /// Returns the title used for the document window.
     String getDocumentTitle() override;
     Result loadDocument(const File& file) override;
     Result saveDocument(const File& file) override;

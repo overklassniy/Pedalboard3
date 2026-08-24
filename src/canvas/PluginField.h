@@ -1,4 +1,4 @@
-﻿// PluginField.h - Field representing the signal path through the app.
+// PluginField.h - Field representing the signal path through the app.
 //
 // This file is part of Pedalboard3, an audio plugin host.
 // Copyright (c) 2009 Niall Moody.
@@ -45,11 +45,9 @@ class PluginField : public juce::Component,
                     public juce::Timer
 {
   public:
-    /// Constructor.
     PluginField(FilterGraph *filterGraph,
                 juce::KnownPluginList *list,
                 juce::ApplicationCommandManager *appManager);
-    /// Destructor.
     ~PluginField() override;
 
     /// Fills in the background.

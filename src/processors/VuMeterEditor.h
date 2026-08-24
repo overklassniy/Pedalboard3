@@ -31,9 +31,7 @@ class VuMeterControl : public Component,
                        public Timer
 {
   public:
-    /// Constructor.
     VuMeterControl(VuMeterProcessor* proc);
-    /// Destructor.
     ~VuMeterControl() override;
 
     /// Draws the meter.
@@ -60,10 +58,8 @@ class VuMeterControl : public Component,
 class VuMeterEditor : public AudioProcessorEditor
 {
   public:
-    /// Constructor.
     VuMeterEditor(AudioProcessor* processor,
                   const Rectangle<int>& windowBounds);
-    /// Destructor.
     ~VuMeterEditor() override;
 
     /// Resizes the meter to fill the window.

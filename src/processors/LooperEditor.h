@@ -38,9 +38,7 @@ class LooperEditor : public AudioProcessorEditor,
                      public juce::Slider::Listener
 {
   public:
-    /// Constructor.
     LooperEditor(LooperProcessor* proc, AudioThumbnail* thumbnail);
-    /// Destructor.
     ~LooperEditor() override;
 
     /// Called when the user selects a sound file.

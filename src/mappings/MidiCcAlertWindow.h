@@ -32,9 +32,7 @@ class MidiCcAlertWindow : public AlertWindow,
                           public MidiMappingManager::MidiLearnCallback
 {
   public:
-    /// Constructor.
     MidiCcAlertWindow(MidiMappingManager* midi);
-    /// Destructor.
     ~MidiCcAlertWindow() override;
 
     /// Updates the combo box when we receive a MIDI CC message.

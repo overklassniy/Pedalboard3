@@ -53,9 +53,7 @@ class MainPanel : public juce::Component,
                   public juce::OSCReceiver::Listener<juce::OSCReceiver::MessageLoopCallback>
 {
   public:
-    /// Constructor.
     MainPanel(juce::ApplicationCommandManager *appManager);
-    /// Destructor.
     ~MainPanel() override;
 
     /// For the menu bar.
@@ -262,14 +260,12 @@ class MainPanel : public juce::Component,
     class ProgramChangeWarning : public juce::Component
     {
       public:
-        /// Constructor.
         ProgramChangeWarning():
             index(0)
         {
             setSize(250, 150);
         }
 
-        /// Destructor.
         ~ProgramChangeWarning() override = default;
 
         /// Draws the warning.
@@ -351,7 +347,6 @@ class MainPanel : public juce::Component,
 class PluginListWindow : public juce::DocumentWindow
 {
   public:
-    /// Constructor.
     PluginListWindow(juce::KnownPluginList& knownPluginList, MainPanel *p):
         juce::DocumentWindow("Available Plugins",
                              juce::Colour(0xffeeece1),
@@ -378,7 +373,6 @@ class PluginListWindow : public juce::DocumentWindow
         setVisible(true);
     }
 
-    /// Destructor.
     ~PluginListWindow() override
     {
         if (panel)

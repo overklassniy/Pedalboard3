@@ -29,9 +29,7 @@ class MetronomeProcessor : public PedalboardProcessor,
                            public ChangeBroadcaster
 {
   public:
-    /// Constructor.
     MetronomeProcessor();
-    /// Destructor.
     ~MetronomeProcessor() override;
 
     /// Returns true if the metronome is currently playing.

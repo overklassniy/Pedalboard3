@@ -65,7 +65,9 @@ class PluginScannerClient
         virtual void scannerCrashed(const juce::String& lastPlugin) {}
     };
 
+    /// Adds a listener for scanner events (scan progress, completion, crashes).
     void addListener(Listener* listener);
+    /// Removes a previously added listener.
     void removeListener(Listener* listener);
 
   private:

@@ -34,9 +34,7 @@ class PresetBar : public Component,
                   public juce::ComboBox::Listener
 {
   public:
-    /// Constructor.
     PresetBar(PluginComponent* comp);
-    /// Destructor.
     ~PresetBar() override;
 
     /// So we can do things when the user clicks one of the buttons.

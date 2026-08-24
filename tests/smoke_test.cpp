@@ -1,12 +1,9 @@
-/**
- * @file smoke_test.cpp
- * @brief Basic smoke tests to verify build and library integration
- *
- * These tests verify that:
- * 1. The project builds correctly
- * 2. Core libraries (fmt, spdlog) are linked properly
- * 3. Basic functionality works
- */
+/// Basic smoke tests to verify build and library integration.
+///
+/// These tests verify that:
+/// 1. The project builds correctly
+/// 2. Core libraries (fmt, spdlog) are linked properly
+/// 3. Basic functionality works
 
 #include <catch2/catch_test_macros.hpp>
 #include <fmt/core.h>

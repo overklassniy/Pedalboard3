@@ -294,7 +294,7 @@ void CrashProtection::writeCrashContext()
     spdlog::critical("[CrashProtection] Plugin: {}", plugin.isEmpty() ? "(none)" : plugin.toStdString());
     spdlog::critical("[CrashProtection] Timestamp: {}",
                      juce::Time::getCurrentTime().toString(true, true, true, true).toStdString());
-    spdlog::critical("[CrashProtection] =====================");
+    spdlog::critical("[CrashProtection] --- crash context end ---");
 
     // Force flush
     spdlog::default_logger()->flush();

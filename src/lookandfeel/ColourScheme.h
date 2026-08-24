@@ -48,9 +48,7 @@ struct ColourScheme
     bool doesColoursMatchPreset(const String& name);
 
   private:
-    /// Constructor.
     ColourScheme();
-    /// Destructor.
     ~ColourScheme();
 };
 

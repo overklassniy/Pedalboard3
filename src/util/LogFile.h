@@ -68,10 +68,8 @@ class LogFile : public juce::ChangeBroadcaster
     static LogFile& getInstance();
 
   private:
-    /// Constructor.
     LogFile();
 
-    /// Destructor.
     ~LogFile();
 
     /// Struct representing a single event in the log.

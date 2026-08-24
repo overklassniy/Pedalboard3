@@ -29,9 +29,7 @@ class WaveformDisplay : public Component,
                         public ChangeBroadcaster
 {
   public:
-    /// Constructor.
     WaveformDisplay(AudioThumbnail* thumb = nullptr, bool deleteThumb = true);
-    /// Destructor.
     ~WaveformDisplay() override;
 
     /// Draws the background and the waveform.
@@ -75,9 +73,7 @@ class WaveformDisplayLite : public Component,
                             public ChangeListener
 {
   public:
-    /// Constructor.
     WaveformDisplayLite(AudioThumbnail& thumb);
-    /// Destructor.
     ~WaveformDisplayLite() override;
 
     /// Draws the background and the waveform.

@@ -38,12 +38,10 @@ class ApplicationMappingsEditor : public Component,
                                   public juce::Button::Listener
 {
 public:
-    /// Constructor.
     ApplicationMappingsEditor(ApplicationCommandManager *app,
                               MidiMappingManager *midi,
                               OscMappingManager *osc);
 
-    /// Destructor.
     ~ApplicationMappingsEditor() override;
 
     /// Fills the background the correct colour.
@@ -75,7 +73,6 @@ private:
         class MappingItemButtons;
 
     public:
-        /// Constructor.
         MappingItem(const String& commandName,
                     CommandID commandId,
                     ApplicationCommandManager *app,
@@ -89,7 +86,6 @@ private:
         {
         }
 
-        /// Destructor.
         ~MappingItem() override = default;
 
         /// Returns false, obviously.
@@ -131,7 +127,6 @@ private:
                                    public KeyListener
         {
         public:
-            /// Constructor.
             MappingItemButtons(CommandID commandId,
                                ApplicationCommandManager *app,
                                MidiMappingManager *midi,
@@ -195,7 +190,6 @@ private:
                 }
             }
 
-            /// Destructor.
             ~MappingItemButtons() override
             {
                 deleteAllChildren();
@@ -448,7 +442,6 @@ private:
     class CategoryItem : public TreeViewItem
     {
     public:
-        /// Constructor.
         CategoryItem(const String& category,
                      ApplicationCommandManager *app,
                      MidiMappingManager *midi,
@@ -462,7 +455,6 @@ private:
             setOpen(true);
         }
 
-        /// Destructor.
         ~CategoryItem() override = default;
 
         /// Returns true, obviously.
@@ -510,7 +502,6 @@ private:
     class RootItem : public TreeViewItem
     {
     public:
-        /// Constructor.
         RootItem(ApplicationCommandManager *app,
                  MidiMappingManager *midi,
                  OscMappingManager *osc)
@@ -521,7 +512,6 @@ private:
             setLinesDrawnForSubItems(false);
         }
 
-        /// Destructor.
         ~RootItem() override = default;
 
         /// Returns true, obviously.

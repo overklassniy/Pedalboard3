@@ -52,8 +52,10 @@ class InternalPluginFormat : public AudioPluginFormat
         endOfFilterTypes
     };
 
+    /// Returns the plugin description for the given internal filter type.
     const PluginDescription* getDescriptionFor(const InternalFilterType type);
 
+    /// Populates the array with descriptions for all available internal filters.
     void getAllTypes(OwnedArray<PluginDescription>& results);
 
     bool canScanForPlugins() const override { return false; }

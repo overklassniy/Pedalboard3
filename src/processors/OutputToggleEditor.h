@@ -32,9 +32,7 @@ class OutputToggleControl : public Component,
                             public juce::Button::Listener
 {
   public:
-    /// Constructor.
     OutputToggleControl(OutputToggleProcessor* proc);
-    /// Destructor.
     ~OutputToggleControl() override;
 
     /// Updates the button to reflect the processor's state.
@@ -58,10 +56,8 @@ class OutputToggleEditor : public AudioProcessorEditor,
                            public juce::Button::Listener
 {
   public:
-    /// Constructor.
     OutputToggleEditor(AudioProcessor* processor,
                        const Rectangle<int>& windowBounds);
-    /// Destructor.
     ~OutputToggleEditor() override;
 
     /// Resizes the button to fill the window.

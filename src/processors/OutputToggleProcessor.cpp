@@ -71,22 +71,22 @@ void OutputToggleProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     data[0] = buffer.getWritePointer(0);
     data[1] = buffer.getWritePointer(1);
 
-    /*if(!toggle)
-    {
-        for(i=0;i<buffer.getNumSamples();++i)
-        {
-            data[0][i] = data[0][i];
-            data[1][i] = 0.0f;
-        }
-    }
-    else
-    {
-        for(i=0;i<buffer.getNumSamples();++i)
-        {
-            data[1][i] = data[0][i];
-            data[0][i] = 0.0f;
-        }
-    }*/
+    //if(!toggle)
+    //{
+    //    for(i=0;i<buffer.getNumSamples();++i)
+    //    {
+    //        data[0][i] = data[0][i];
+    //        data[1][i] = 0.0f;
+    //    }
+    //}
+    //else
+    //{
+    //    for(i=0;i<buffer.getNumSamples();++i)
+    //    {
+    //        data[1][i] = data[0][i];
+    //        data[0][i] = 0.0f;
+    //    }
+    //}
 
     for(i=0;i<buffer.getNumSamples();++i)
     {

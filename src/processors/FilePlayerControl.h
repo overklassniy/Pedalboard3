@@ -36,9 +36,7 @@ class FilePlayerControl : public Component,
                           public juce::Button::Listener
 {
   public:
-    /// Constructor.
     FilePlayerControl(FilePlayerProcessor* proc);
-    /// Destructor.
     ~FilePlayerControl() override;
 
     /// Called when the user selects a sound file.

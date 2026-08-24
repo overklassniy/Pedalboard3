@@ -1,4 +1,4 @@
-﻿// PluginComponent.h - Component representing a plugin/filter in the graph.
+// PluginComponent.h - Component representing a plugin/filter in the graph.
 //
 // This file is part of Pedalboard3, an audio plugin host.
 // Copyright (c) 2009 Niall Moody.
@@ -37,9 +37,7 @@ class PluginComponent : public juce::Component,
                         public juce::Label::Listener
 {
   public:
-    /// Constructor.
     PluginComponent(AudioProcessorGraph::Node::Ptr n);
-    /// Destructor.
     ~PluginComponent() override;
 
     /// Draws the component.
@@ -170,14 +168,12 @@ class PluginComponent : public juce::Component,
 class PluginPinComponent : public juce::Component
 {
   public:
-    /// Constructor.
     ///
     /// dir is whether this is an input (false) or output (true) pin.
     /// id is the uid of the plugin this pin is for.
     /// chan is the input/output channel of the plugin this pin represents.
     /// param is whether this is an audio or parameter(/midi) pin.
     PluginPinComponent(bool dir, AudioProcessorGraph::NodeID id, int chan, bool param);
-    /// Destructor.
     ~PluginPinComponent() override;
 
     /// Draws the pin.
@@ -216,9 +212,7 @@ class PluginPinComponent : public juce::Component
 class PluginEditorWindow : public juce::DocumentWindow
 {
   public:
-    /// Constructor.
     PluginEditorWindow(juce::AudioProcessorEditor *editor, PluginComponent *c);
-    /// Destructor.
     ~PluginEditorWindow() override;
 
     /// Used to close the window.
@@ -232,9 +226,7 @@ class PluginEditorWindow : public juce::DocumentWindow
     class EditorWrapper : public juce::Component
     {
       public:
-        /// Constructor.
         EditorWrapper(juce::AudioProcessorEditor *ed, PluginComponent *comp);
-        /// Destructor.
         ~EditorWrapper() override;
 
         /// So we can resize our child components.
@@ -263,7 +255,6 @@ class PluginConnection : public juce::Component,
                          public juce::ChangeListener
 {
   public:
-    /// Constructor.
     ///
     /// s is the source plugin pin. d is the destination plugin pin.
     /// allOutputs: if true, the user was holding shift when they created
@@ -271,7 +262,6 @@ class PluginConnection : public juce::Component,
     /// should be made for all the outputs following this one in its source,
     /// and all the inputs following it in its destination.
     PluginConnection(PluginPinComponent *s, PluginPinComponent *d = nullptr, bool allOutputs = false);
-    /// Destructor.
     ~PluginConnection() override;
 
     /// Draws the connection.

@@ -34,7 +34,6 @@ class BypassableInstance : public AudioPluginInstance
   public:
     /// Constructor. Takes ownership of the wrapped plugin.
     explicit BypassableInstance(std::unique_ptr<AudioPluginInstance> plug);
-    /// Destructor.
     ~BypassableInstance() override;
 
     /// Sets up the internal buffer.
@@ -62,7 +61,7 @@ class BypassableInstance : public AudioPluginInstance
     /// Returns the plugin's name.
     const String getName() const override { return plugin->getName(); }
 
-    // JUCE 8 bus layout support - delegate to inner plugin
+    /// JUCE 8 bus layout support — delegates to the inner plugin.
     bool isBusesLayoutSupported(const BusesLayout& layout) const override
     {
         return plugin->checkBusesLayoutSupported(layout);

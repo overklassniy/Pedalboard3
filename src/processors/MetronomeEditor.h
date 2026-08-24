@@ -33,10 +33,8 @@ class MetronomeEditor : public AudioProcessorEditor,
                         public Timer
 {
   public:
-    /// Constructor.
     MetronomeEditor(MetronomeProcessor* processor,
                     const Rectangle<int>& windowBounds);
-    /// Destructor.
     ~MetronomeEditor() override;
 
     /// Resizes the controls to fill the window.

@@ -35,9 +35,7 @@ class PatchOrganiser : public Component,
                        public juce::Button::Listener
 {
   public:
-    /// Constructor.
     PatchOrganiser(MainPanel* panel, Array<XmlElement*>& patchArray);
-    /// Destructor.
     ~PatchOrganiser() override;
 
     /// Returns the number of active mappings.

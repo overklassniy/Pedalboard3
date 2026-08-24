@@ -50,9 +50,7 @@ class LooperProcessor : public PedalboardProcessor,
                         public AsyncUpdater
 {
   public:
-    /// Constructor.
     LooperProcessor();
-    /// Destructor.
     ~LooperProcessor() override;
 
     /// Sets the sound file to play.

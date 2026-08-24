@@ -35,12 +35,10 @@ class BypassableInstance;
 class OscMapping : public Mapping
 {
   public:
-    /// Constructor.
     OscMapping(OscMappingManager* manager, FilterGraph* graph, uint32 pluginId, int param,
                const String& oscAddress, int oscParam);
     /// Constructor to load from an XmlElement.
     OscMapping(OscMappingManager* manager, FilterGraph* graph, XmlElement* e);
-    /// Destructor.
     ~OscMapping() override;
 
     /// Called when an OSC message matching this mapping's address is received.
@@ -52,7 +50,9 @@ class OscMapping : public Mapping
     const String& getAddress() const { return address; }
     int getParameterIndex() const { return parameter; }
 
+    /// Sets the OSC address this mapping responds to.
     void setAddress(const String& oscAddress);
+    /// Sets the parameter index within the target plugin.
     void setParameterIndex(int val);
 
   private:
@@ -93,7 +93,6 @@ class OscAppMapping
 class OscMappingManager
 {
   public:
-    /// Constructor.
     ///
     /// @param manager The app's ApplicationCommandManager for invoking commands.
     OscMappingManager(ApplicationCommandManager* manager);
@@ -113,10 +112,14 @@ class OscMappingManager
     /// Dispatches a MIDI message extracted from OSC to registered MIDI processors.
     void handleMIDIMessage(const String& address, const juce::MidiMessage& midiMessage);
 
+    /// Registers an OSC-to-parameter mapping at the given address.
     void registerMapping(const String& address, OscMapping* mapping);
+    /// Unregisters an OSC-to-parameter mapping.
     void unregisterMapping(OscMapping* mapping);
 
+    /// Registers an OSC-to-command mapping for application-level actions.
     void registerAppMapping(OscAppMapping* mapping);
+    /// Unregisters an OSC-to-command mapping.
     void unregisterAppMapping(OscAppMapping* mapping);
 
     /// Registers a plugin that wants MIDI messages over OSC at the given address.
@@ -126,7 +129,9 @@ class OscMappingManager
     /// Returns the OSC address for the given plugin, or empty if none.
     const String getMIDIProcessorAddress(BypassableInstance* processor) const;
 
+    /// Returns the number of registered application-level mappings.
     int getNumAppMappings() const;
+    /// Returns the application-level mapping at the given index.
     OscAppMapping* getAppMapping(int i);
 
     /// Returns all unique OSC addresses received so far (for address learning).

@@ -27,9 +27,7 @@
 class VuMeterProcessor : public PedalboardProcessor
 {
   public:
-    /// Constructor.
     VuMeterProcessor();
-    /// Destructor.
     ~VuMeterProcessor() override;
 
     /// Returns the component which is added to the instance's PluginComponent.

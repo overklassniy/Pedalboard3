@@ -27,9 +27,7 @@
 class OutputToggleProcessor : public PedalboardProcessor
 {
   public:
-    /// Constructor.
     OutputToggleProcessor();
-    /// Destructor.
     ~OutputToggleProcessor() override;
 
     /// Returns the component which is added to the instance's PluginComponent.

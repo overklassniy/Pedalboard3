@@ -36,9 +36,7 @@ class ColourSchemeEditor : public Component,
                            public juce::ComboBox::Listener
 {
   public:
-    /// Constructor.
     ColourSchemeEditor();
-    /// Destructor.
     ~ColourSchemeEditor() override;
 
     /// Returns the number of colours which can be edited.

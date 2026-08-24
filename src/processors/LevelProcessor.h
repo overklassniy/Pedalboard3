@@ -27,9 +27,7 @@
 class LevelProcessor : public PedalboardProcessor
 {
   public:
-    /// Constructor.
     LevelProcessor();
-    /// Destructor.
     ~LevelProcessor() override;
 
     /// Returns the component which is added to the instance's PluginComponent.

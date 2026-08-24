@@ -60,24 +60,24 @@ class SafetyLimiterProcessor : public AudioProcessor
     bool hasEditor() const override { return false; }
     AudioProcessorEditor* createEditor() override { return nullptr; }
 
-    // Safety state queries (thread-safe)
+    /// Safety state queries (thread-safe).
     bool isMuted() const { return muted.load(); }
     bool isLimiting() const { return limiting.load(); }
 
-    // Manual unmute (called from Panic)
+    /// Manual unmute (called from Panic).
     void unmute() { muted.store(false); }
 
-    // Check if mute was triggered since last check (for toast notification)
+    /// Check if mute was triggered since last check (for toast notification).
     bool checkAndClearMuteTriggered()
     {
         bool expected = true;
         return muteTriggered.compare_exchange_strong(expected, false);
     }
 
-    // Audio activity detection for wire glow
+    /// Audio activity detection for wire glow.
     bool isAudioActive() const { return audioActive.load(); }
 
-    // Output level metering (peak with decay, read by UI for Audio Output VU)
+    /// Output level metering (peak with decay, read by UI for Audio Output VU).
     float getOutputLevel(int channel) const
     {
         if (channel >= 0 && channel < 2)
@@ -85,7 +85,7 @@ class SafetyLimiterProcessor : public AudioProcessor
         return 0.0f;
     }
 
-    // Input level metering (peak with decay, read by UI for Audio Input VU)
+    /// Input level metering (peak with decay, read by UI for Audio Input VU).
     float getInputLevel(int channel) const
     {
         if (channel >= 0 && channel < 2)
@@ -93,7 +93,7 @@ class SafetyLimiterProcessor : public AudioProcessor
         return 0.0f;
     }
 
-    // VU-ballistic level (300ms integration, read by UI for VU meter display)
+    /// VU-ballistic level (300ms integration, read by UI for VU meter display).
     float getOutputVuLevel(int channel) const
     {
         if (channel >= 0 && channel < 2)
@@ -107,12 +107,12 @@ class SafetyLimiterProcessor : public AudioProcessor
         return 0.0f;
     }
 
-    // Called from MeteringProcessorPlayer after graph processes (RT-safe).
+    /// Called from MeteringProcessorPlayer after graph processes (RT-safe).
     void updateOutputLevelsFromDevice(const float* const* outputData, int numChannels, int numSamples);
-    // Called from MeteringProcessorPlayer before graph processes (RT-safe).
+    /// Called from MeteringProcessorPlayer before graph processes (RT-safe).
     void updateInputLevelsFromDevice(const float* const* inputData, int numChannels, int numSamples);
 
-    // Static instance accessor for PluginComponent to read output levels
+    /// Static instance accessor for PluginComponent to read output levels.
     static SafetyLimiterProcessor* getInstance() { return instance; }
     static void setInstance(SafetyLimiterProcessor* inst) { instance = inst; }
 

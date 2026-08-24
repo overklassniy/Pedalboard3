@@ -27,9 +27,7 @@
 class PresetManager
 {
   public:
-    /// Constructor.
     PresetManager();
-    /// Destructor.
     ~PresetManager();
 
     /// Loads a preset from an .fxp file.

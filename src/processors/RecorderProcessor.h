@@ -29,9 +29,7 @@ class RecorderProcessor : public PedalboardProcessor,
                           public ChangeBroadcaster
 {
   public:
-    /// Constructor.
     RecorderProcessor();
-    /// Destructor.
     ~RecorderProcessor() override;
 
     /// Sets the sound file to play.

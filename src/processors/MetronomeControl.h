@@ -34,10 +34,8 @@ class MetronomeControl : public Component,
                          public juce::Label::Listener
 {
   public:
-    /// Constructor.
     /// @param editors If false, the file selectors are hidden for use on the plugin surface.
     MetronomeControl(MetronomeProcessor* proc, bool editors);
-    /// Destructor.
     ~MetronomeControl() override;
 
     /// Called when the user selects an accent or click sound file.

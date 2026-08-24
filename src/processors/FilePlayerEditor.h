@@ -33,10 +33,8 @@ class FilePlayerEditor : public AudioProcessorEditor,
                          public Timer
 {
   public:
-    /// Constructor.
     FilePlayerEditor(FilePlayerProcessor* processor,
                      const Rectangle<int>& windowBounds);
-    /// Destructor.
     ~FilePlayerEditor() override;
 
     /// Resizes the controls to fill the window.

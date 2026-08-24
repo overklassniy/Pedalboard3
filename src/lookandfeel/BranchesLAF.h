@@ -28,9 +28,7 @@
 class BranchesLAF : public juce::LookAndFeel
 {
   public:
-    /// Constructor.
     BranchesLAF();
-    /// Destructor.
     ~BranchesLAF() override;
 
     /// Draws the button background.

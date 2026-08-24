@@ -29,7 +29,6 @@
 class PedalboardProcessor : public AudioPluginInstance
 {
   public:
-    /// Destructor.
     ~PedalboardProcessor() override = default;
 
     /// Returns the component which is added to the instance's PluginComponent.

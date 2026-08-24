@@ -32,9 +32,7 @@ class LevelControl : public Component,
                      public juce::Slider::Listener
 {
   public:
-    /// Constructor.
     LevelControl(LevelProcessor* proc);
-    /// Destructor.
     ~LevelControl() override;
 
     /// Updates the slider to reflect the processor's level.
@@ -58,9 +56,7 @@ class LevelEditor : public AudioProcessorEditor,
                     public juce::Slider::Listener
 {
   public:
-    /// Constructor.
     LevelEditor(AudioProcessor* processor, const Rectangle<int>& windowBounds);
-    /// Destructor.
     ~LevelEditor() override;
 
     /// Resizes the slider to fill the window.

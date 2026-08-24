@@ -29,11 +29,9 @@ class FilePlayerProcessor : public PedalboardProcessor,
                             public ChangeBroadcaster
 {
   public:
-    /// Constructor.
     FilePlayerProcessor();
     /// Constructor which also sets the processor's sound file.
     FilePlayerProcessor(const File& phil);
-    /// Destructor.
     ~FilePlayerProcessor() override;
 
     /// Sets the sound file to play.

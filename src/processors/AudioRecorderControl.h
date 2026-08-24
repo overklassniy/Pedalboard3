@@ -34,9 +34,7 @@ class AudioRecorderControl : public Component,
                              public juce::Button::Listener
 {
   public:
-    /// Constructor.
     AudioRecorderControl(RecorderProcessor* proc, AudioThumbnail& thumbnail);
-    /// Destructor.
     ~AudioRecorderControl() override;
 
     /// Called when the user selects a sound file.

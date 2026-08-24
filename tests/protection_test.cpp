@@ -1,14 +1,11 @@
-/**
- * @file protection_test.cpp
- * @brief Tests for plugin protection features (PluginBlacklist, CrashProtection)
- *
- * These tests verify:
- * 1. PluginBlacklist - add/remove/query, path normalization, persistence logic
- * 2. CrashProtection - callback invocation, context tracking, exception handling
- *
- * Tests use mock implementations to avoid actual crashes while verifying
- * the protection logic works correctly.
- */
+/// Tests for plugin protection features (PluginBlacklist, CrashProtection).
+///
+/// These tests verify:
+/// 1. PluginBlacklist — add/remove/query, path normalization, persistence logic
+/// 2. CrashProtection — callback invocation, context tracking, exception handling
+///
+/// Tests use mock implementations to avoid actual crashes while verifying
+/// the protection logic works correctly.
 
 #include <atomic>
 #include <catch2/catch_test_macros.hpp>
@@ -20,13 +17,9 @@
 #include <thread>
 #include <vector>
 
-// =============================================================================
 // Mock PluginBlacklist (mirrors real implementation for testing)
-// =============================================================================
 
-/**
- * Mock implementation of PluginBlacklist for testing without SettingsManager
- */
+/// Mock implementation of PluginBlacklist for testing without SettingsManager.
 class MockPluginBlacklist
 {
   public:
@@ -126,13 +119,9 @@ class MockPluginBlacklist
     mutable std::mutex blacklistMutex;
 };
 
-// =============================================================================
 // Mock CrashProtection (mirrors real implementation for testing)
-// =============================================================================
 
-/**
- * Mock implementation of CrashProtection for testing without SEH
- */
+/// Mock implementation of CrashProtection for testing without SEH.
 class MockCrashProtection
 {
   public:
@@ -238,9 +227,7 @@ class MockCrashProtection
     std::string lastExceptionMessage;
 };
 
-// =============================================================================
 // PluginBlacklist Tests
-// =============================================================================
 
 TEST_CASE("PluginBlacklist - Path Management", "[protection][blacklist]")
 {
@@ -412,9 +399,7 @@ TEST_CASE("PluginBlacklist - Retrieval", "[protection][blacklist]")
     }
 }
 
-// =============================================================================
 // CrashProtection Tests
-// =============================================================================
 
 TEST_CASE("CrashProtection - Successful Operations", "[protection][crash]")
 {
@@ -581,9 +566,7 @@ TEST_CASE("CrashProtection - Operation Context", "[protection][crash]")
     }
 }
 
-// =============================================================================
 // Mutation Tests - PluginBlacklist
-// =============================================================================
 
 TEST_CASE("PluginBlacklist - Mutation Tests", "[protection][mutation]")
 {
@@ -642,9 +625,7 @@ TEST_CASE("PluginBlacklist - Mutation Tests", "[protection][mutation]")
     }
 }
 
-// =============================================================================
 // Mutation Tests - CrashProtection
-// =============================================================================
 
 TEST_CASE("CrashProtection - Mutation Tests", "[protection][mutation]")
 {
@@ -713,9 +694,7 @@ TEST_CASE("CrashProtection - Mutation Tests", "[protection][mutation]")
     }
 }
 
-// =============================================================================
 // Thread Safety Tests
-// =============================================================================
 
 TEST_CASE("PluginBlacklist - Thread Safety", "[protection][threading]")
 {

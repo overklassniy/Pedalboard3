@@ -32,9 +32,7 @@
 class TrayIcon : public SystemTrayIconComponent
 {
   public:
-    /// Constructor.
     TrayIcon(DocumentWindow* win);
-    /// Destructor.
     ~TrayIcon() override;
 
     /// Called to display a PopupMenu on right-click.

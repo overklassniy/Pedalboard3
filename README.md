@@ -154,6 +154,30 @@ cmake --build build
 
 Both are in `.gitignore` and are not part of the Pedalboard3 source tree.
 
+### Directory structure
+
+| Directory | Purpose |
+| --- | --- |
+| `src/app/` | Application shell, main window, main panel, about, log display, tray icon |
+| `src/audio/` | Audio engine core: graph, singletons, transport, internal plugin format |
+| `src/osc/` | OSC mapping: base Mapping class, OSC manager, tap tempo helper |
+| `src/util/` | Utilities and embedded resource data (vectors, images, properties, log) |
+| `src/lookandfeel/` | Custom BranchesLAF LookAndFeel and colour scheme system |
+| `src/processors/` | Built-in processors, editors, controls, DSP safety (limiter, crossfade, VU) |
+| `src/canvas/` | Plugin canvas: node components and the field/canvas |
+| `src/mappings/` | MIDI mapping system and mapping UI components |
+| `src/preset/` | Patch and preset management, preferences dialog |
+| `src/stability/` | Stability infrastructure: blacklist, crash protection, settings, undo/redo |
+| `src/scanner/` | Out-of-process plugin scanner (IPC, client, safe wrapper, pool, main entry) |
+| `JUCE/` | JUCE 8.0.15 git submodule (audio framework) |
+| `cmake/` | CPM.cmake dependency manager script |
+| `tests/` | Unit tests (Catch2) |
+| `icon/` | Application icons (PNG) |
+| `images/` | Bitmap images used by the UI |
+| `vectors/` | SVG vector graphics for UI elements |
+| `pedalboard2-OLD/` | Original Pedalboard2 source (reference only) |
+| `pedalboard3-VST3/` | VST3 fork source (reference only) |
+
 ### JUCE 8 API notes
 
 - `AudioProcessor::createEditor()` is private — use `createEditorAndMakeActive()`.

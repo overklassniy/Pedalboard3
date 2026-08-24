@@ -1,9 +1,7 @@
-# ==============================================================================
 # Pedalboard3 - CMake Build Configuration
 #
 # A modern VST3 plugin host preserving the original Pedalboard2 UI.
 # Built on JUCE 8.0.15 with C++20.
-# ==============================================================================
 
 cmake_minimum_required(VERSION 3.24)
 
@@ -13,21 +11,15 @@ project(Pedalboard3
     LANGUAGES C CXX
 )
 
-# ==============================================================================
 # CPM.cmake - Dependency Manager
-# ==============================================================================
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
 
-# ==============================================================================
 # C++ Standard
-# ==============================================================================
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# ==============================================================================
 # Modern C++ Libraries (via CPM)
-# ==============================================================================
 
 # fmt - Modern string formatting
 CPMAddPackage(
@@ -53,9 +45,7 @@ CPMAddPackage(
     OPTIONS "JSON_BuildTests OFF" "JSON_Install OFF"
 )
 
-# ==============================================================================
 # Testing Framework
-# ==============================================================================
 option(Pedalboard3_BUILD_TESTS "Build tests" ON)
 
 if(Pedalboard3_BUILD_TESTS)
@@ -70,9 +60,7 @@ if(Pedalboard3_BUILD_TESTS)
     enable_testing()
 endif()
 
-# ==============================================================================
 # Compiler Warnings
-# ==============================================================================
 if(MSVC)
     add_compile_options(/W4 /WX-)  # High warnings, don't treat as errors yet
     add_compile_options(/wd4100)   # Unreferenced formal parameter (common in JUCE)
@@ -84,9 +72,7 @@ else()
     add_compile_options(-Wno-unused-parameter)
 endif()
 
-# ==============================================================================
 # JUCE - Audio Framework (submodule at tag 8.0.15)
-# ==============================================================================
 if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/JUCE/CMakeLists.txt)
     message(FATAL_ERROR
         "JUCE submodule not found. Run:\n"
@@ -99,9 +85,7 @@ endif()
 
 add_subdirectory(JUCE)
 
-# ==============================================================================
 # Main Application
-# ==============================================================================
 juce_add_gui_app(Pedalboard3
     PRODUCT_NAME "Pedalboard3"
     COMPANY_NAME "Pedalboard3 Project"
@@ -113,9 +97,7 @@ juce_add_gui_app(Pedalboard3
 # Generate JUCE header
 juce_generate_juce_header(Pedalboard3)
 
-# ==============================================================================
 # Source Files
-# ==============================================================================
 target_sources(Pedalboard3 PRIVATE
     # Application shell
     src/app/App.cpp
@@ -281,9 +263,7 @@ target_sources(Pedalboard3 PRIVATE
     src/scanner/PluginPoolManager.h
 )
 
-# ==============================================================================
 # Include Directories (flat includes work across all subdirectories)
-# ==============================================================================
 target_include_directories(Pedalboard3 PRIVATE
     src/app
     src/audio
@@ -298,9 +278,7 @@ target_include_directories(Pedalboard3 PRIVATE
     src/scanner
 )
 
-# ==============================================================================
 # Compile Definitions
-# ==============================================================================
 target_compile_definitions(Pedalboard3 PRIVATE
     # JUCE Settings
     JUCE_WEB_BROWSER=0
@@ -338,9 +316,7 @@ else()
     )
 endif()
 
-# ==============================================================================
 # Link Libraries
-# ==============================================================================
 target_link_libraries(Pedalboard3 PRIVATE
     # JUCE modules
     juce::juce_audio_basics
@@ -377,9 +353,7 @@ if(WIN32)
     target_link_libraries(Pedalboard3 PRIVATE ws2_32)
 endif()
 
-# ==============================================================================
 # Out-of-Process Plugin Scanner
-# ==============================================================================
 juce_add_console_app(Pedalboard3Scanner
     PRODUCT_NAME "Pedalboard3Scanner"
     COMPANY_NAME "Pedalboard3 Project"
@@ -431,9 +405,7 @@ target_link_libraries(Pedalboard3Scanner PRIVATE
     spdlog::spdlog
 )
 
-# ==============================================================================
 # Tests
-# ==============================================================================
 if(Pedalboard3_BUILD_TESTS)
     add_subdirectory(tests)
 endif()

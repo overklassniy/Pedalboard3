@@ -32,9 +32,7 @@ class TapTempoBox : public Component,
                     public Timer
 {
   public:
-    /// Constructor.
     TapTempoBox(PluginField* field, TextEditor* tempoEd);
-    /// Destructor.
     ~TapTempoBox() override;
 
     /// Draws the box.

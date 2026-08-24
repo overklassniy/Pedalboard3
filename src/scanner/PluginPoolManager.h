@@ -67,7 +67,6 @@ class PluginPoolManager : private Thread
     /// Shuts down and destroys the singleton instance.
     static void killInstance();
 
-    /// Destructor.
     ~PluginPoolManager() override;
 
     // Configuration
@@ -126,7 +125,9 @@ class PluginPoolManager : private Thread
 
     // Listeners
 
+    /// Adds a listener for plugin pool events.
     void addListener(PluginPoolListener* listener);
+    /// Removes a previously added listener.
     void removeListener(PluginPoolListener* listener);
 
   private:

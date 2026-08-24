@@ -35,9 +35,7 @@ class PreferencesDialog : public Component,
                           public juce::Button::Listener
 {
   public:
-    /// Constructor.
     PreferencesDialog(MainPanel* panel, const String& port, const String& multicastAddress);
-    /// Destructor.
     ~PreferencesDialog() override;
 
     /// Not used.

@@ -29,11 +29,9 @@ class FilterGraph;
 class Mapping
 {
   public:
-    /// Constructor.
     Mapping(FilterGraph* graph, uint32 pluginId, int param);
     /// Constructor to load Mapping parameters from an XmlElement.
     Mapping(FilterGraph* graph, XmlElement* e);
-    /// Destructor.
     virtual ~Mapping();
 
     /// Returns an XmlElement representing this Mapping.

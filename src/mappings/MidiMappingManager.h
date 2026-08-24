@@ -33,7 +33,6 @@ class MidiMappingManager;
 class MidiMapping : public Mapping
 {
   public:
-    /// Constructor.
     ///
     /// manager is the MidiMappingManager to register with.
     /// graph is the FilterGraph this Mapping exists in.
@@ -55,7 +54,6 @@ class MidiMapping : public Mapping
                 float upper = 1.0f);
     /// Constructor to load Mapping parameters from an XmlElement.
     MidiMapping(MidiMappingManager* manager, FilterGraph* graph, XmlElement* e);
-    /// Destructor.
     ~MidiMapping() override;
 
     /// Called when a MIDI CC message matching this mapping's CC is received.
@@ -115,7 +113,6 @@ class MidiMapping : public Mapping
 class MidiAppMapping
 {
   public:
-    /// Constructor.
     ///
     /// manager is the MidiMappingManager to register with.
     /// midiCc is the MIDI CC being mapped to the command.
@@ -123,7 +120,6 @@ class MidiAppMapping
     MidiAppMapping(MidiMappingManager* manager, int midiCc, CommandID commandId);
     /// Constructor to load Mapping parameters from an XmlElement.
     MidiAppMapping(MidiMappingManager* manager, XmlElement* e);
-    /// Destructor.
     ~MidiAppMapping();
 
     /// Returns an XmlElement representing this Mapping.
@@ -148,9 +144,7 @@ class MidiAppMapping
 class MidiMappingManager
 {
   public:
-    /// Constructor.
     MidiMappingManager(ApplicationCommandManager* manager);
-    /// Destructor.
     ~MidiMappingManager();
 
     /// Called when a MIDI CC message is received.
@@ -175,7 +169,6 @@ class MidiMappingManager
     class MidiLearnCallback
     {
       public:
-        /// Destructor.
         virtual ~MidiLearnCallback() {}
 
         /// Called when the manager receives a MIDI CC message.
@@ -215,9 +208,7 @@ class MidiMappingManager
 class MidiInterceptor : public AudioPluginInstance
 {
   public:
-    /// Constructor.
     MidiInterceptor();
-    /// Destructor.
     ~MidiInterceptor() override;
 
     /// Registers the current MidiMappingManager with this instance.

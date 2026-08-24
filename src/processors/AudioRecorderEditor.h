@@ -33,11 +33,9 @@ class AudioRecorderEditor : public AudioProcessorEditor,
                             public Timer
 {
   public:
-    /// Constructor.
     AudioRecorderEditor(RecorderProcessor* processor,
                         const Rectangle<int>& windowBounds,
                         AudioThumbnail& thumbnail);
-    /// Destructor.
     ~AudioRecorderEditor() override;
 
     /// Resizes the controls to fill the window.

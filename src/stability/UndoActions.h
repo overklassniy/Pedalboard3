@@ -51,7 +51,7 @@ class AddPluginAction : public FilterGraphAction
 
     juce::String getName() const { return "Add Plugin: " + pluginDescription.name; }
 
-    // Get the NodeID after perform() - needed for tracking
+    /// Returns the NodeID after perform() — needed for tracking.
     juce::AudioProcessorGraph::NodeID getNodeId() const { return nodeId; }
 
   private:
