@@ -391,8 +391,8 @@ target_link_libraries(Pedalboard3Scanner PRIVATE
 )
 
 # ==============================================================================
-# Tests (added in Phase 6)
+# Tests
 # ==============================================================================
 if(Pedalboard3_BUILD_TESTS)
-    # TODO: add_subdirectory(tests) - added in Phase 6
+    add_subdirectory(tests)
 endif()
