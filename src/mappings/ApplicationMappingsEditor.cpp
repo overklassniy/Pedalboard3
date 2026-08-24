@@ -19,16 +19,13 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "ApplicationMappingsEditor.h"
+
 #include "MidiMappingManager.h"
 #include "OscMappingManager.h"
 
-ApplicationMappingsEditor::ApplicationMappingsEditor(ApplicationCommandManager *app,
-                                                     MidiMappingManager *midi,
-                                                     OscMappingManager *osc)
-    : appManager(app),
-      midiManager(midi),
-      oscManager(osc)
-{
+ApplicationMappingsEditor::ApplicationMappingsEditor(ApplicationCommandManager* app, MidiMappingManager* midi,
+                                                     OscMappingManager* osc)
+    : appManager(app), midiManager(midi), oscManager(osc) {
     mappingsTree = new TreeView();
     mappingsTree->setRootItem(new RootItem(app, midi, osc));
     mappingsTree->setRootItemVisible(false);
@@ -43,28 +40,23 @@ ApplicationMappingsEditor::ApplicationMappingsEditor(ApplicationCommandManager *
     setSize(400, 524);
 }
 
-ApplicationMappingsEditor::~ApplicationMappingsEditor()
-{
+ApplicationMappingsEditor::~ApplicationMappingsEditor() {
     mappingsTree->deleteRootItem();
     deleteAllChildren();
 }
 
-void ApplicationMappingsEditor::paint(Graphics& g)
-{
+void ApplicationMappingsEditor::paint(Graphics& g) {
     g.fillAll(ColourScheme::getInstance().colours["Window Background"]);
 }
 
-void ApplicationMappingsEditor::resized()
-{
+void ApplicationMappingsEditor::resized() {
     mappingsTree->setSize(getWidth(), getHeight() - 28);
 
     resetButton->setTopLeftPosition((getWidth() - 112), (getHeight() - 26));
 }
 
-void ApplicationMappingsEditor::buttonClicked(Button *button)
-{
-    if (button == resetButton)
-    {
+void ApplicationMappingsEditor::buttonClicked(Button* button) {
+    if (button == resetButton) {
         appManager->getKeyMappings()->resetToDefaultMappings();
 
         for (int i = (midiManager->getNumAppMappings() - 1); i >= 0; --i)
@@ -73,8 +65,7 @@ void ApplicationMappingsEditor::buttonClicked(Button *button)
         for (int i = (oscManager->getNumAppMappings() - 1); i >= 0; --i)
             delete oscManager->getAppMapping(i);
 
-        for (int i = 0; i < mappingsTree->getRootItem()->getNumSubItems(); ++i)
-        {
+        for (int i = 0; i < mappingsTree->getRootItem()->getNumSubItems(); ++i) {
             mappingsTree->getRootItem()->getSubItem(i)->setOpen(false);
             mappingsTree->getRootItem()->getSubItem(i)->setOpen(true);
         }

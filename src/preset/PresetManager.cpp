@@ -20,9 +20,7 @@
 
 #include "PresetManager.h"
 
-
-PresetManager::PresetManager()
-{
+PresetManager::PresetManager() {
     File presetDir = File::getSpecialLocation(File::userApplicationDataDirectory)
                          .getChildFile("Pedalboard3")
                          .getChildFile("presets");
@@ -31,40 +29,25 @@ PresetManager::PresetManager()
         presetDir.createDirectory();
 }
 
+PresetManager::~PresetManager() {}
 
-PresetManager::~PresetManager()
-{
-}
-
-
-void PresetManager::importPreset(const File& inFile, AudioProcessor* plugin)
-{
+void PresetManager::importPreset(const File& inFile, AudioProcessor* plugin) {
     FileInputStream inStream(inFile);
     MemoryBlock memBlock(static_cast<size_t>(inStream.getTotalLength()));
 
     inStream.read(memBlock.getData(), static_cast<size_t>(inStream.getTotalLength()));
 
-    plugin->setCurrentProgramStateInformation(memBlock.getData(),
-                                              static_cast<int>(memBlock.getSize()));
+    plugin->setCurrentProgramStateInformation(memBlock.getData(), static_cast<int>(memBlock.getSize()));
 }
 
-
-void PresetManager::importPreset(const String& presetName,
-                                 AudioProcessor* plugin)
-{
+void PresetManager::importPreset(const String& presetName, AudioProcessor* plugin) {
     File presetPath;
 
-    presetPath = getPluginPresetDir(plugin->getName())
-                     .getChildFile(presetName)
-                     .withFileExtension("fxp");
+    presetPath = getPluginPresetDir(plugin->getName()).getChildFile(presetName).withFileExtension("fxp");
     importPreset(presetPath, plugin);
 }
 
-
-void PresetManager::savePreset(const MemoryBlock& block,
-                               const String& presetName,
-                               const String& pluginName)
-{
+void PresetManager::savePreset(const MemoryBlock& block, const String& presetName, const String& pluginName) {
     File presetDir = getPluginPresetDir(pluginName);
 
     if (!presetDir.exists())
@@ -75,24 +58,18 @@ void PresetManager::savePreset(const MemoryBlock& block,
     outStream.write(block.getData(), block.getSize());
 }
 
-
-void PresetManager::getListOfUserPresets(const String& pluginName,
-                                         StringArray& presetList)
-{
+void PresetManager::getListOfUserPresets(const String& pluginName, StringArray& presetList) {
     File presetDir = getPluginPresetDir(pluginName);
     Array<File> presets;
 
-    if (presetDir.exists())
-    {
+    if (presetDir.exists()) {
         presetDir.findChildFiles(presets, File::findFiles, false, "*.fxp");
         for (const auto& preset : presets)
             presetList.add(preset.getFileNameWithoutExtension());
     }
 }
 
-
-File PresetManager::getPluginPresetDir(const String& pluginName)
-{
+File PresetManager::getPluginPresetDir(const String& pluginName) {
     return File::getSpecialLocation(File::userApplicationDataDirectory)
         .getChildFile("Pedalboard3")
         .getChildFile("presets")

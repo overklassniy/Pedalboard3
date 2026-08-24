@@ -26,15 +26,25 @@
 class FilterGraph;
 
 /// The base class for all parameter mappings.
-class Mapping
-{
+class Mapping {
   public:
+    /// Creates a mapping for the given plugin and parameter index.
+    ///
+    /// @param graph The filter graph the mapping belongs to.
+    /// @param pluginId The id of the plugin this mapping applies to.
+    /// @param param The index of the plugin parameter this mapping controls.
     Mapping(FilterGraph* graph, uint32 pluginId, int param);
-    /// Constructor to load Mapping parameters from an XmlElement.
+    /// Loads Mapping parameters from an XmlElement.
+    ///
+    /// @param graph The filter graph the mapping belongs to.
+    /// @param e The XmlElement to load mapping parameters from.
     Mapping(FilterGraph* graph, XmlElement* e);
+    /// Destructor.
     virtual ~Mapping();
 
     /// Returns an XmlElement representing this Mapping.
+    ///
+    /// @return A new XmlElement encoding this mapping's state.
     virtual XmlElement* getXml() const = 0;
 
     /// Returns the id of the plugin this mapping applies to.
@@ -43,10 +53,14 @@ class Mapping
     int getParameter() const { return parameter; }
 
     /// Sets this mapping's parameter index.
+    ///
+    /// @param val The new parameter index.
     void setParameter(int val);
 
   protected:
     /// Called from subclasses to update their parameter.
+    ///
+    /// @param val The normalised value (0.0 to 1.0) to apply to the parameter.
     void updateParameter(float val);
 
   private:

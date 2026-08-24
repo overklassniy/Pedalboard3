@@ -22,20 +22,16 @@
 
 #include <spdlog/spdlog.h>
 
-
-PluginBlacklist& PluginBlacklist::getInstance()
-{
+PluginBlacklist& PluginBlacklist::getInstance() {
     static PluginBlacklist instance;
     return instance;
 }
 
-PluginBlacklist::PluginBlacklist()
-{
+PluginBlacklist::PluginBlacklist() {
     loadFromSettings();
 }
 
-juce::String PluginBlacklist::normalizePath(const juce::String& path) const
-{
+juce::String PluginBlacklist::normalizePath(const juce::String& path) const {
 #if JUCE_WINDOWS
     // Case-insensitive on Windows, also normalize slashes
     return path.toLowerCase().replace("\\", "/");
@@ -44,20 +40,17 @@ juce::String PluginBlacklist::normalizePath(const juce::String& path) const
 #endif
 }
 
-bool PluginBlacklist::isBlacklisted(const juce::String& pluginPath) const
-{
+bool PluginBlacklist::isBlacklisted(const juce::String& pluginPath) const {
     std::lock_guard<std::mutex> lock(blacklistMutex);
     return blacklistedPaths.count(normalizePath(pluginPath)) > 0;
 }
 
-bool PluginBlacklist::isBlacklistedById(const juce::String& pluginId) const
-{
+bool PluginBlacklist::isBlacklistedById(const juce::String& pluginId) const {
     std::lock_guard<std::mutex> lock(blacklistMutex);
     return blacklistedIds.count(pluginId) > 0;
 }
 
-void PluginBlacklist::addToBlacklist(const juce::String& pluginPath)
-{
+void PluginBlacklist::addToBlacklist(const juce::String& pluginPath) {
     {
         std::lock_guard<std::mutex> lock(blacklistMutex);
         blacklistedPaths.insert(normalizePath(pluginPath));
@@ -66,8 +59,7 @@ void PluginBlacklist::addToBlacklist(const juce::String& pluginPath)
     saveToSettings();
 }
 
-void PluginBlacklist::addToBlacklistById(const juce::String& pluginId)
-{
+void PluginBlacklist::addToBlacklistById(const juce::String& pluginId) {
     {
         std::lock_guard<std::mutex> lock(blacklistMutex);
         blacklistedIds.insert(pluginId);
@@ -76,8 +68,7 @@ void PluginBlacklist::addToBlacklistById(const juce::String& pluginId)
     saveToSettings();
 }
 
-void PluginBlacklist::removeFromBlacklist(const juce::String& pluginPath)
-{
+void PluginBlacklist::removeFromBlacklist(const juce::String& pluginPath) {
     {
         std::lock_guard<std::mutex> lock(blacklistMutex);
         blacklistedPaths.erase(normalizePath(pluginPath));
@@ -86,8 +77,7 @@ void PluginBlacklist::removeFromBlacklist(const juce::String& pluginPath)
     saveToSettings();
 }
 
-void PluginBlacklist::removeFromBlacklistById(const juce::String& pluginId)
-{
+void PluginBlacklist::removeFromBlacklistById(const juce::String& pluginId) {
     {
         std::lock_guard<std::mutex> lock(blacklistMutex);
         blacklistedIds.erase(pluginId);
@@ -96,8 +86,7 @@ void PluginBlacklist::removeFromBlacklistById(const juce::String& pluginId)
     saveToSettings();
 }
 
-juce::StringArray PluginBlacklist::getBlacklistedPaths() const
-{
+juce::StringArray PluginBlacklist::getBlacklistedPaths() const {
     std::lock_guard<std::mutex> lock(blacklistMutex);
     juce::StringArray result;
     for (const auto& path : blacklistedPaths)
@@ -105,8 +94,7 @@ juce::StringArray PluginBlacklist::getBlacklistedPaths() const
     return result;
 }
 
-juce::StringArray PluginBlacklist::getBlacklistedIds() const
-{
+juce::StringArray PluginBlacklist::getBlacklistedIds() const {
     std::lock_guard<std::mutex> lock(blacklistMutex);
     juce::StringArray result;
     for (const auto& id : blacklistedIds)
@@ -114,8 +102,7 @@ juce::StringArray PluginBlacklist::getBlacklistedIds() const
     return result;
 }
 
-void PluginBlacklist::clearBlacklist()
-{
+void PluginBlacklist::clearBlacklist() {
     {
         std::lock_guard<std::mutex> lock(blacklistMutex);
         blacklistedPaths.clear();
@@ -125,14 +112,12 @@ void PluginBlacklist::clearBlacklist()
     saveToSettings();
 }
 
-int PluginBlacklist::getBlacklistCount() const
-{
+int PluginBlacklist::getBlacklistCount() const {
     std::lock_guard<std::mutex> lock(blacklistMutex);
     return static_cast<int>(blacklistedPaths.size() + blacklistedIds.size());
 }
 
-void PluginBlacklist::loadFromSettings()
-{
+void PluginBlacklist::loadFromSettings() {
     std::lock_guard<std::mutex> lock(blacklistMutex);
 
     blacklistedPaths.clear();
@@ -154,8 +139,7 @@ void PluginBlacklist::loadFromSettings()
                   blacklistedIds.size());
 }
 
-void PluginBlacklist::saveToSettings()
-{
+void PluginBlacklist::saveToSettings() {
     juce::StringArray paths;
     juce::StringArray ids;
 

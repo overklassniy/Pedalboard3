@@ -27,17 +27,20 @@
 class OutputToggleProcessor;
 
 /// The PluginComponent control for OutputToggleProcessor.
-class OutputToggleControl : public Component,
-                            public Timer,
-                            public juce::Button::Listener
-{
+class OutputToggleControl : public Component, public Timer, public juce::Button::Listener {
   public:
+    /// Creates the small toggle control for the plugin surface.
+    ///
+    /// @param proc The output toggle processor to associate with this control.
     OutputToggleControl(OutputToggleProcessor* proc);
+    /// Removes child components.
     ~OutputToggleControl() override;
 
     /// Updates the button to reflect the processor's state.
     void timerCallback() override;
     /// Toggles between outputs.
+    ///
+    /// @param button The button that was clicked (unused; reads the member toggle button).
     void buttonClicked(Button* button) override;
 
   private:
@@ -51,13 +54,14 @@ class OutputToggleControl : public Component,
 };
 
 /// The full editor for OutputToggleProcessor.
-class OutputToggleEditor : public AudioProcessorEditor,
-                           public Timer,
-                           public juce::Button::Listener
-{
+class OutputToggleEditor : public AudioProcessorEditor, public Timer, public juce::Button::Listener {
   public:
-    OutputToggleEditor(AudioProcessor* processor,
-                       const Rectangle<int>& windowBounds);
+    /// Creates the full editor with the saved window bounds.
+    ///
+    /// @param processor The audio processor to associate with this editor.
+    /// @param windowBounds The saved window bounds to restore.
+    OutputToggleEditor(AudioProcessor* processor, const Rectangle<int>& windowBounds);
+    /// Saves the editor bounds back to the processor.
     ~OutputToggleEditor() override;
 
     /// Resizes the button to fill the window.
@@ -68,6 +72,8 @@ class OutputToggleEditor : public AudioProcessorEditor,
     /// Updates the button and restores the editor window bounds.
     void timerCallback() override;
     /// Toggles between outputs.
+    ///
+    /// @param button The button that was clicked (unused; reads the member toggle button).
     void buttonClicked(Button* button) override;
 
   private:

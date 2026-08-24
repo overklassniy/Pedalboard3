@@ -30,18 +30,15 @@
 
 using namespace PluginScannerIPC;
 
-PluginScannerClient::PluginScannerClient()
-{
+PluginScannerClient::PluginScannerClient() {
     spdlog::debug("[PluginScannerClient] Created");
 }
 
-PluginScannerClient::~PluginScannerClient()
-{
+PluginScannerClient::~PluginScannerClient() {
     stopScanner();
 }
 
-juce::File PluginScannerClient::getScannerExecutable()
-{
+juce::File PluginScannerClient::getScannerExecutable() {
     // Scanner should be in the same directory as the main executable
     auto appDir = juce::File::getSpecialLocation(juce::File::currentExecutableFile).getParentDirectory();
 
@@ -52,8 +49,7 @@ juce::File PluginScannerClient::getScannerExecutable()
 #endif
 }
 
-bool PluginScannerClient::isScannerRunning() const
-{
+bool PluginScannerClient::isScannerRunning() const {
 #ifdef _WIN32
     HANDLE hProcess = static_cast<HANDLE>(scannerProcess);
     if (hProcess == nullptr || hProcess == INVALID_HANDLE_VALUE)
@@ -69,41 +65,34 @@ bool PluginScannerClient::isScannerRunning() const
 #endif
 }
 
-bool PluginScannerClient::startScanner()
-{
+bool PluginScannerClient::startScanner() {
 #ifdef _WIN32
     if (isScannerRunning())
         return true;
 
-    // Close any existing handles
     stopScanner();
 
     spdlog::info("[PluginScannerClient] Starting scanner process");
 
-    // Create the named pipe for communication
-    HANDLE hPipe = CreateNamedPipeA(PIPE_NAME,
-                                    PIPE_ACCESS_DUPLEX,
-                                    PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
-                                    1,       // Max instances
-                                    65536,   // Output buffer size
-                                    65536,   // Input buffer size
-                                    0,       // Default timeout
-                                    nullptr  // Security attributes
+    HANDLE hPipe = CreateNamedPipeA(PIPE_NAME, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+                                    1,      // Max instances
+                                    65536,  // Output buffer size
+                                    65536,  // Input buffer size
+                                    0,      // Default timeout
+                                    nullptr // Security attributes
     );
 
-    if (hPipe == INVALID_HANDLE_VALUE)
-    {
+    if (hPipe == INVALID_HANDLE_VALUE) {
         spdlog::error("[PluginScannerClient] Failed to create named pipe: {}", GetLastError());
         return false;
     }
 
     pipeHandle = hPipe;
 
-    // Launch the scanner process
     auto scannerExe = getScannerExecutable();
-    if (!scannerExe.existsAsFile())
-    {
-        spdlog::error("[PluginScannerClient] Scanner executable not found: {}", scannerExe.getFullPathName().toStdString());
+    if (!scannerExe.existsAsFile()) {
+        spdlog::error("[PluginScannerClient] Scanner executable not found: {}",
+                      scannerExe.getFullPathName().toStdString());
         CloseHandle(hPipe);
         pipeHandle = nullptr;
         return false;
@@ -116,9 +105,8 @@ bool PluginScannerClient::startScanner()
     juce::String cmdLine = "\"" + scannerExe.getFullPathName() + "\"";
 
     if (!CreateProcessA(nullptr, const_cast<char*>(cmdLine.toRawUTF8()), nullptr, nullptr, FALSE,
-                        CREATE_NO_WINDOW,  // Run without console window
-                        nullptr, nullptr, &si, &pi))
-    {
+                        CREATE_NO_WINDOW, // Run without console window
+                        nullptr, nullptr, &si, &pi)) {
         spdlog::error("[PluginScannerClient] Failed to start scanner process: {}", GetLastError());
         CloseHandle(hPipe);
         pipeHandle = nullptr;
@@ -128,14 +116,11 @@ bool PluginScannerClient::startScanner()
     scannerProcess = pi.hProcess;
     CloseHandle(pi.hThread);
 
-    // Wait for scanner to connect to our pipe
     spdlog::debug("[PluginScannerClient] Waiting for scanner to connect...");
 
-    if (!ConnectNamedPipe(hPipe, nullptr))
-    {
+    if (!ConnectNamedPipe(hPipe, nullptr)) {
         DWORD err = GetLastError();
-        if (err != ERROR_PIPE_CONNECTED)
-        {
+        if (err != ERROR_PIPE_CONNECTED) {
             spdlog::error("[PluginScannerClient] Scanner failed to connect: {}", err);
             stopScanner();
             return false;
@@ -146,21 +131,18 @@ bool PluginScannerClient::startScanner()
     MessageHeader header;
     juce::String payload;
 
-    // Set a timeout for reading
     COMMTIMEOUTS timeouts = {};
-    timeouts.ReadTotalTimeoutConstant = 5000;  // 5 second timeout
+    timeouts.ReadTotalTimeoutConstant = 5000; // 5 second timeout
     SetCommTimeouts(hPipe, &timeouts);
 
     DWORD bytesRead;
-    if (!ReadFile(hPipe, &header, sizeof(header), &bytesRead, nullptr) || bytesRead != sizeof(header))
-    {
+    if (!ReadFile(hPipe, &header, sizeof(header), &bytesRead, nullptr) || bytesRead != sizeof(header)) {
         spdlog::error("[PluginScannerClient] Failed to read Ready message from scanner");
         stopScanner();
         return false;
     }
 
-    if (header.type != MessageType::Ready)
-    {
+    if (header.type != MessageType::Ready) {
         spdlog::error("[PluginScannerClient] Expected Ready message, got: {}", static_cast<int>(header.type));
         stopScanner();
         return false;
@@ -176,15 +158,12 @@ bool PluginScannerClient::startScanner()
 #endif
 }
 
-void PluginScannerClient::stopScanner()
-{
+void PluginScannerClient::stopScanner() {
 #ifdef _WIN32
     HANDLE hPipe = static_cast<HANDLE>(pipeHandle);
     HANDLE hProcess = static_cast<HANDLE>(scannerProcess);
 
-    if (hPipe != nullptr && hPipe != INVALID_HANDLE_VALUE)
-    {
-        // Try to send shutdown message
+    if (hPipe != nullptr && hPipe != INVALID_HANDLE_VALUE) {
         MessageHeader header;
         header.type = MessageType::Shutdown;
         header.payloadSize = 0;
@@ -195,11 +174,9 @@ void PluginScannerClient::stopScanner()
         pipeHandle = nullptr;
     }
 
-    if (hProcess != nullptr && hProcess != INVALID_HANDLE_VALUE)
-    {
+    if (hProcess != nullptr && hProcess != INVALID_HANDLE_VALUE) {
         // Wait briefly for graceful shutdown
-        if (WaitForSingleObject(hProcess, 1000) == WAIT_TIMEOUT)
-        {
+        if (WaitForSingleObject(hProcess, 1000) == WAIT_TIMEOUT) {
             spdlog::warn("[PluginScannerClient] Scanner didn't exit gracefully, terminating");
             TerminateProcess(hProcess, 1);
         }
@@ -213,8 +190,7 @@ void PluginScannerClient::stopScanner()
 #endif
 }
 
-bool PluginScannerClient::ensureScannerRunning()
-{
+bool PluginScannerClient::ensureScannerRunning() {
     if (isScannerRunning())
         return true;
 
@@ -222,8 +198,7 @@ bool PluginScannerClient::ensureScannerRunning()
 }
 
 bool PluginScannerClient::scanPlugin(const juce::String& pluginPath, const juce::String& formatName,
-                                     juce::OwnedArray<juce::PluginDescription>& results)
-{
+                                     juce::OwnedArray<juce::PluginDescription>& results) {
     juce::ScopedLock lock(scanLock);
 
     spdlog::debug("[PluginScannerClient] Scanning plugin: {}", pluginPath.toStdString());
@@ -231,9 +206,7 @@ bool PluginScannerClient::scanPlugin(const juce::String& pluginPath, const juce:
 
     listeners.call(&Listener::scanProgress, pluginPath);
 
-    // Ensure scanner is running
-    if (!ensureScannerRunning())
-    {
+    if (!ensureScannerRunning()) {
         spdlog::error("[PluginScannerClient] Failed to start scanner for: {}", pluginPath.toStdString());
         return false;
     }
@@ -241,7 +214,6 @@ bool PluginScannerClient::scanPlugin(const juce::String& pluginPath, const juce:
 #ifdef _WIN32
     HANDLE hPipe = static_cast<HANDLE>(pipeHandle);
 
-    // Build and send request
     ScanRequest request;
     request.pluginPath = pluginPath;
     request.formatName = formatName;
@@ -252,18 +224,15 @@ bool PluginScannerClient::scanPlugin(const juce::String& pluginPath, const juce:
     header.payloadSize = static_cast<uint32_t>(payload.toUTF8().length());
 
     DWORD bytesWritten;
-    if (!WriteFile(hPipe, &header, sizeof(header), &bytesWritten, nullptr))
-    {
+    if (!WriteFile(hPipe, &header, sizeof(header), &bytesWritten, nullptr)) {
         spdlog::error("[PluginScannerClient] Failed to send scan request header");
         handleScannerCrash();
         return false;
     }
 
-    if (header.payloadSize > 0)
-    {
+    if (header.payloadSize > 0) {
         auto payloadBytes = payload.toUTF8();
-        if (!WriteFile(hPipe, payloadBytes.getAddress(), header.payloadSize, &bytesWritten, nullptr))
-        {
+        if (!WriteFile(hPipe, payloadBytes.getAddress(), header.payloadSize, &bytesWritten, nullptr)) {
             spdlog::error("[PluginScannerClient] Failed to send scan request payload");
             handleScannerCrash();
             return false;
@@ -272,45 +241,34 @@ bool PluginScannerClient::scanPlugin(const juce::String& pluginPath, const juce:
 
     FlushFileBuffers(hPipe);
 
-    // Wait for response with timeout
     COMMTIMEOUTS timeouts = {};
     timeouts.ReadTotalTimeoutConstant = SCAN_TIMEOUT_MS;
     SetCommTimeouts(hPipe, &timeouts);
 
-    // Check if scanner is still running
-    if (!isScannerRunning())
-    {
+    if (!isScannerRunning()) {
         spdlog::error("[PluginScannerClient] Scanner crashed during scan of: {}", pluginPath.toStdString());
         handleScannerCrash();
         return false;
     }
 
-    // Read response header
     DWORD bytesRead;
-    if (!ReadFile(hPipe, &header, sizeof(header), &bytesRead, nullptr) || bytesRead != sizeof(header))
-    {
-        if (!isScannerRunning())
-        {
+    if (!ReadFile(hPipe, &header, sizeof(header), &bytesRead, nullptr) || bytesRead != sizeof(header)) {
+        if (!isScannerRunning()) {
             spdlog::error("[PluginScannerClient] Scanner crashed during scan of: {}", pluginPath.toStdString());
             handleScannerCrash();
-        }
-        else
-        {
+        } else {
             spdlog::error("[PluginScannerClient] Timeout waiting for scan response: {}", pluginPath.toStdString());
             // Timeout - blacklist the plugin
             PluginBlacklist::getInstance().addToBlacklist(pluginPath);
-            stopScanner();  // Kill the hung scanner
+            stopScanner(); // Kill the hung scanner
         }
         return false;
     }
 
-    // Read response payload
     juce::String responsePayload;
-    if (header.payloadSize > 0)
-    {
+    if (header.payloadSize > 0) {
         juce::HeapBlock<char> buffer(header.payloadSize + 1);
-        if (!ReadFile(hPipe, buffer.get(), header.payloadSize, &bytesRead, nullptr))
-        {
+        if (!ReadFile(hPipe, buffer.get(), header.payloadSize, &bytesRead, nullptr)) {
             spdlog::error("[PluginScannerClient] Failed to read response payload");
             return false;
         }
@@ -318,25 +276,19 @@ bool PluginScannerClient::scanPlugin(const juce::String& pluginPath, const juce:
         responsePayload = juce::String::fromUTF8(buffer.get(), static_cast<int>(header.payloadSize));
     }
 
-    // Parse response
     auto response = ScanResponse::deserialize(responsePayload);
 
-    if (response.resultCode != ScanResultCode::Success)
-    {
+    if (response.resultCode != ScanResultCode::Success) {
         spdlog::warn("[PluginScannerClient] Scan failed for {}: {}", pluginPath.toStdString(),
                      response.errorMessage.toStdString());
         listeners.call(&Listener::scanComplete, pluginPath, false);
         return false;
     }
 
-    // Parse plugin descriptions from XML
-    if (auto xml = juce::XmlDocument::parse(response.pluginXml))
-    {
-        for (auto* pluginXml : xml->getChildIterator())
-        {
+    if (auto xml = juce::XmlDocument::parse(response.pluginXml)) {
+        for (auto* pluginXml : xml->getChildIterator()) {
             auto desc = std::make_unique<juce::PluginDescription>();
-            if (desc->loadFromXml(*pluginXml))
-            {
+            if (desc->loadFromXml(*pluginXml)) {
                 results.add(desc.release());
             }
         }
@@ -353,29 +305,23 @@ bool PluginScannerClient::scanPlugin(const juce::String& pluginPath, const juce:
 #endif
 }
 
-void PluginScannerClient::handleScannerCrash()
-{
+void PluginScannerClient::handleScannerCrash() {
     spdlog::error("[PluginScannerClient] Scanner crashed while scanning: {}", lastScannedPlugin.toStdString());
 
-    // Auto-blacklist the plugin that caused the crash
-    if (lastScannedPlugin.isNotEmpty())
-    {
+    if (lastScannedPlugin.isNotEmpty()) {
         spdlog::warn("[PluginScannerClient] Auto-blacklisting crashed plugin: {}", lastScannedPlugin.toStdString());
         PluginBlacklist::getInstance().addToBlacklist(lastScannedPlugin);
     }
 
     listeners.call(&Listener::scannerCrashed, lastScannedPlugin);
 
-    // Clean up handles
     stopScanner();
 }
 
-void PluginScannerClient::addListener(Listener* listener)
-{
+void PluginScannerClient::addListener(Listener* listener) {
     listeners.add(listener);
 }
 
-void PluginScannerClient::removeListener(Listener* listener)
-{
+void PluginScannerClient::removeListener(Listener* listener) {
     listeners.remove(listener);
 }

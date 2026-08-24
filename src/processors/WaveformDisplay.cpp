@@ -19,36 +19,30 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "WaveformDisplay.h"
+
 #include "AudioSingletons.h"
 #include "ColourScheme.h"
 
-WaveformDisplay::WaveformDisplay(AudioThumbnail* thumb, bool deleteThumb) :
-readPointer(0.0f),
-newReadPointer(0.0f),
-backgroundColour(ColourScheme::getInstance().colours["Window Background"]),
-deleteThumbnail(deleteThumb)
-{
+WaveformDisplay::WaveformDisplay(AudioThumbnail* thumb, bool deleteThumb)
+    : readPointer(0.0f), newReadPointer(0.0f),
+      backgroundColour(ColourScheme::getInstance().colours["Window Background"]), deleteThumbnail(deleteThumb) {
     if (thumb)
         thumbnail = thumb;
-    else
-    {
-        thumbnail = new AudioThumbnail(512,
-                                       AudioFormatManagerSingleton::getInstance(),
+    else {
+        thumbnail = new AudioThumbnail(512, AudioFormatManagerSingleton::getInstance(),
                                        AudioThumbnailCacheSingleton::getInstance());
     }
     thumbnail->addChangeListener(this);
 }
 
-WaveformDisplay::~WaveformDisplay()
-{
+WaveformDisplay::~WaveformDisplay() {
     thumbnail->removeChangeListener(this);
 
     if (deleteThumbnail)
         delete thumbnail;
 }
 
-void WaveformDisplay::paint(Graphics& g)
-{
+void WaveformDisplay::paint(Graphics& g) {
     float x;
     String tempstr;
     const double length = thumbnail->getTotalLength();
@@ -59,8 +53,7 @@ void WaveformDisplay::paint(Graphics& g)
     g.setColour(Colours::black.withAlpha(0.25f));
     g.drawRect(0, 0, getWidth(), getHeight());
 
-    if (length > 0)
-    {
+    if (length > 0) {
         // Draw the thumbnail.
         g.setColour(ColourScheme::getInstance().colours["Waveform Colour"]);
         thumbnail->drawChannels(g, tempRect, 0.0, length, 1.0f);
@@ -74,45 +67,34 @@ void WaveformDisplay::paint(Graphics& g)
         g.setColour(ColourScheme::getInstance().colours["Text Colour"].withAlpha(0.25f));
         g.setFont(juce::FontOptions().withHeight(10.0f));
         tempstr << static_cast<int>(length / 60.0) << ":" << String(static_cast<int>(length) % 60).paddedLeft('0', 2);
-        g.drawText(tempstr,
-                   tempRect.getRight() - 52,
-                   tempRect.getY(),
-                   50,
-                   12,
-                   Justification(Justification::right),
+        g.drawText(tempstr, tempRect.getRight() - 52, tempRect.getY(), 50, 12, Justification(Justification::right),
                    false);
     }
 }
 
-void WaveformDisplay::changeListenerCallback(ChangeBroadcaster* source)
-{
+void WaveformDisplay::changeListenerCallback(ChangeBroadcaster* source) {
     repaint();
 }
 
-void WaveformDisplay::mouseDown(const MouseEvent& e)
-{
+void WaveformDisplay::mouseDown(const MouseEvent& e) {
     float x = static_cast<float>(e.x);
 
-    if ((x > 0.0f) && (x < (getWidth() - 1)) && (thumbnail->getTotalLength() > 0))
-    {
+    if ((x > 0.0f) && (x < (getWidth() - 1)) && (thumbnail->getTotalLength() > 0)) {
         newReadPointer = x / static_cast<float>(getWidth() - 2);
         sendChangeMessage();
     }
 }
 
-void WaveformDisplay::mouseDrag(const MouseEvent& e)
-{
+void WaveformDisplay::mouseDrag(const MouseEvent& e) {
     float x = static_cast<float>(e.x);
 
-    if ((x > 0.0f) && (x < (getWidth() - 1)) && (thumbnail->getTotalLength() > 0))
-    {
+    if ((x > 0.0f) && (x < (getWidth() - 1)) && (thumbnail->getTotalLength() > 0)) {
         newReadPointer = x / static_cast<float>(getWidth() - 2);
         sendChangeMessage();
     }
 }
 
-void WaveformDisplay::setFile(const File& file)
-{
+void WaveformDisplay::setFile(const File& file) {
     AudioThumbnailCacheSingleton::getInstance().clear();
     thumbnail->setSource(new FileInputSource(file));
     if (file == File())
@@ -120,31 +102,25 @@ void WaveformDisplay::setFile(const File& file)
     readPointer = 0.0f;
 }
 
-void WaveformDisplay::setReadPointer(float val)
-{
+void WaveformDisplay::setReadPointer(float val) {
     readPointer = val;
     repaint();
 }
 
-void WaveformDisplay::setBackgroundColour(const Colour& col)
-{
+void WaveformDisplay::setBackgroundColour(const Colour& col) {
     backgroundColour = col;
 }
 
-WaveformDisplayLite::WaveformDisplayLite(AudioThumbnail& thumb) :
-thumbnail(thumb),
-backgroundColour(ColourScheme::getInstance().colours["Window Background"])
-{
+WaveformDisplayLite::WaveformDisplayLite(AudioThumbnail& thumb)
+    : thumbnail(thumb), backgroundColour(ColourScheme::getInstance().colours["Window Background"]) {
     thumbnail.addChangeListener(this);
 }
 
-WaveformDisplayLite::~WaveformDisplayLite()
-{
+WaveformDisplayLite::~WaveformDisplayLite() {
     thumbnail.removeChangeListener(this);
 }
 
-void WaveformDisplayLite::paint(Graphics& g)
-{
+void WaveformDisplayLite::paint(Graphics& g) {
     String tempstr;
     const double length = thumbnail.getTotalLength();
     const Rectangle<int> tempRect(1, 1, getWidth() - 2, getHeight() - 2);
@@ -154,8 +130,7 @@ void WaveformDisplayLite::paint(Graphics& g)
     g.setColour(Colours::black.withAlpha(0.25f));
     g.drawRect(0, 0, getWidth(), getHeight());
 
-    if (length > 0)
-    {
+    if (length > 0) {
         // Draw the thumbnail.
         g.setColour(ColourScheme::getInstance().colours["Waveform Colour"]);
         thumbnail.drawChannels(g, tempRect, 0.0, length, 1.0f);
@@ -164,22 +139,15 @@ void WaveformDisplayLite::paint(Graphics& g)
         g.setColour(ColourScheme::getInstance().colours["Text Colour"].withAlpha(0.25f));
         g.setFont(juce::FontOptions().withHeight(10.0f));
         tempstr << static_cast<int>(length / 60.0) << ":" << String(static_cast<int>(length) % 60).paddedLeft('0', 2);
-        g.drawText(tempstr,
-                   tempRect.getRight() - 52,
-                   tempRect.getY(),
-                   50,
-                   12,
-                   Justification(Justification::right),
+        g.drawText(tempstr, tempRect.getRight() - 52, tempRect.getY(), 50, 12, Justification(Justification::right),
                    false);
     }
 }
 
-void WaveformDisplayLite::changeListenerCallback(ChangeBroadcaster* source)
-{
+void WaveformDisplayLite::changeListenerCallback(ChangeBroadcaster* source) {
     repaint();
 }
 
-void WaveformDisplayLite::setBackgroundColour(const Colour& col)
-{
+void WaveformDisplayLite::setBackgroundColour(const Colour& col) {
     backgroundColour = col;
 }

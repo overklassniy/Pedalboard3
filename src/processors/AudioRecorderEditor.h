@@ -21,21 +21,22 @@
 #ifndef AUDIORECORDEREDITOR_H_
 #define AUDIORECORDEREDITOR_H_
 
+#include "AudioRecorderControl.h"
+
 #include <JuceHeader.h>
 #include <memory>
-
-#include "AudioRecorderControl.h"
 
 class RecorderProcessor;
 
 /// The full editor for RecorderProcessor.
-class AudioRecorderEditor : public AudioProcessorEditor,
-                            public Timer
-{
+class AudioRecorderEditor : public AudioProcessorEditor, public Timer {
   public:
-    AudioRecorderEditor(RecorderProcessor* processor,
-                        const Rectangle<int>& windowBounds,
-                        AudioThumbnail& thumbnail);
+    /// Creates the editor with the recorder controls and restores window bounds.
+    ///
+    /// @param processor The recorder processor to associate with this editor.
+    /// @param windowBounds The saved window bounds to restore.
+    /// @param thumbnail The audio thumbnail to pass to the recorder control.
+    AudioRecorderEditor(RecorderProcessor* processor, const Rectangle<int>& windowBounds, AudioThumbnail& thumbnail);
     ~AudioRecorderEditor() override;
 
     /// Resizes the controls to fill the window.

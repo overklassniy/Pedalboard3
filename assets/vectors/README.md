@@ -1,4 +1,4 @@
-# vectors/
+# assets/vectors/
 
 Source SVG vector graphics for Pedalboard3 UI elements.
 
@@ -17,6 +17,7 @@ Source SVG vector graphics for Pedalboard3 UI elements.
 
 ## Integration
 
-These SVGs are the source for the embedded vector data in `src/Vectors.cpp`.
-The SVG data is loaded at runtime via `juce::Drawable::createFromSVG` and
-rendered by the custom `BranchesLAF` LookAndFeel and UI components.
+These SVGs are the source for the embedded vector data in
+`src/util/Vectors.cpp`. The SVG data is loaded at runtime via
+`juce::Drawable::createFromSVG` and rendered by the custom `BranchesLAF`
+LookAndFeel and UI components.

@@ -32,14 +32,18 @@
 /// should start or stop playing, and whether they should return to zero.
 /// This happens asynchronously because the signal may come from a MIDI source
 /// running in the audio thread.
-class MainTransport : public ChangeBroadcaster
-{
+class MainTransport : public ChangeBroadcaster {
   public:
+    /// Destructor. Removes all change listeners and clears the singleton.
     ~MainTransport();
 
     /// Registers a transport with this singleton.
+    ///
+    /// @param transport The change listener to register as a transport.
     void registerTransport(ChangeListener* transport);
     /// Unregisters a transport from this singleton.
+    ///
+    /// @param transport The change listener to unregister.
     void unregisterTransport(ChangeListener* transport);
 
     /// Called from each transport when they have reached the end of their timeline.
@@ -57,18 +61,25 @@ class MainTransport : public ChangeBroadcaster
     ///
     /// Uses rtzCount to ensure returnToZero is set to false after all
     /// transports have been informed about the change.
+    ///
+    /// @return True if the transport should return to zero; decrements the
+    ///         internal counter on each call.
     bool getReturnToZero();
 
-    juce_DeclareSingleton(MainTransport, true)
+  juce_DeclareSingleton(MainTransport, true)
 
-  private:
-    MainTransport();
+      private :
+      /// Private constructor. Initializes transport state to stopped.
+      MainTransport();
 
     /// Registered transports (needed because ChangeBroadcaster cannot be queried for listener count).
     Array<ChangeListener*> transports;
 
+    /// Current transport state (true = playing).
     bool state;
+    /// Counter for return-to-zero notifications; decremented as each transport reads it.
     int returnToZero;
+    /// Number of transports currently playing; starts at 1 for the MainPanel play button.
     int transportsPlaying;
 };
 

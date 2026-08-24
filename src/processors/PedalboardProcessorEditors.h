@@ -21,11 +21,11 @@
 #ifndef PEDALBOARDPROCESSOREDITORS_H_
 #define PEDALBOARDPROCESSOREDITORS_H_
 
-#include "LevelEditor.h"
+#include "AudioRecorderEditor.h"
 #include "FilePlayerEditor.h"
+#include "LevelEditor.h"
+#include "MetronomeEditor.h"
 #include "OutputToggleEditor.h"
 #include "VuMeterEditor.h"
-#include "AudioRecorderEditor.h"
-#include "MetronomeEditor.h"
 
 #endif

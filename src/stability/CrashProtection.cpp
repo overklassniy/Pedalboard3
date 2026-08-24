@@ -30,30 +30,25 @@
     #include <windows.h>
 #endif
 
-CrashProtection& CrashProtection::getInstance()
-{
+CrashProtection& CrashProtection::getInstance() {
     static CrashProtection instance;
     return instance;
 }
 
-CrashProtection::CrashProtection()
-{
+CrashProtection::CrashProtection() {
     lastPing.store(std::chrono::steady_clock::now());
 }
 
-CrashProtection::~CrashProtection()
-{
+CrashProtection::~CrashProtection() {
     stopWatchdog();
 }
 
 #ifdef _WIN32
 // Windows-specific exception filter for SEH
-static int exceptionFilter(unsigned int code, struct _EXCEPTION_POINTERS* ep)
-{
+static int exceptionFilter(unsigned int code, struct _EXCEPTION_POINTERS* ep) {
     // Log the exception type
     const char* exceptionName = "Unknown";
-    switch (code)
-    {
+    switch (code) {
     case EXCEPTION_ACCESS_VIOLATION:
         exceptionName = "Access Violation";
         break;
@@ -88,8 +83,7 @@ static int exceptionFilter(unsigned int code, struct _EXCEPTION_POINTERS* ep)
 
     spdlog::critical("[CrashProtection] SEH caught exception: {} (0x{:08X})", exceptionName, code);
 
-    if (ep && ep->ContextRecord)
-    {
+    if (ep && ep->ContextRecord) {
     #ifdef _M_X64
         spdlog::critical("[CrashProtection] RIP: 0x{:016X}", ep->ContextRecord->Rip);
     #else
@@ -106,16 +100,12 @@ static int exceptionFilter(unsigned int code, struct _EXCEPTION_POINTERS* ep)
 // that require unwinding
 typedef void (*RawOperationFunc)(void* context);
 
-static bool executeSEHBlock(RawOperationFunc func, void* context)
-{
+static bool executeSEHBlock(RawOperationFunc func, void* context) {
     bool success = false;
-    __try
-    {
+    __try {
         func(context);
         success = true;
-    }
-    __except (exceptionFilter(GetExceptionCode(), GetExceptionInformation()))
-    {
+    } __except (exceptionFilter(GetExceptionCode(), GetExceptionInformation())) {
         success = false;
     }
     return success;
@@ -123,8 +113,7 @@ static bool executeSEHBlock(RawOperationFunc func, void* context)
 #endif
 
 bool CrashProtection::executeWithProtection(std::function<void()> operation, const juce::String& operationName,
-                                            const juce::String& pluginName)
-{
+                                            const juce::String& pluginName) {
     setCurrentOperation(operationName, pluginName);
     triggerAutoSave();
 
@@ -135,36 +124,29 @@ bool CrashProtection::executeWithProtection(std::function<void()> operation, con
 
 #ifdef _WIN32
     // Use the separate SEH wrapper function to avoid C2712
-    auto wrapper = [](void* ctx)
-    {
+    auto wrapper = [](void* ctx) {
         auto* op = static_cast<std::function<void()>*>(ctx);
         (*op)();
     };
 
     success = executeSEHBlock(wrapper, &operation);
 
-    if (!success)
-    {
+    if (!success) {
         spdlog::critical("[CrashProtection] Operation failed with SEH exception: {}", operationName.toStdString());
         writeCrashContext();
     }
 #else
     // On non-Windows, just run the operation directly
     // Could add signal handlers here for Unix
-    try
-    {
+    try {
         operation();
         success = true;
-    }
-    catch (const std::exception& e)
-    {
+    } catch (const std::exception& e) {
         spdlog::critical("[CrashProtection] Operation failed with exception: {} - {}", operationName.toStdString(),
                          e.what());
         writeCrashContext();
         success = false;
-    }
-    catch (...)
-    {
+    } catch (...) {
         spdlog::critical("[CrashProtection] Operation failed with unknown exception: {}", operationName.toStdString());
         writeCrashContext();
         success = false;
@@ -175,55 +157,44 @@ bool CrashProtection::executeWithProtection(std::function<void()> operation, con
     return success;
 }
 
-void CrashProtection::setCurrentOperation(const juce::String& operation, const juce::String& pluginName)
-{
+void CrashProtection::setCurrentOperation(const juce::String& operation, const juce::String& pluginName) {
     juce::ScopedLock lock(operationLock);
     currentOperation = operation;
     currentPluginName = pluginName;
 }
 
-void CrashProtection::clearCurrentOperation()
-{
+void CrashProtection::clearCurrentOperation() {
     juce::ScopedLock lock(operationLock);
     currentOperation.clear();
     currentPluginName.clear();
 }
 
-juce::String CrashProtection::getCurrentOperation() const
-{
+juce::String CrashProtection::getCurrentOperation() const {
     juce::ScopedLock lock(operationLock);
     return currentOperation;
 }
 
-juce::String CrashProtection::getCurrentPluginName() const
-{
+juce::String CrashProtection::getCurrentPluginName() const {
     juce::ScopedLock lock(operationLock);
     return currentPluginName;
 }
 
-void CrashProtection::setAutoSaveCallback(std::function<void()> callback)
-{
+void CrashProtection::setAutoSaveCallback(std::function<void()> callback) {
     autoSaveCallback = std::move(callback);
 }
 
-void CrashProtection::triggerAutoSave()
-{
-    if (autoSaveCallback)
-    {
+void CrashProtection::triggerAutoSave() {
+    if (autoSaveCallback) {
         spdlog::debug("[CrashProtection] Triggering auto-save before risky operation");
-        try
-        {
+        try {
             autoSaveCallback();
-        }
-        catch (const std::exception& e)
-        {
+        } catch (const std::exception& e) {
             spdlog::warn("[CrashProtection] Auto-save failed: {}", e.what());
         }
     }
 }
 
-void CrashProtection::startWatchdog(int timeoutMs)
-{
+void CrashProtection::startWatchdog(int timeoutMs) {
     if (watchdogRunning.load())
         return;
 
@@ -236,8 +207,7 @@ void CrashProtection::startWatchdog(int timeoutMs)
     spdlog::info("[CrashProtection] Watchdog started with {}ms timeout", timeoutMs);
 }
 
-void CrashProtection::stopWatchdog()
-{
+void CrashProtection::stopWatchdog() {
     if (!watchdogRunning.load())
         return;
 
@@ -249,34 +219,27 @@ void CrashProtection::stopWatchdog()
     spdlog::info("[CrashProtection] Watchdog stopped");
 }
 
-void CrashProtection::pingWatchdog()
-{
+void CrashProtection::pingWatchdog() {
     lastPing.store(std::chrono::steady_clock::now());
 }
 
-void CrashProtection::watchdogLoop()
-{
-    while (watchdogRunning.load())
-    {
+void CrashProtection::watchdogLoop() {
+    while (watchdogRunning.load()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         auto now = std::chrono::steady_clock::now();
         auto lastPingTime = lastPing.load();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPingTime).count();
 
-        if (elapsed > watchdogTimeoutMs)
-        {
-            if (!hangDetected.load())
-            {
+        if (elapsed > watchdogTimeoutMs) {
+            if (!hangDetected.load()) {
                 hangDetected.store(true);
                 spdlog::critical("[CrashProtection] WATCHDOG: UI thread appears hung! No ping for {}ms", elapsed);
                 spdlog::critical("[CrashProtection] Last operation: {} (plugin: {})",
                                  getCurrentOperation().toStdString(), getCurrentPluginName().toStdString());
                 writeCrashContext();
             }
-        }
-        else if (hangDetected.load())
-        {
+        } else if (hangDetected.load()) {
             // Recovered from hang
             hangDetected.store(false);
             spdlog::warn("[CrashProtection] WATCHDOG: UI thread recovered after hang");
@@ -284,8 +247,7 @@ void CrashProtection::watchdogLoop()
     }
 }
 
-void CrashProtection::writeCrashContext()
-{
+void CrashProtection::writeCrashContext() {
     juce::String op = getCurrentOperation();
     juce::String plugin = getCurrentPluginName();
 
@@ -302,15 +264,13 @@ void CrashProtection::writeCrashContext()
 
 TimedOperationResult CrashProtection::executeWithTimeout(std::function<void()> operation,
                                                          const juce::String& operationName, int timeoutMs,
-                                                         const juce::String& pluginPath)
-{
+                                                         const juce::String& pluginPath) {
     setCurrentOperation(operationName, pluginPath);
 
     spdlog::debug("[CrashProtection] Starting timed operation: {} (timeout: {}ms)", operationName.toStdString(),
                   timeoutMs);
 
-    struct SharedTimeoutState
-    {
+    struct SharedTimeoutState {
         std::mutex mtx;
         std::condition_variable cv;
         bool completed = false;
@@ -321,13 +281,10 @@ TimedOperationResult CrashProtection::executeWithTimeout(std::function<void()> o
 
     // Run operation in a separate thread
     std::thread worker([state, operation = std::move(operation)]() mutable {
-        try
-        {
+        try {
             operation();
             state->success = true;
-        }
-        catch (...)
-        {
+        } catch (...) {
             state->success = false;
         }
 
@@ -342,24 +299,18 @@ TimedOperationResult CrashProtection::executeWithTimeout(std::function<void()> o
     TimedOperationResult result;
     {
         std::unique_lock<std::mutex> lock(state->mtx);
-        if (state->cv.wait_for(lock, std::chrono::milliseconds(timeoutMs), [state] { return state->completed; }))
-        {
+        if (state->cv.wait_for(lock, std::chrono::milliseconds(timeoutMs), [state] { return state->completed; })) {
             // Operation completed
-            if (state->success)
-            {
+            if (state->success) {
                 result = TimedOperationResult::Success;
                 spdlog::debug("[CrashProtection] Timed operation completed successfully: {}",
                               operationName.toStdString());
-            }
-            else
-            {
+            } else {
                 result = TimedOperationResult::Exception;
                 spdlog::error("[CrashProtection] Timed operation threw exception: {}", operationName.toStdString());
                 writeCrashContext();
             }
-        }
-        else
-        {
+        } else {
             // Timeout occurred
             result = TimedOperationResult::Timeout;
             spdlog::error("[CrashProtection] TIMEOUT: Operation exceeded {}ms: {}", timeoutMs,
@@ -367,8 +318,7 @@ TimedOperationResult CrashProtection::executeWithTimeout(std::function<void()> o
             writeCrashContext();
 
             // Auto-blacklist the plugin if path provided
-            if (pluginPath.isNotEmpty())
-            {
+            if (pluginPath.isNotEmpty()) {
                 spdlog::warn("[CrashProtection] Auto-blacklisting plugin due to timeout: {}", pluginPath.toStdString());
                 PluginBlacklist::getInstance().addToBlacklist(pluginPath);
             }
@@ -379,16 +329,12 @@ TimedOperationResult CrashProtection::executeWithTimeout(std::function<void()> o
     // This is intentional: we can't safely terminate the thread, but we can
     // continue execution. The thread will eventually complete or the process
     // will exit.
-    if (worker.joinable())
-    {
-        if (result == TimedOperationResult::Timeout)
-        {
+    if (worker.joinable()) {
+        if (result == TimedOperationResult::Timeout) {
             // Detach hung thread - we can't wait for it
             worker.detach();
             spdlog::warn("[CrashProtection] Detached hung worker thread for: {}", operationName.toStdString());
-        }
-        else
-        {
+        } else {
             worker.join();
         }
     }
@@ -399,13 +345,11 @@ TimedOperationResult CrashProtection::executeWithTimeout(std::function<void()> o
 
 TimedOperationResult CrashProtection::executeWithProtectionAndTimeout(std::function<void()> operation,
                                                                       const juce::String& operationName, int timeoutMs,
-                                                                      const juce::String& pluginPath)
-{
+                                                                      const juce::String& pluginPath) {
     // Wrap the operation with SEH protection, then apply timeout
     auto protectedOp = [this, operation = std::move(operation), operationName, pluginPath]() mutable {
         bool success = executeWithProtection(operation, operationName, pluginPath);
-        if (!success)
-        {
+        if (!success) {
             throw std::runtime_error("SEH exception caught");
         }
     };

@@ -20,11 +20,8 @@
 
 #include "LogFile.h"
 
-
-void LogFile::start()
-{
-    if (!isLogging)
-    {
+void LogFile::start() {
+    if (!isLogging) {
         const juce::ScopedLock lock(critSec);
 
         juce::String tempstr;
@@ -41,22 +38,16 @@ void LogFile::start()
                 .getChildFile("Pedalboard3")
                 .getChildFile(tempstr));
 
-        if (logFile->failedToOpen())
-        {
-            juce::AlertWindow::showMessageBox(juce::AlertWindow::WarningIcon,
-                                              "LogFileError",
+        if (logFile->failedToOpen()) {
+            juce::AlertWindow::showMessageBox(juce::AlertWindow::WarningIcon, "LogFileError",
                                               "Could not open log file for writing");
-        }
-        else
+        } else
             isLogging = true;
     }
 }
 
-
-void LogFile::stop()
-{
-    if (isLogging)
-    {
+void LogFile::stop() {
+    if (isLogging) {
         const juce::ScopedLock lock(critSec);
 
         isLogging = false;
@@ -67,11 +58,8 @@ void LogFile::stop()
     }
 }
 
-
-void LogFile::logEvent(const juce::String& eventType, const juce::String& message)
-{
-    if (isLogging)
-    {
+void LogFile::logEvent(const juce::String& eventType, const juce::String& message) {
+    if (isLogging) {
         juce::Time timmy(juce::Time::getCurrentTime());
         LogEvent tempEv;
 
@@ -97,10 +85,7 @@ void LogFile::logEvent(const juce::String& eventType, const juce::String& messag
     }
 }
 
-
-const juce::String& LogFile::getLogContents(const juce::StringArray& eventTypes,
-                                            juce::Time& eventsSince)
-{
+const juce::String& LogFile::getLogContents(const juce::StringArray& eventTypes, juce::Time& eventsSince) {
     int i;
     std::map<int64, LogEvent>::iterator it;
     juce::Array<int> typesHash;
@@ -113,16 +98,11 @@ const juce::String& LogFile::getLogContents(const juce::StringArray& eventTypes,
     {
         const juce::ScopedLock lock(critSec);
 
-        for (it = events.lower_bound(eventsSince.toMilliseconds());
-             it != events.end();
-             ++it)
-        {
+        for (it = events.lower_bound(eventsSince.toMilliseconds()); it != events.end(); ++it) {
             eventsSince = juce::Time(it->first);
 
-            for (i = 0; i < typesHash.size(); ++i)
-            {
-                if (it->second.typeHash == typesHash[i])
-                {
+            for (i = 0; i < typesHash.size(); ++i) {
+                if (it->second.typeHash == typesHash[i]) {
                     tempContents << it->second.message << juce::newLine;
                     break;
                 }
@@ -133,23 +113,15 @@ const juce::String& LogFile::getLogContents(const juce::StringArray& eventTypes,
     return tempContents;
 }
 
-
-LogFile& LogFile::getInstance()
-{
+LogFile& LogFile::getInstance() {
     static LogFile instance;
 
     return instance;
 }
 
+LogFile::LogFile() : isLogging(false) {}
 
-LogFile::LogFile() :
-    isLogging(false)
-{
-}
-
-
-LogFile::~LogFile()
-{
+LogFile::~LogFile() {
     if (isLogging)
         logFile->flush();
 }

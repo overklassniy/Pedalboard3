@@ -16,10 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include <JuceHeader.h>
-
 #include "PluginScannerIPC.h"
 
+#include <JuceHeader.h>
 #include <iostream>
 
 #ifdef _WIN32
@@ -28,8 +27,11 @@
 
 using namespace PluginScannerIPC;
 
-class PluginScannerApplication : public juce::JUCEApplicationBase
-{
+/// JUCE application class for the out-of-process plugin scanner.
+///
+/// Connects to the host via a named pipe, receives scan requests, and
+/// sends back plugin descriptions or error codes.
+class PluginScannerApplication : public juce::JUCEApplicationBase {
   public:
     PluginScannerApplication() = default;
 
@@ -39,23 +41,28 @@ class PluginScannerApplication : public juce::JUCEApplicationBase
 
     void suspended() override {}
     void resumed() override {}
-    void unhandledException(const std::exception*, const juce::String&, int) override
-    {
+    /// Logs unhandled exceptions to stderr.
+    ///
+    /// @param exception The unhandled exception (unused).
+    /// @param sourceFile Source file where the exception occurred (unused).
+    /// @param lineNumber Line number where the exception occurred (unused).
+    void unhandledException(const std::exception*, const juce::String&, int) override {
         std::cerr << "[Scanner] Unhandled exception caught" << std::endl;
     }
 
-    void initialise(const juce::String& commandLine) override
-    {
+    /// Registers plugin formats, connects to the host pipe, and starts the
+    /// message processing loop.
+    ///
+    /// @param commandLine Command line arguments passed to the scanner.
+    void initialise(const juce::String& commandLine) override {
         std::cerr << "[Scanner] Starting Pedalboard3 Plugin Scanner" << std::endl;
 
-        // Initialize plugin formats - JUCE 8 requires explicit format registration
+        // JUCE 8 requires explicit format registration.
         formatManager.addFormat(std::make_unique<juce::VST3PluginFormat>());
 
         std::cerr << "[Scanner] Registered " << formatManager.getNumFormats() << " plugin formats" << std::endl;
 
-        // Connect to the host's named pipe
-        if (!connectToHost())
-        {
+        if (!connectToHost()) {
             std::cerr << "[Scanner] Failed to connect to host pipe" << std::endl;
             setApplicationReturnValue(1);
             quit();
@@ -64,15 +71,13 @@ class PluginScannerApplication : public juce::JUCEApplicationBase
 
         std::cerr << "[Scanner] Connected to host, entering message loop" << std::endl;
 
-        // Send ready message
         sendMessage(MessageType::Ready);
 
-        // Start message processing
         startTimer(10);
     }
 
-    void shutdown() override
-    {
+    /// Stops the timer and disconnects from the host.
+    void shutdown() override {
         std::cerr << "[Scanner] Shutting down" << std::endl;
         stopTimer();
         disconnectFromHost();
@@ -89,52 +94,49 @@ class PluginScannerApplication : public juce::JUCEApplicationBase
     HANDLE pipeHandle = INVALID_HANDLE_VALUE;
 #endif
 
-    bool connectToHost()
-    {
+    /// Connects to the host's named pipe, retrying up to 10 times.
+    ///
+    /// @return True if the pipe was connected successfully.
+    bool connectToHost() {
 #ifdef _WIN32
-        // Try to connect to the named pipe created by the host
-        for (int attempt = 0; attempt < 10; ++attempt)
-        {
+        for (int attempt = 0; attempt < 10; ++attempt) {
             pipeHandle = CreateFileA(PIPE_NAME, GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
 
-            if (pipeHandle != INVALID_HANDLE_VALUE)
-            {
-                // Set pipe to message mode
+            if (pipeHandle != INVALID_HANDLE_VALUE) {
                 DWORD mode = PIPE_READMODE_BYTE;
                 SetNamedPipeHandleState(pipeHandle, &mode, nullptr, nullptr);
                 return true;
             }
 
-            // Wait a bit before retry
-            if (GetLastError() == ERROR_PIPE_BUSY)
-            {
+            if (GetLastError() == ERROR_PIPE_BUSY) {
                 WaitNamedPipeA(PIPE_NAME, 1000);
-            }
-            else
-            {
+            } else {
                 Sleep(100);
             }
         }
         return false;
 #else
-        // Unix implementation would use Unix domain sockets
+        // Unix implementation would use Unix domain sockets.
         return false;
 #endif
     }
 
-    void disconnectFromHost()
-    {
+    /// Closes the named pipe handle if open.
+    void disconnectFromHost() {
 #ifdef _WIN32
-        if (pipeHandle != INVALID_HANDLE_VALUE)
-        {
+        if (pipeHandle != INVALID_HANDLE_VALUE) {
             CloseHandle(pipeHandle);
             pipeHandle = INVALID_HANDLE_VALUE;
         }
 #endif
     }
 
-    bool sendMessage(MessageType type, const juce::String& payload = {})
-    {
+    /// Writes a message header and optional payload to the host pipe.
+    ///
+    /// @param type Message type to send.
+    /// @param payload Optional string payload to include after the header.
+    /// @return True if the message was written and flushed successfully.
+    bool sendMessage(MessageType type, const juce::String& payload = {}) {
 #ifdef _WIN32
         if (pipeHandle == INVALID_HANDLE_VALUE)
             return false;
@@ -148,8 +150,7 @@ class PluginScannerApplication : public juce::JUCEApplicationBase
         if (!WriteFile(pipeHandle, &header, sizeof(header), &bytesWritten, nullptr))
             return false;
 
-        if (header.payloadSize > 0)
-        {
+        if (header.payloadSize > 0) {
             if (!WriteFile(pipeHandle, payloadBytes.getAddress(), header.payloadSize, &bytesWritten, nullptr))
                 return false;
         }
@@ -161,13 +162,17 @@ class PluginScannerApplication : public juce::JUCEApplicationBase
 #endif
     }
 
-    bool readMessage(MessageHeader& header, juce::String& payload)
-    {
+    /// Reads a message from the host pipe if data is available. Returns false
+    /// when no complete message is pending.
+    ///
+    /// @param header Output parameter filled with the read message header.
+    /// @param payload Output parameter filled with the read payload string.
+    /// @return True if a complete valid message was read.
+    bool readMessage(MessageHeader& header, juce::String& payload) {
 #ifdef _WIN32
         if (pipeHandle == INVALID_HANDLE_VALUE)
             return false;
 
-        // Check if data is available
         DWORD bytesAvailable = 0;
         if (!PeekNamedPipe(pipeHandle, nullptr, 0, nullptr, &bytesAvailable, nullptr))
             return false;
@@ -182,16 +187,13 @@ class PluginScannerApplication : public juce::JUCEApplicationBase
         if (header.magic != 0x50444233)
             return false;
 
-        if (header.payloadSize > 0)
-        {
+        if (header.payloadSize > 0) {
             juce::HeapBlock<char> buffer(header.payloadSize + 1);
             if (!ReadFile(pipeHandle, buffer.get(), header.payloadSize, &bytesRead, nullptr))
                 return false;
             buffer[header.payloadSize] = 0;
             payload = juce::String::fromUTF8(buffer.get(), header.payloadSize);
-        }
-        else
-        {
+        } else {
             payload.clear();
         }
 
@@ -201,31 +203,33 @@ class PluginScannerApplication : public juce::JUCEApplicationBase
 #endif
     }
 
-    void startTimer(int intervalMs) { juce::Timer::callAfterDelay(intervalMs, [this]() { timerCallback(); }); }
+    /// Schedules a timer callback after the given interval in milliseconds.
+    ///
+    /// @param intervalMs Delay in milliseconds before the timer callback fires.
+    void startTimer(int intervalMs) {
+        juce::Timer::callAfterDelay(intervalMs, [this]() { timerCallback(); });
+    }
 
     void stopTimer() {}
 
-    void timerCallback()
-    {
+    /// Processes pending messages and reschedules the next callback.
+    void timerCallback() {
         processMessages();
 
         // Schedule next callback if still running
-        if (!juce::JUCEApplicationBase::isStandaloneApp() ||
-            juce::JUCEApplicationBase::getInstance()->isInitialising())
+        if (!juce::JUCEApplicationBase::isStandaloneApp() || juce::JUCEApplicationBase::getInstance()->isInitialising())
             return;
 
         juce::Timer::callAfterDelay(10, [this]() { timerCallback(); });
     }
 
-    void processMessages()
-    {
+    /// Reads and dispatches all pending messages from the host pipe.
+    void processMessages() {
         MessageHeader header;
         juce::String payload;
 
-        while (readMessage(header, payload))
-        {
-            switch (header.type)
-            {
+        while (readMessage(header, payload)) {
+            switch (header.type) {
             case MessageType::Ping:
                 sendMessage(MessageType::Pong);
                 break;
@@ -246,49 +250,44 @@ class PluginScannerApplication : public juce::JUCEApplicationBase
         }
     }
 
-    void handleScanRequest(const juce::String& payload)
-    {
+    /// Deserializes a scan request, scans the plugin file for the requested
+    /// format, and sends the result or error back to the host.
+    ///
+    /// @param payload JSON-serialized ScanRequest to process.
+    void handleScanRequest(const juce::String& payload) {
         auto request = ScanRequest::deserialize(payload);
         std::cerr << "[Scanner] Scanning: " << request.pluginPath.toStdString() << std::endl;
 
         ScanResponse response;
 
-        // Find the appropriate format
         juce::AudioPluginFormat* format = nullptr;
-        for (int i = 0; i < formatManager.getNumFormats(); ++i)
-        {
+        for (int i = 0; i < formatManager.getNumFormats(); ++i) {
             auto* f = formatManager.getFormat(i);
-            if (f->getName() == request.formatName)
-            {
+            if (f->getName() == request.formatName) {
                 format = f;
                 break;
             }
         }
 
-        if (!format)
-        {
+        if (!format) {
             response.resultCode = ScanResultCode::InvalidFormat;
             response.errorMessage = "Unknown format: " + request.formatName;
             sendMessage(MessageType::ScanError, response.serialize());
             return;
         }
 
-        // Try to scan the plugin
         juce::OwnedArray<juce::PluginDescription> results;
         format->findAllTypesForFile(results, request.pluginPath);
 
-        if (results.isEmpty())
-        {
+        if (results.isEmpty()) {
             response.resultCode = ScanResultCode::LoadFailed;
             response.errorMessage = "No plugins found in file";
             sendMessage(MessageType::ScanError, response.serialize());
             return;
         }
 
-        // Serialize all found plugins to XML
         juce::XmlElement root("PLUGINS");
-        for (auto* desc : results)
-        {
+        for (auto* desc : results) {
             if (auto xml = desc->createXml())
                 root.addChildElement(xml.release());
         }
@@ -302,5 +301,4 @@ class PluginScannerApplication : public juce::JUCEApplicationBase
     }
 };
 
-// Create the application instance
 START_JUCE_APPLICATION(PluginScannerApplication)

@@ -19,30 +19,21 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "TrayIcon.h"
+
 #include "Images.h"
 
 #ifndef JUCE_MAC
 
-
-TrayIcon::TrayIcon(DocumentWindow* win) :
-    window(win)
-{
-    auto iconImage = ImageCache::getFromMemory(Images::icon16_png,
-                                               Images::icon16_pngSize);
+TrayIcon::TrayIcon(DocumentWindow* win) : window(win) {
+    auto iconImage = ImageCache::getFromMemory(Images::icon16_png, Images::icon16_pngSize);
     setIconImage(iconImage, iconImage);
     setIconTooltip("Pedalboard3");
 }
 
+TrayIcon::~TrayIcon() {}
 
-TrayIcon::~TrayIcon()
-{
-}
-
-
-void TrayIcon::mouseDown(const MouseEvent& e)
-{
-    if (e.mods.isRightButtonDown())
-    {
+void TrayIcon::mouseDown(const MouseEvent& e) {
+    if (e.mods.isRightButtonDown()) {
         PopupMenu m;
 
         if (window->isVisible())
@@ -54,23 +45,18 @@ void TrayIcon::mouseDown(const MouseEvent& e)
 
         const int result = m.show();
 
-        if (result == 1)
-        {
+        if (result == 1) {
             if (window->isVisible())
                 window->setVisible(false);
             else
                 window->setVisible(true);
-        }
-        else if (result == 2)
+        } else if (result == 2)
             window->closeButtonPressed();
     }
 }
 
-
-void TrayIcon::mouseDoubleClick(const MouseEvent& e)
-{
-    if (e.mods.isLeftButtonDown())
-    {
+void TrayIcon::mouseDoubleClick(const MouseEvent& e) {
+    if (e.mods.isLeftButtonDown()) {
         if (window->isVisible())
             window->setVisible(false);
         else

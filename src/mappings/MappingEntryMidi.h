@@ -21,8 +21,9 @@
 #ifndef MAPPINGENTRYMIDI_H_
 #define MAPPINGENTRYMIDI_H_
 
-#include <JuceHeader.h>
 #include "MappingSlider.h"
+
+#include <JuceHeader.h>
 
 class MappingsDialog;
 
@@ -30,25 +31,38 @@ class MappingsDialog;
 class MappingEntryMidi : public Component,
                          public juce::ComboBox::Listener,
                          public juce::Button::Listener,
-                         public MappingSliderListener
-{
-public:
-    MappingEntryMidi(MappingsDialog* dlg, int arrayIndex, int cc, bool latch,
-                     float lowerBound, float upperBound);
+                         public MappingSliderListener {
+  public:
+    /// Creates a MIDI mapping entry row.
+    ///
+    /// @param dlg The parent MappingsDialog.
+    /// @param arrayIndex The row's position in the mappings array.
+    /// @param cc The initial MIDI CC.
+    /// @param latch Enables latched mode.
+    /// @param lowerBound The lower bound of the parameter range.
+    /// @param upperBound The upper bound of the parameter range.
+    MappingEntryMidi(MappingsDialog* dlg, int arrayIndex, int cc, bool latch, float lowerBound, float upperBound);
     ~MappingEntryMidi() override;
 
-    /// Fills out the parameter combo box.
+    /// Adds a parameter name to the parameter combo box.
+    ///
+    /// @param param The parameter name to add.
     void addParameter(const String& param);
-    /// Selects the currently-selected parameter in the combo box.
+    /// Selects the parameter at the given index in the combo box.
+    ///
+    /// @param index The zero-based index of the parameter to select.
     void selectParameter(int index);
 
     void paint(Graphics& g) override;
     void resized() override;
+    /// Forwards CC selection or MIDI learn activation to the parent dialog.
     void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override;
+    /// Forwards latch toggle changes to the parent dialog.
     void buttonClicked(Button* buttonThatWasClicked) override;
+    /// Forwards lower/upper bound changes to the parent dialog.
     void sliderValueChanged(MappingSlider* sliderThatWasMoved) override;
 
-private:
+  private:
     /// The MappingsDialog which holds the mappings array for this plugin.
     MappingsDialog* mappingsDialog;
     /// The index of the mapping within its parent's Array.

@@ -26,24 +26,27 @@
 /// Stores 4 values and uses the average of the differences to calculate
 /// tempo. Each value represents seconds since an arbitrary start point.
 /// If the calculated tempo is less than 30 BPM, the values are reset.
-class TapTempoHelper
-{
+class TapTempoHelper {
   public:
+    /// Constructor. Initializes all stored times to zero.
     TapTempoHelper();
+    /// Destructor.
     ~TapTempoHelper();
 
-    /// Updates the tempo and returns the new value.
+    /// Updates the tempo based on a new tap and returns the new value in BPM.
     ///
-    /// @param seconds  Seconds since app start or arbitrary start point,
-    ///                  representing the time at which the user tapped.
-    /// @return The new tempo in BPM. May be 0 if not enough data yet.
+    /// If the calculated tempo is less than 30 BPM, the values are reset.
+    ///
+    /// @param seconds The time at which the user tapped, measured from an
+    ///        arbitrary start point.
+    ///
+    /// @return The new tempo in BPM, or 0.0 if not enough data has been
+    ///         collected yet.
     double updateTempo(double seconds);
 
   private:
-    enum
-    {
-        NumValues = 4
-    };
+    /// Number of tap intervals stored for averaging.
+    enum { NumValues = 4 };
 
     double times[NumValues];
 };

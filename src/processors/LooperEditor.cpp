@@ -19,29 +19,20 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "LooperEditor.h"
-#include "PedalboardProcessors.h"
+
+#include "ColourScheme.h"
 #include "JuceHelperStuff.h"
 #include "LooperControl.h"
-#include "ColourScheme.h"
+#include "PedalboardProcessors.h"
 #include "Vectors.h"
 
 LooperEditor::LooperEditor(LooperProcessor* proc, AudioThumbnail* thumbnail)
-    : AudioProcessorEditor(proc),
-      processor(proc),
-      playing(false),
-      recording(false)
-{
+    : AudioProcessorEditor(proc), processor(proc), playing(false), recording(false) {
     fileDisplay = std::make_unique<WaveformDisplay>(thumbnail, false);
     addAndMakeVisible(*fileDisplay);
     fileDisplay->setName("fileDisplay");
 
-    filename = std::make_unique<FilenameComponent>("filename",
-                                                   File(),
-                                                   true,
-                                                   false,
-                                                   true,
-                                                   "*.wav;*.aif",
-                                                   "",
+    filename = std::make_unique<FilenameComponent>("filename", File(), true, false, true, "*.wav;*.aif", "",
                                                    "<no file loaded>");
     addAndMakeVisible(*filename);
     filename->setName("filename");
@@ -85,7 +76,8 @@ LooperEditor::LooperEditor(LooperProcessor* proc, AudioThumbnail* thumbnail)
 
     separatorLabel = std::make_unique<Label>("separatorLabel", "/");
     addAndMakeVisible(*separatorLabel);
-    separatorLabel->setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 105.0f, juce::Font::bold)));
+    separatorLabel->setFont(
+        juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 105.0f, juce::Font::bold)));
     separatorLabel->setJustificationType(Justification::centred);
     separatorLabel->setEditable(false, false, false);
     separatorLabel->setColour(TextEditor::textColourId, Colours::black);
@@ -93,7 +85,8 @@ LooperEditor::LooperEditor(LooperProcessor* proc, AudioThumbnail* thumbnail)
 
     numeratorLabel = std::make_unique<Label>("numeratorLabel", "4");
     addAndMakeVisible(*numeratorLabel);
-    numeratorLabel->setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 105.0f, juce::Font::bold)));
+    numeratorLabel->setFont(
+        juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 105.0f, juce::Font::bold)));
     numeratorLabel->setJustificationType(Justification::centred);
     numeratorLabel->setEditable(true, true, false);
     numeratorLabel->setColour(TextEditor::textColourId, Colours::black);
@@ -102,7 +95,8 @@ LooperEditor::LooperEditor(LooperProcessor* proc, AudioThumbnail* thumbnail)
 
     denominatorLabel = std::make_unique<Label>("denominatorLabel", "4");
     addAndMakeVisible(*denominatorLabel);
-    denominatorLabel->setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 105.0f, juce::Font::bold)));
+    denominatorLabel->setFont(
+        juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 105.0f, juce::Font::bold)));
     denominatorLabel->setJustificationType(Justification::centred);
     denominatorLabel->setEditable(true, true, false);
     denominatorLabel->setColour(TextEditor::textColourId, Colours::black);
@@ -140,13 +134,11 @@ LooperEditor::LooperEditor(LooperProcessor* proc, AudioThumbnail* thumbnail)
     inputLevelSlider->addListener(this);
 
     String tempstr;
-    std::unique_ptr<Drawable> rtzImage(JuceHelperStuff::loadSVGFromMemory(Vectors::rtzbutton_svg,
-                                                                          Vectors::rtzbutton_svgSize));
+    std::unique_ptr<Drawable> rtzImage(
+        JuceHelperStuff::loadSVGFromMemory(Vectors::rtzbutton_svg, Vectors::rtzbutton_svgSize));
 
-    playImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::playbutton_svg,
-                                                        Vectors::playbutton_svgSize));
-    pauseImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::pausebutton_svg,
-                                                         Vectors::pausebutton_svgSize));
+    playImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::playbutton_svg, Vectors::playbutton_svgSize));
+    pauseImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::pausebutton_svg, Vectors::pausebutton_svgSize));
     playPauseButton->setImages(playImage.get());
     playPauseButton->setColour(DrawableButton::backgroundColourId,
                                ColourScheme::getInstance().colours["Button Colour"]);
@@ -155,45 +147,33 @@ LooperEditor::LooperEditor(LooperProcessor* proc, AudioThumbnail* thumbnail)
     playPauseButton->addListener(this);
     playPauseButton->setTooltip("Play/pause audio file");
 
-    recordImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::recordbutton_svg,
-                                                          Vectors::recordbutton_svgSize));
-    stopImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::stopbutton_svg,
-                                                        Vectors::stopbutton_svgSize));
+    recordImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::recordbutton_svg, Vectors::recordbutton_svgSize));
+    stopImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::stopbutton_svg, Vectors::stopbutton_svgSize));
     recordButton->setImages(recordImage.get());
-    recordButton->setColour(DrawableButton::backgroundColourId,
-                            ColourScheme::getInstance().colours["Button Colour"]);
-    recordButton->setColour(DrawableButton::backgroundOnColourId,
-                            ColourScheme::getInstance().colours["Button Colour"]);
+    recordButton->setColour(DrawableButton::backgroundColourId, ColourScheme::getInstance().colours["Button Colour"]);
+    recordButton->setColour(DrawableButton::backgroundOnColourId, ColourScheme::getInstance().colours["Button Colour"]);
     recordButton->addListener(this);
     recordButton->setTooltip("Record/stop recording a loop");
 
     changeListenerCallback(processor);
 
     rtzButton->setImages(rtzImage.get());
-    rtzButton->setColour(DrawableButton::backgroundColourId,
-                         ColourScheme::getInstance().colours["Button Colour"]);
-    rtzButton->setColour(DrawableButton::backgroundOnColourId,
-                         ColourScheme::getInstance().colours["Button Colour"]);
+    rtzButton->setColour(DrawableButton::backgroundColourId, ColourScheme::getInstance().colours["Button Colour"]);
+    rtzButton->setColour(DrawableButton::backgroundOnColourId, ColourScheme::getInstance().colours["Button Colour"]);
     rtzButton->addListener(this);
     rtzButton->setTooltip("Return to the start of the audio file");
 
     const File& soundFile = processor->getFile();
-    if (soundFile != File())
-    {
+    if (soundFile != File()) {
         filename->setCurrentFile(soundFile, true, dontSendNotification);
         fileDisplay->setReadPointer(static_cast<float>(processor->getReadPosition()));
-    }
-    else
-    {
+    } else {
         filename->setDefaultBrowseTarget(LooperControl::lastDir);
     }
 
-    syncButton->setToggleState(processor->getParameter(LooperProcessor::SyncToMainTransport) > 0.5f,
-                               false);
-    stopAfterBarButton->setToggleState(processor->getParameter(LooperProcessor::StopAfterBar) > 0.5f,
-                                       false);
-    autoPlayButton->setToggleState(processor->getParameter(LooperProcessor::AutoPlay) > 0.5f,
-                                   false);
+    syncButton->setToggleState(processor->getParameter(LooperProcessor::SyncToMainTransport) > 0.5f, false);
+    stopAfterBarButton->setToggleState(processor->getParameter(LooperProcessor::StopAfterBar) > 0.5f, false);
+    autoPlayButton->setToggleState(processor->getParameter(LooperProcessor::AutoPlay) > 0.5f, false);
 
     inputLevelSlider->setDoubleClickReturnValue(true, 0.5);
     inputLevelSlider->setValue(processor->getParameter(LooperProcessor::InputLevel));
@@ -211,7 +191,7 @@ LooperEditor::LooperEditor(LooperProcessor* proc, AudioThumbnail* thumbnail)
     processor->addChangeListener(this);
 
     inputLevelSlider->setColour(Slider::rotarySliderFillColourId,
-                                  ColourScheme::getInstance().colours["Level Dial Colour"]);
+                                ColourScheme::getInstance().colours["Level Dial Colour"]);
     loopLevelSlider->setColour(Slider::rotarySliderFillColourId,
                                ColourScheme::getInstance().colours["Level Dial Colour"]);
 
@@ -220,18 +200,14 @@ LooperEditor::LooperEditor(LooperProcessor* proc, AudioThumbnail* thumbnail)
     setSize(500, 300);
 }
 
-LooperEditor::~LooperEditor()
-{
+LooperEditor::~LooperEditor() {
     processor->removeChangeListener(this);
     removeAllChildren();
 }
 
-void LooperEditor::paint(Graphics& /*g*/)
-{
-}
+void LooperEditor::paint(Graphics& /*g*/) {}
 
-void LooperEditor::resized()
-{
+void LooperEditor::resized() {
     fileDisplay->setBounds(0, 28, getWidth() - 2, getHeight() - 155);
     filename->setBounds(0, 0, getWidth() - 84, 24);
     syncButton->setBounds(0, getHeight() - 23, 168, 24);
@@ -250,48 +226,31 @@ void LooperEditor::resized()
     inputLevelSlider->setBounds(getWidth() - 170, getHeight() - 103, 80, 80);
 }
 
-void LooperEditor::buttonClicked(Button* buttonThatWasClicked)
-{
-    if (buttonThatWasClicked == syncButton.get())
-    {
+void LooperEditor::buttonClicked(Button* buttonThatWasClicked) {
+    if (buttonThatWasClicked == syncButton.get()) {
         bool val = syncButton->getToggleState();
-        processor->setParameter(LooperProcessor::SyncToMainTransport,
-                                val ? 1.0f : 0.0f);
-    }
-    else if (buttonThatWasClicked == stopAfterBarButton.get())
-    {
+        processor->setParameter(LooperProcessor::SyncToMainTransport, val ? 1.0f : 0.0f);
+    } else if (buttonThatWasClicked == stopAfterBarButton.get()) {
         bool val = stopAfterBarButton->getToggleState();
-        processor->setParameter(LooperProcessor::StopAfterBar,
-                                val ? 1.0f : 0.0f);
-    }
-    else if (buttonThatWasClicked == autoPlayButton.get())
-    {
+        processor->setParameter(LooperProcessor::StopAfterBar, val ? 1.0f : 0.0f);
+    } else if (buttonThatWasClicked == autoPlayButton.get()) {
         bool val = autoPlayButton->getToggleState();
-        processor->setParameter(LooperProcessor::AutoPlay,
-                                val ? 1.0f : 0.0f);
-    }
-    else if (buttonThatWasClicked == playPauseButton.get())
-    {
+        processor->setParameter(LooperProcessor::AutoPlay, val ? 1.0f : 0.0f);
+    } else if (buttonThatWasClicked == playPauseButton.get()) {
         if (!playing)
             playPauseButton->setImages(pauseImage.get());
         else
             playPauseButton->setImages(playImage.get());
         playing = !playing;
         processor->setParameter(LooperProcessor::Play, 1.0f);
-    }
-    else if (buttonThatWasClicked == rtzButton.get())
-    {
+    } else if (buttonThatWasClicked == rtzButton.get()) {
         processor->setParameter(LooperProcessor::ReturnToZero, 1.0f);
         fileDisplay->setReadPointer(0.0f);
-    }
-    else if (buttonThatWasClicked == recordButton.get())
-    {
+    } else if (buttonThatWasClicked == recordButton.get()) {
         recording = !recording;
 
-        if (recording)
-        {
-            if (playing)
-            {
+        if (recording) {
+            if (playing) {
                 playPauseButton->setImages(playImage.get());
                 playing = false;
                 processor->setParameter(LooperProcessor::Play, 1.0f);
@@ -304,36 +263,25 @@ void LooperEditor::buttonClicked(Button* buttonThatWasClicked)
     processor->sendChangeMessage();
 }
 
-void LooperEditor::labelTextChanged(Label* labelThatHasChanged)
-{
-    if (labelThatHasChanged == numeratorLabel.get())
-    {
+void LooperEditor::labelTextChanged(Label* labelThatHasChanged) {
+    if (labelThatHasChanged == numeratorLabel.get()) {
         float tempf = static_cast<float>(numeratorLabel->getText().getIntValue());
         processor->setParameter(LooperProcessor::BarNumerator, tempf);
-    }
-    else if (labelThatHasChanged == denominatorLabel.get())
-    {
+    } else if (labelThatHasChanged == denominatorLabel.get()) {
         float tempf = static_cast<float>(denominatorLabel->getText().getIntValue());
         processor->setParameter(LooperProcessor::BarDenominator, tempf);
     }
 }
 
-void LooperEditor::sliderValueChanged(Slider* sliderThatWasMoved)
-{
-    if (sliderThatWasMoved == loopLevelSlider.get())
-    {
-        processor->setParameter(LooperProcessor::LoopLevel,
-                                static_cast<float>(loopLevelSlider->getValue()));
-    }
-    else if (sliderThatWasMoved == inputLevelSlider.get())
-    {
-        processor->setParameter(LooperProcessor::InputLevel,
-                                static_cast<float>(inputLevelSlider->getValue()));
+void LooperEditor::sliderValueChanged(Slider* sliderThatWasMoved) {
+    if (sliderThatWasMoved == loopLevelSlider.get()) {
+        processor->setParameter(LooperProcessor::LoopLevel, static_cast<float>(loopLevelSlider->getValue()));
+    } else if (sliderThatWasMoved == inputLevelSlider.get()) {
+        processor->setParameter(LooperProcessor::InputLevel, static_cast<float>(inputLevelSlider->getValue()));
     }
 }
 
-void LooperEditor::filenameComponentChanged(FilenameComponent* filenameComp)
-{
+void LooperEditor::filenameComponentChanged(FilenameComponent* filenameComp) {
     File phil = filenameComp->getCurrentFile();
     fileDisplay->setFile(phil);
     processor->setFile(phil);
@@ -342,69 +290,53 @@ void LooperEditor::filenameComponentChanged(FilenameComponent* filenameComp)
     processor->sendChangeMessage();
 }
 
-void LooperEditor::timerCallback()
-{
+void LooperEditor::timerCallback() {
     if (playing)
         fileDisplay->setReadPointer(static_cast<float>(processor->getReadPosition()));
 }
 
-void LooperEditor::changeListenerCallback(ChangeBroadcaster* source)
-{
-    if (source == fileDisplay.get())
-    {
-        processor->setParameter(LooperProcessor::ReadPosition,
-                                fileDisplay->getReadPointer());
+void LooperEditor::changeListenerCallback(ChangeBroadcaster* source) {
+    if (source == fileDisplay.get()) {
+        processor->setParameter(LooperProcessor::ReadPosition, fileDisplay->getReadPointer());
         fileDisplay->setReadPointer(static_cast<float>(processor->getReadPosition()));
-    }
-    else if (source == processor)
-    {
+    } else if (source == processor) {
         if (processor->getNewFileLoaded())
             fileDisplay->setFile(processor->getFile());
 
         if (filename->getCurrentFile() != processor->getFile())
             filename->setCurrentFile(processor->getFile(), true, dontSendNotification);
 
-        if (processor->isRecording())
-        {
+        if (processor->isRecording()) {
             playPauseButton->setEnabled(false);
 
             if (!recording)
                 fileDisplay->setFile(File());
             recordButton->setImages(stopImage.get());
             recording = true;
-        }
-        else
-        {
+        } else {
             playPauseButton->setEnabled(true);
             recordButton->setImages(recordImage.get());
             recording = false;
 
-            if (processor->isPlaying())
-            {
+            if (processor->isPlaying()) {
                 playPauseButton->setImages(pauseImage.get());
                 playing = true;
-            }
-            else
-            {
+            } else {
                 playPauseButton->setImages(playImage.get());
                 playing = false;
             }
         }
 
         fileDisplay->setReadPointer(static_cast<float>(processor->getReadPosition()));
-        syncButton->setToggleState(processor->getParameter(LooperProcessor::SyncToMainTransport) > 0.5f,
-                                   false);
-        stopAfterBarButton->setToggleState(processor->getParameter(LooperProcessor::StopAfterBar) > 0.5f,
-                                           false);
+        syncButton->setToggleState(processor->getParameter(LooperProcessor::SyncToMainTransport) > 0.5f, false);
+        stopAfterBarButton->setToggleState(processor->getParameter(LooperProcessor::StopAfterBar) > 0.5f, false);
     }
 }
 
-void LooperEditor::setWaveformBackground(const Colour& col)
-{
+void LooperEditor::setWaveformBackground(const Colour& col) {
     fileDisplay->setBackgroundColour(col);
 }
 
-void LooperEditor::clearDisplay()
-{
+void LooperEditor::clearDisplay() {
     fileDisplay->setFile(File());
 }

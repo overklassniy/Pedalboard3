@@ -17,34 +17,29 @@
 #include <vector>
 
 // Mock Types (mirrors IFilterGraph interface)`n
-struct MockNodeID
-{
+struct MockNodeID {
     uint32_t uid;
     bool operator==(const MockNodeID& other) const { return uid == other.uid; }
     bool operator!=(const MockNodeID& other) const { return uid != other.uid; }
     bool operator<(const MockNodeID& other) const { return uid < other.uid; }
 };
 
-struct MockConnection
-{
+struct MockConnection {
     MockNodeID sourceId;
     int sourceChannel;
     MockNodeID destId;
     int destChannel;
 
-    bool operator==(const MockConnection& other) const
-    {
+    bool operator==(const MockConnection& other) const {
         return sourceId == other.sourceId && sourceChannel == other.sourceChannel && destId == other.destId &&
                destChannel == other.destChannel;
     }
 };
 
 // Mock graph simulating IFilterGraph
-class MockFilterGraph
-{
+class MockFilterGraph {
   public:
-    struct NodeInfo
-    {
+    struct NodeInfo {
         MockNodeID id;
         double x, y;
         std::string pluginId;
@@ -62,8 +57,7 @@ class MockFilterGraph
     MockNodeID safetyLimiterNode{4};
     MockNodeID crossfadeMixerNode{5};
 
-    MockFilterGraph()
-    {
+    MockFilterGraph() {
         // Add infrastructure nodes
         nodes.push_back({audioInputNode, 50.0, 100.0, "AudioInput", true});
         nodes.push_back({audioOutputNode, 500.0, 100.0, "AudioOutput", true});
@@ -80,15 +74,13 @@ class MockFilterGraph
 
     int getNumFilters() const { return static_cast<int>(nodes.size()); }
 
-    MockNodeID addFilter(const std::string& pluginId, double x, double y)
-    {
+    MockNodeID addFilter(const std::string& pluginId, double x, double y) {
         MockNodeID id{nextNodeId++};
         nodes.push_back({id, x, y, pluginId, false});
         return id;
     }
 
-    bool removeFilter(MockNodeID id)
-    {
+    bool removeFilter(MockNodeID id) {
         // Cannot remove infrastructure
         if (isHiddenInfrastructureNode(id))
             return false;
@@ -100,24 +92,21 @@ class MockFilterGraph
 
         // Remove node
         auto it = std::remove_if(nodes.begin(), nodes.end(), [&](const NodeInfo& n) { return n.id == id; });
-        if (it != nodes.end())
-        {
+        if (it != nodes.end()) {
             nodes.erase(it, nodes.end());
             return true;
         }
         return false;
     }
 
-    NodeInfo* getNode(MockNodeID id)
-    {
+    NodeInfo* getNode(MockNodeID id) {
         for (auto& n : nodes)
             if (n.id == id)
                 return &n;
         return nullptr;
     }
 
-    const NodeInfo* getNode(MockNodeID id) const
-    {
+    const NodeInfo* getNode(MockNodeID id) const {
         for (const auto& n : nodes)
             if (n.id == id)
                 return &n;
@@ -128,8 +117,7 @@ class MockFilterGraph
 
     // Connection Management
 
-    bool addConnection(MockNodeID srcId, int srcChannel, MockNodeID dstId, int dstChannel)
-    {
+    bool addConnection(MockNodeID srcId, int srcChannel, MockNodeID dstId, int dstChannel) {
         // Validate nodes exist
         if (!nodeExists(srcId) || !nodeExists(dstId))
             return false;
@@ -152,28 +140,25 @@ class MockFilterGraph
         return true;
     }
 
-    bool removeConnection(MockNodeID srcId, int srcChannel, MockNodeID dstId, int dstChannel)
-    {
+    bool removeConnection(MockNodeID srcId, int srcChannel, MockNodeID dstId, int dstChannel) {
         MockConnection target{srcId, srcChannel, dstId, dstChannel};
         auto it = std::remove_if(connections.begin(), connections.end(),
                                  [&](const MockConnection& c) { return c == target; });
-        if (it != connections.end())
-        {
+        if (it != connections.end()) {
             connections.erase(it, connections.end());
             return true;
         }
         return false;
     }
 
-    void disconnectFilter(MockNodeID id)
-    {
+    void disconnectFilter(MockNodeID id) {
         connections.erase(std::remove_if(connections.begin(), connections.end(),
                                          [&](const MockConnection& c) { return c.sourceId == id || c.destId == id; }),
                           connections.end());
     }
 
-    const MockConnection* getConnectionBetween(MockNodeID srcId, int srcChannel, MockNodeID dstId, int dstChannel) const
-    {
+    const MockConnection* getConnectionBetween(MockNodeID srcId, int srcChannel, MockNodeID dstId,
+                                               int dstChannel) const {
         MockConnection target{srcId, srcChannel, dstId, dstChannel};
         for (const auto& c : connections)
             if (c == target)
@@ -185,19 +170,15 @@ class MockFilterGraph
 
     // Position Management
 
-    void setNodePosition(MockNodeID id, double x, double y)
-    {
-        if (auto* node = getNode(id))
-        {
+    void setNodePosition(MockNodeID id, double x, double y) {
+        if (auto* node = getNode(id)) {
             node->x = x;
             node->y = y;
         }
     }
 
-    bool getNodePosition(MockNodeID id, double& x, double& y) const
-    {
-        if (const auto* node = getNode(id))
-        {
+    bool getNodePosition(MockNodeID id, double& x, double& y) const {
+        if (const auto* node = getNode(id)) {
             x = node->x;
             y = node->y;
             return true;
@@ -207,28 +188,24 @@ class MockFilterGraph
 
     // Infrastructure Detection
 
-    bool isHiddenInfrastructureNode(MockNodeID id) const
-    {
+    bool isHiddenInfrastructureNode(MockNodeID id) const {
         return id == audioInputNode || id == audioOutputNode || id == midiInputNode || id == safetyLimiterNode ||
                id == crossfadeMixerNode;
     }
 };
 
 // Node Management Tests`n
-TEST_CASE("FilterGraph Node Management", "[filtergraph][nodes]")
-{
+TEST_CASE("FilterGraph Node Management", "[filtergraph][nodes]") {
     MockFilterGraph graph;
 
-    SECTION("Initial state has infrastructure nodes")
-    {
+    SECTION("Initial state has infrastructure nodes") {
         REQUIRE(graph.getNumFilters() == 5); // Audio in/out, MIDI in, SafetyLimiter, CrossfadeMixer
         REQUIRE(graph.nodeExists(graph.audioInputNode));
         REQUIRE(graph.nodeExists(graph.audioOutputNode));
         REQUIRE(graph.nodeExists(graph.midiInputNode));
     }
 
-    SECTION("Add user filter")
-    {
+    SECTION("Add user filter") {
         int beforeCount = graph.getNumFilters();
         MockNodeID newNode = graph.addFilter("com.vendor.plugin", 200.0, 150.0);
 
@@ -240,8 +217,7 @@ TEST_CASE("FilterGraph Node Management", "[filtergraph][nodes]")
         REQUIRE(node->pluginId == "com.vendor.plugin");
     }
 
-    SECTION("Remove user filter")
-    {
+    SECTION("Remove user filter") {
         MockNodeID plugin = graph.addFilter("TestPlugin", 100.0, 100.0);
         REQUIRE(graph.nodeExists(plugin));
 
@@ -250,8 +226,7 @@ TEST_CASE("FilterGraph Node Management", "[filtergraph][nodes]")
         REQUIRE_FALSE(graph.nodeExists(plugin));
     }
 
-    SECTION("Cannot remove infrastructure nodes")
-    {
+    SECTION("Cannot remove infrastructure nodes") {
         bool removedInput = graph.removeFilter(graph.audioInputNode);
         bool removedOutput = graph.removeFilter(graph.audioOutputNode);
         bool removedMidi = graph.removeFilter(graph.midiInputNode);
@@ -266,15 +241,13 @@ TEST_CASE("FilterGraph Node Management", "[filtergraph][nodes]")
         REQUIRE(graph.nodeExists(graph.midiInputNode));
     }
 
-    SECTION("Remove non-existent filter is safe")
-    {
+    SECTION("Remove non-existent filter is safe") {
         MockNodeID ghost{9999};
         bool removed = graph.removeFilter(ghost);
         REQUIRE_FALSE(removed);
     }
 
-    SECTION("Unique node IDs")
-    {
+    SECTION("Unique node IDs") {
         MockNodeID n1 = graph.addFilter("P1", 0, 0);
         MockNodeID n2 = graph.addFilter("P2", 0, 0);
         MockNodeID n3 = graph.addFilter("P3", 0, 0);
@@ -286,19 +259,16 @@ TEST_CASE("FilterGraph Node Management", "[filtergraph][nodes]")
 }
 
 // Connection Management Tests`n
-TEST_CASE("FilterGraph Connection Management", "[filtergraph][connections]")
-{
+TEST_CASE("FilterGraph Connection Management", "[filtergraph][connections]") {
     MockFilterGraph graph;
 
-    SECTION("Initial passthrough connections exist")
-    {
+    SECTION("Initial passthrough connections exist") {
         // Default stereo passthrough: AudioIn -> AudioOut
         REQUIRE(graph.getConnectionBetween(graph.audioInputNode, 0, graph.audioOutputNode, 0) != nullptr);
         REQUIRE(graph.getConnectionBetween(graph.audioInputNode, 1, graph.audioOutputNode, 1) != nullptr);
     }
 
-    SECTION("Add connection between plugins")
-    {
+    SECTION("Add connection between plugins") {
         MockNodeID p1 = graph.addFilter("P1", 100, 100);
         MockNodeID p2 = graph.addFilter("P2", 200, 100);
 
@@ -307,8 +277,7 @@ TEST_CASE("FilterGraph Connection Management", "[filtergraph][connections]")
         REQUIRE(graph.getConnectionBetween(p1, 0, p2, 0) != nullptr);
     }
 
-    SECTION("Connect plugin into audio chain")
-    {
+    SECTION("Connect plugin into audio chain") {
         MockNodeID plugin = graph.addFilter("Effect", 150, 100);
 
         // Remove default passthrough
@@ -322,15 +291,13 @@ TEST_CASE("FilterGraph Connection Management", "[filtergraph][connections]")
         REQUIRE(graph.getConnectionBetween(plugin, 0, graph.audioOutputNode, 0) != nullptr);
     }
 
-    SECTION("Self-connection rejected")
-    {
+    SECTION("Self-connection rejected") {
         MockNodeID plugin = graph.addFilter("P1", 100, 100);
         bool added = graph.addConnection(plugin, 0, plugin, 1);
         REQUIRE_FALSE(added);
     }
 
-    SECTION("Duplicate connection rejected")
-    {
+    SECTION("Duplicate connection rejected") {
         MockNodeID p1 = graph.addFilter("P1", 100, 100);
         MockNodeID p2 = graph.addFilter("P2", 200, 100);
 
@@ -339,8 +306,7 @@ TEST_CASE("FilterGraph Connection Management", "[filtergraph][connections]")
         REQUIRE_FALSE(duplicate);
     }
 
-    SECTION("Connection to non-existent node fails")
-    {
+    SECTION("Connection to non-existent node fails") {
         MockNodeID plugin = graph.addFilter("P1", 100, 100);
         MockNodeID ghost{9999};
 
@@ -351,8 +317,7 @@ TEST_CASE("FilterGraph Connection Management", "[filtergraph][connections]")
         REQUIRE_FALSE(fromGhost);
     }
 
-    SECTION("Negative channel rejected")
-    {
+    SECTION("Negative channel rejected") {
         MockNodeID p1 = graph.addFilter("P1", 100, 100);
         MockNodeID p2 = graph.addFilter("P2", 200, 100);
 
@@ -363,8 +328,7 @@ TEST_CASE("FilterGraph Connection Management", "[filtergraph][connections]")
         REQUIRE_FALSE(badDst);
     }
 
-    SECTION("Remove connection")
-    {
+    SECTION("Remove connection") {
         MockNodeID p1 = graph.addFilter("P1", 100, 100);
         MockNodeID p2 = graph.addFilter("P2", 200, 100);
 
@@ -376,8 +340,7 @@ TEST_CASE("FilterGraph Connection Management", "[filtergraph][connections]")
         REQUIRE(graph.getConnectionBetween(p1, 0, p2, 0) == nullptr);
     }
 
-    SECTION("Disconnect filter removes all connections")
-    {
+    SECTION("Disconnect filter removes all connections") {
         MockNodeID plugin = graph.addFilter("Effect", 150, 100);
 
         graph.addConnection(graph.audioInputNode, 0, plugin, 0);
@@ -394,8 +357,7 @@ TEST_CASE("FilterGraph Connection Management", "[filtergraph][connections]")
         REQUIRE(graph.getNumConnections() < beforeCount);
     }
 
-    SECTION("Remove filter also removes connections")
-    {
+    SECTION("Remove filter also removes connections") {
         MockNodeID plugin = graph.addFilter("Effect", 150, 100);
 
         graph.addConnection(graph.audioInputNode, 0, plugin, 0);
@@ -410,12 +372,10 @@ TEST_CASE("FilterGraph Connection Management", "[filtergraph][connections]")
 }
 
 // Position Management Tests`n
-TEST_CASE("FilterGraph Position Management", "[filtergraph][position]")
-{
+TEST_CASE("FilterGraph Position Management", "[filtergraph][position]") {
     MockFilterGraph graph;
 
-    SECTION("Get initial node position")
-    {
+    SECTION("Get initial node position") {
         double x, y;
         bool found = graph.getNodePosition(graph.audioInputNode, x, y);
 
@@ -424,8 +384,7 @@ TEST_CASE("FilterGraph Position Management", "[filtergraph][position]")
         REQUIRE(y == 100.0);
     }
 
-    SECTION("Set node position")
-    {
+    SECTION("Set node position") {
         MockNodeID plugin = graph.addFilter("P1", 0, 0);
 
         graph.setNodePosition(plugin, 300.0, 250.0);
@@ -436,8 +395,7 @@ TEST_CASE("FilterGraph Position Management", "[filtergraph][position]")
         REQUIRE(y == 250.0);
     }
 
-    SECTION("Get position of non-existent node returns false")
-    {
+    SECTION("Get position of non-existent node returns false") {
         MockNodeID ghost{9999};
         double x = -1, y = -1;
 
@@ -447,35 +405,29 @@ TEST_CASE("FilterGraph Position Management", "[filtergraph][position]")
 }
 
 // Infrastructure Detection Tests`n
-TEST_CASE("FilterGraph Infrastructure Detection", "[filtergraph][infrastructure]")
-{
+TEST_CASE("FilterGraph Infrastructure Detection", "[filtergraph][infrastructure]") {
     MockFilterGraph graph;
 
-    SECTION("IO nodes are infrastructure")
-    {
+    SECTION("IO nodes are infrastructure") {
         REQUIRE(graph.isHiddenInfrastructureNode(graph.audioInputNode));
         REQUIRE(graph.isHiddenInfrastructureNode(graph.audioOutputNode));
         REQUIRE(graph.isHiddenInfrastructureNode(graph.midiInputNode));
     }
 
-    SECTION("Internal processors are infrastructure")
-    {
+    SECTION("Internal processors are infrastructure") {
         REQUIRE(graph.isHiddenInfrastructureNode(graph.safetyLimiterNode));
         REQUIRE(graph.isHiddenInfrastructureNode(graph.crossfadeMixerNode));
     }
 
-    SECTION("User plugins are not infrastructure")
-    {
+    SECTION("User plugins are not infrastructure") {
         MockNodeID plugin = graph.addFilter("UserPlugin", 100, 100);
         REQUIRE_FALSE(graph.isHiddenInfrastructureNode(plugin));
     }
 }
 
 // Mutation Testing`n
-TEST_CASE("FilterGraph Mutation Testing", "[filtergraph][mutation]")
-{
-    SECTION("OFF-BY-ONE: Node count after add/remove")
-    {
+TEST_CASE("FilterGraph Mutation Testing", "[filtergraph][mutation]") {
+    SECTION("OFF-BY-ONE: Node count after add/remove") {
         MockFilterGraph graph;
         int initialCount = graph.getNumFilters();
 
@@ -486,8 +438,7 @@ TEST_CASE("FilterGraph Mutation Testing", "[filtergraph][mutation]")
         REQUIRE(graph.getNumFilters() == initialCount);
     }
 
-    SECTION("NEGATE: Infrastructure check inversion")
-    {
+    SECTION("NEGATE: Infrastructure check inversion") {
         MockFilterGraph graph;
 
         // If negated, user plugins would appear as infrastructure
@@ -503,8 +454,7 @@ TEST_CASE("FilterGraph Mutation Testing", "[filtergraph][mutation]")
         REQUIRE(isInfra != isIO);
     }
 
-    SECTION("SWAP: Source/dest in connection lookup")
-    {
+    SECTION("SWAP: Source/dest in connection lookup") {
         MockFilterGraph graph;
         MockNodeID p1 = graph.addFilter("P1", 0, 0);
         MockNodeID p2 = graph.addFilter("P2", 100, 0);
@@ -518,8 +468,7 @@ TEST_CASE("FilterGraph Mutation Testing", "[filtergraph][mutation]")
         REQUIRE(graph.getConnectionBetween(p2, 0, p1, 0) == nullptr);
     }
 
-    SECTION("DELETE: Connection cleanup on node removal")
-    {
+    SECTION("DELETE: Connection cleanup on node removal") {
         MockFilterGraph graph;
         MockNodeID plugin = graph.addFilter("P1", 100, 100);
 
@@ -537,8 +486,7 @@ TEST_CASE("FilterGraph Mutation Testing", "[filtergraph][mutation]")
         REQUIRE(connectionsAfter < connectionsBefore);
     }
 
-    SECTION("CONDITION: Self-connection check")
-    {
+    SECTION("CONDITION: Self-connection check") {
         MockFilterGraph graph;
         MockNodeID plugin = graph.addFilter("P1", 0, 0);
 

@@ -27,17 +27,19 @@
 class LevelProcessor;
 
 /// The PluginComponent control for LevelProcessor.
-class LevelControl : public Component,
-                     public Timer,
-                     public juce::Slider::Listener
-{
+class LevelControl : public Component, public Timer, public juce::Slider::Listener {
   public:
+    /// Creates the compact rotary slider control for the given processor.
+    ///
+    /// @param proc The level processor to associate with this control.
     LevelControl(LevelProcessor* proc);
     ~LevelControl() override;
 
     /// Updates the slider to reflect the processor's level.
     void timerCallback() override;
     /// Sets the processor's level from the slider.
+    ///
+    /// @param slider The slider whose value changed (unused; reads the member slider).
     void sliderValueChanged(Slider* slider) override;
 
   private:
@@ -51,11 +53,12 @@ class LevelControl : public Component,
 };
 
 /// The full editor for LevelProcessor.
-class LevelEditor : public AudioProcessorEditor,
-                    public Timer,
-                    public juce::Slider::Listener
-{
+class LevelEditor : public AudioProcessorEditor, public Timer, public juce::Slider::Listener {
   public:
+    /// Creates the full editor with a large rotary slider and restores window bounds.
+    ///
+    /// @param processor The audio processor to associate with this editor.
+    /// @param windowBounds The saved window bounds to restore.
     LevelEditor(AudioProcessor* processor, const Rectangle<int>& windowBounds);
     ~LevelEditor() override;
 
@@ -67,6 +70,8 @@ class LevelEditor : public AudioProcessorEditor,
     /// Updates the slider to reflect the processor's level.
     void timerCallback() override;
     /// Sets the processor's level from the slider.
+    ///
+    /// @param slider The slider whose value changed (unused; reads the member slider).
     void sliderValueChanged(Slider* slider) override;
 
   private:

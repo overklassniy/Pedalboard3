@@ -24,24 +24,33 @@
 #include "PedalboardProcessor.h"
 
 /// Simple processor which provides a level control.
-class LevelProcessor : public PedalboardProcessor
-{
+class LevelProcessor : public PedalboardProcessor {
   public:
+    /// Constructs a level processor with the level set to 0.5.
     LevelProcessor();
     ~LevelProcessor() override;
 
     /// Returns the component which is added to the instance's PluginComponent.
+    ///
+    /// @return A new LevelControl component; deleted by the caller.
     Component* getControls();
     /// Returns the size of the controls component.
     Point<int> getSize() override { return Point<int>(64, 64); }
 
     /// Updates the bounds of our editor window.
+    ///
+    /// @param bounds The new editor window bounds to store.
     void updateEditorBounds(const Rectangle<int>& bounds);
 
     /// Provides a description of the processor to the filter graph.
+    ///
+    /// @param description The plugin description to fill in.
     void fillInPluginDescription(PluginDescription& description) const override;
 
     /// Alters the input audio's level accordingly.
+    ///
+    /// @param buffer The audio buffer to apply the level change to.
+    /// @param midiMessages The MIDI buffer (unused).
     void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) override;
 
     /// Returns the name of the processor.
@@ -52,22 +61,31 @@ class LevelProcessor : public PedalboardProcessor
     void releaseResources() override {}
     /// Returns the length of the plugin's tail.
     double getTailLengthSeconds() const override { return 0.0; }
-    /// We definitely want Midi input.
+    /// This processor does not accept MIDI input.
     bool acceptsMidi() const override { return false; }
-    /// But we don't need to output it.
+    /// This processor does not produce MIDI output.
     bool producesMidi() const override { return false; }
-    /// We have no editor.
+    /// Creates the full editor window for this processor.
     AudioProcessorEditor* createEditor() override;
-    /// We have no editor.
+    /// Returns true; this processor has a custom editor.
     bool hasEditor() const override { return true; }
 
-    // JUCE 8: deprecated parameter methods kept as regular methods for
-    // internal use by control components.
+    /// JUCE 8: deprecated parameter methods kept as regular methods for
+    /// internal use by control components.
     /// Returns the parameter value (0-1 normalized).
+    ///
+    /// @param parameterIndex The index of the parameter (unused; only parameter 0 exists).
+    /// @return The current level value, normalized to 0-1.
     float getParameter(int parameterIndex) { return level; }
     /// Sets the parameter value (0-1 normalized).
+    ///
+    /// @param parameterIndex The index of the parameter (unused; only parameter 0 exists).
+    /// @param newValue The new level value, normalized to 0-1.
     void setParameter(int parameterIndex, float newValue);
     /// Returns the parameter's value as a string.
+    ///
+    /// @param parameterIndex The index of the parameter (unused; only parameter 0 exists).
+    /// @return A textual representation of the current level value.
     const String getParameterText(int parameterIndex);
 
     /// We have no programs.
@@ -80,9 +98,14 @@ class LevelProcessor : public PedalboardProcessor
     const String getProgramName(int index) override { return ""; }
     /// We have no programs.
     void changeProgramName(int index, const String& newName) override {}
-    /// Loads the position of the slider and the size and position of the editor.
+    /// Saves the level value and editor bounds to the block.
+    ///
+    /// @param destData The memory block to serialize state into.
     void getStateInformation(juce::MemoryBlock& destData) override;
-    /// Saves the position of the slider and the size and position of the editor.
+    /// Restores the level value and editor bounds from the data.
+    ///
+    /// @param data Pointer to the serialized state data.
+    /// @param sizeInBytes Size of the serialized state data in bytes.
     void setStateInformation(const void* data, int sizeInBytes) override;
 
   private:

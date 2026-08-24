@@ -172,9 +172,7 @@ Both are in `.gitignore` and are not part of the Pedalboard3 source tree.
 | `JUCE/` | JUCE 8.0.15 git submodule (audio framework) |
 | `cmake/` | CPM.cmake dependency manager script |
 | `tests/` | Unit tests (Catch2) |
-| `icon/` | Application icons (PNG) |
-| `images/` | Bitmap images used by the UI |
-| `vectors/` | SVG vector graphics for UI elements |
+| `assets/` | Visual assets: `icons/` (app icons, PNG/ICO/SVG) and `vectors/` (UI button SVGs) |
 | `pedalboard2-OLD/` | Original Pedalboard2 source (reference only) |
 | `pedalboard3-VST3/` | VST3 fork source (reference only) |
 

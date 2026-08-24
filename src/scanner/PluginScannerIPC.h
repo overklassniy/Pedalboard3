@@ -20,21 +20,21 @@
 
 #include <JuceHeader.h>
 
-namespace PluginScannerIPC
-{
+/// IPC protocol definitions for communication between the host and the
+/// out-of-process plugin scanner.
+namespace PluginScannerIPC {
 
-// Pipe name for Windows named pipes
+/// Pipe name for Windows named pipes.
 constexpr const char* PIPE_NAME = "\\\\.\\pipe\\Pedalboard3PluginScanner";
 
-// Protocol version for compatibility checking
+/// Protocol version for compatibility checking.
 constexpr int PROTOCOL_VERSION = 1;
 
-// Timeout for scanner operations (ms)
+/// Timeout for scanner operations in milliseconds.
 constexpr int SCAN_TIMEOUT_MS = 30000;
 
-// Message types
-enum class MessageType : uint8_t
-{
+/// Message types exchanged between host and scanner.
+enum class MessageType : uint8_t {
     // Host -> Scanner
     Ping = 0,
     ScanPlugin = 1,
@@ -48,9 +48,8 @@ enum class MessageType : uint8_t
     Ready = 104
 };
 
-// Scan result codes
-enum class ScanResultCode : uint8_t
-{
+/// Scan result codes returned by the scanner.
+enum class ScanResultCode : uint8_t {
     Success = 0,
     LoadFailed = 1,
     InvalidFormat = 2,
@@ -60,34 +59,36 @@ enum class ScanResultCode : uint8_t
 };
 
 /// Message header for IPC communication.
-struct MessageHeader
-{
-    uint32_t magic = 0x50444233;  // "PDB3"
+struct MessageHeader {
+    uint32_t magic = 0x50444233; // "PDB3"
     uint8_t version = PROTOCOL_VERSION;
     MessageType type;
     uint32_t payloadSize = 0;
 };
 
 /// Scan request sent from host to scanner.
-struct ScanRequest
-{
+struct ScanRequest {
     juce::String pluginPath;
-    juce::String formatName;  // "VST3", "VST", "AU", etc.
+    juce::String formatName; // "VST3", "VST", "AU", etc.
 
-    juce::String serialize() const
-    {
+    /// Serializes the request to a JSON string.
+    ///
+    /// @return JSON string representation of the request.
+    juce::String serialize() const {
         juce::DynamicObject::Ptr obj = new juce::DynamicObject();
         obj->setProperty("path", pluginPath);
         obj->setProperty("format", formatName);
         return juce::JSON::toString(juce::var(obj.get()));
     }
 
-    static ScanRequest deserialize(const juce::String& json)
-    {
+    /// Deserializes a JSON string into a ScanRequest.
+    ///
+    /// @param json JSON string to deserialize.
+    /// @return The deserialized ScanRequest.
+    static ScanRequest deserialize(const juce::String& json) {
         ScanRequest req;
         auto parsed = juce::JSON::parse(json);
-        if (auto* obj = parsed.getDynamicObject())
-        {
+        if (auto* obj = parsed.getDynamicObject()) {
             req.pluginPath = obj->getProperty("path").toString();
             req.formatName = obj->getProperty("format").toString();
         }
@@ -96,14 +97,15 @@ struct ScanRequest
 };
 
 /// Scan result sent from scanner to host.
-struct ScanResponse
-{
+struct ScanResponse {
     ScanResultCode resultCode = ScanResultCode::LoadFailed;
     juce::String errorMessage;
-    juce::String pluginXml;  // Serialized PluginDescription if successful
+    juce::String pluginXml; // Serialized PluginDescription if successful
 
-    juce::String serialize() const
-    {
+    /// Serializes the response to a JSON string.
+    ///
+    /// @return JSON string representation of the response.
+    juce::String serialize() const {
         juce::DynamicObject::Ptr obj = new juce::DynamicObject();
         obj->setProperty("code", static_cast<int>(resultCode));
         obj->setProperty("error", errorMessage);
@@ -111,12 +113,14 @@ struct ScanResponse
         return juce::JSON::toString(juce::var(obj.get()));
     }
 
-    static ScanResponse deserialize(const juce::String& json)
-    {
+    /// Deserializes a JSON string into a ScanResponse.
+    ///
+    /// @param json JSON string to deserialize.
+    /// @return The deserialized ScanResponse.
+    static ScanResponse deserialize(const juce::String& json) {
         ScanResponse resp;
         auto parsed = juce::JSON::parse(json);
-        if (auto* obj = parsed.getDynamicObject())
-        {
+        if (auto* obj = parsed.getDynamicObject()) {
             resp.resultCode = static_cast<ScanResultCode>(static_cast<int>(obj->getProperty("code")));
             resp.errorMessage = obj->getProperty("error").toString();
             resp.pluginXml = obj->getProperty("xml").toString();
@@ -126,8 +130,12 @@ struct ScanResponse
 };
 
 /// Helper to write a message to a pipe/stream.
-inline bool writeMessage(juce::OutputStream& stream, MessageType type, const juce::String& payload = {})
-{
+///
+/// @param stream Output stream to write to.
+/// @param type Message type to send.
+/// @param payload Optional string payload to include after the header.
+/// @return True if the message was written and flushed successfully.
+inline bool writeMessage(juce::OutputStream& stream, MessageType type, const juce::String& payload = {}) {
     MessageHeader header;
     header.type = type;
     auto payloadBytes = payload.toUTF8();
@@ -136,8 +144,7 @@ inline bool writeMessage(juce::OutputStream& stream, MessageType type, const juc
     if (!stream.write(&header, sizeof(header)))
         return false;
 
-    if (header.payloadSize > 0)
-    {
+    if (header.payloadSize > 0) {
         if (!stream.write(payloadBytes.getAddress(), header.payloadSize))
             return false;
     }
@@ -147,27 +154,29 @@ inline bool writeMessage(juce::OutputStream& stream, MessageType type, const juc
 }
 
 /// Helper to read a message from a pipe/stream.
-inline bool readMessage(juce::InputStream& stream, MessageHeader& header, juce::String& payload)
-{
+///
+/// @param stream Input stream to read from.
+/// @param header Output parameter filled with the read message header.
+/// @param payload Output parameter filled with the read payload string.
+/// @return True if a complete valid message was read.
+inline bool readMessage(juce::InputStream& stream, MessageHeader& header, juce::String& payload) {
     if (stream.read(&header, static_cast<int>(sizeof(header))) != static_cast<int>(sizeof(header)))
         return false;
 
     if (header.magic != 0x50444233)
         return false;
 
-    if (header.payloadSize > 0)
-    {
+    if (header.payloadSize > 0) {
         juce::MemoryBlock block(header.payloadSize);
         if (stream.read(block.getData(), static_cast<int>(header.payloadSize)) != static_cast<int>(header.payloadSize))
             return false;
-        payload = juce::String::fromUTF8(static_cast<const char*>(block.getData()), static_cast<int>(header.payloadSize));
-    }
-    else
-    {
+        payload =
+            juce::String::fromUTF8(static_cast<const char*>(block.getData()), static_cast<int>(header.payloadSize));
+    } else {
         payload.clear();
     }
 
     return true;
 }
 
-}  // namespace PluginScannerIPC
+} // namespace PluginScannerIPC

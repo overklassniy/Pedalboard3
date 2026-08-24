@@ -19,27 +19,21 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "VuMeterEditor.h"
-#include "VuMeterProcessor.h"
+
 #include "ColourScheme.h"
+#include "VuMeterProcessor.h"
 
 #include <cmath>
 
-VuMeterControl::VuMeterControl(VuMeterProcessor* proc)
-    : processor(proc),
-      levelLeft(0.0f),
-      levelRight(0.0f)
-{
+VuMeterControl::VuMeterControl(VuMeterProcessor* proc) : processor(proc), levelLeft(0.0f), levelRight(0.0f) {
     startTimer(60);
 
     setSize(64, 128);
 }
 
-VuMeterControl::~VuMeterControl()
-{
-}
+VuMeterControl::~VuMeterControl() {}
 
-void VuMeterControl::paint(Graphics& g)
-{
+void VuMeterControl::paint(Graphics& g) {
     float textSize;
     float levLeft = (levelLeft < 0.0f) ? (levelLeft / 60.0f) + 1.0f : 1.0f;
     float levRight = (levelRight < 0.0f) ? (levelRight / 60.0f) + 1.0f : 1.0f;
@@ -58,49 +52,27 @@ void VuMeterControl::paint(Graphics& g)
     Colour topColour2 = colours["VU Meter Upper Colour"].withMultipliedBrightness(levRight);
     Colour bottomColour = colours["VU Meter Lower Colour"];
 
-    ColourGradient grad1(topColour1,
-                           0.0f,
-                           0.0f,
-                           bottomColour,
-                           0.0f,
-                           heightLeft,
-                           false);
-    ColourGradient grad2(topColour2,
-                           0.0f,
-                           0.0f,
-                           bottomColour,
-                           0.0f,
-                           heightRight,
-                           false);
+    ColourGradient grad1(topColour1, 0.0f, 0.0f, bottomColour, 0.0f, heightLeft, false);
+    ColourGradient grad2(topColour2, 0.0f, 0.0f, bottomColour, 0.0f, heightRight, false);
 
-    if (levelLeft >= 0.0f)
-    {
+    if (levelLeft >= 0.0f) {
         g.setColour(colours["VU Meter Over Colour"]);
         g.fillRect(0.0f, 0.0f, (width * 0.5f) - 2.0f, redSize);
     }
 
-    if (levelLeft > -60.0f)
-    {
+    if (levelLeft > -60.0f) {
         g.setGradientFill(grad1);
-        g.fillRect(0.0f,
-                   height - heightLeft - 4.0f,
-                   (width * 0.5f) - 2.0f,
-                   heightLeft);
+        g.fillRect(0.0f, height - heightLeft - 4.0f, (width * 0.5f) - 2.0f, heightLeft);
     }
 
-    if (levelRight >= 0.0f)
-    {
+    if (levelRight >= 0.0f) {
         g.setColour(colours["VU Meter Over Colour"]);
         g.fillRect((width * 0.5f) + 2.0f, 0.0f, (width * 0.5f) - 2.0f, redSize);
     }
 
-    if (levelRight > -60.0f)
-    {
+    if (levelRight > -60.0f) {
         g.setGradientFill(grad2);
-        g.fillRect((width * 0.5f) + 2.0f,
-                   height - heightRight - 4.0f,
-                   (width * 0.5f) - 2.0f,
-                   heightRight);
+        g.fillRect((width * 0.5f) + 2.0f, height - heightRight - 4.0f, (width * 0.5f) - 2.0f, heightRight);
     }
 
     g.setColour(colours["Text Colour"].withAlpha(0.25f));
@@ -120,51 +92,22 @@ void VuMeterControl::paint(Graphics& g)
     g.setColour(colours["Text Colour"].withAlpha(0.5f));
     g.setFont(textSize);
 
-    g.drawText("0dB",
-               static_cast<int>((width / 2.0f) - textSize),
-               static_cast<int>(redSize - textSize),
-               static_cast<int>(textSize * 2.0f),
-               static_cast<int>(textSize * 2.0f),
-               Justification::centred,
-               false);
-    g.drawText("6dB",
-               static_cast<int>((width / 2.0f) - textSize),
-               static_cast<int>(sixDb - textSize),
-               static_cast<int>(textSize * 2.0f),
-               static_cast<int>(textSize * 2.0f),
-               Justification::centred,
-               false);
-    g.drawText("12dB",
-               static_cast<int>((width / 2.0f) - (textSize * 2.0f)),
-               static_cast<int>(twelveDb - textSize),
-               static_cast<int>(textSize * 4.0f),
-               static_cast<int>(textSize * 2.0f),
-               Justification::centred,
-               false);
-    g.drawText("24dB",
-               static_cast<int>((width / 2.0f) - (textSize * 2.0f)),
-               static_cast<int>(twentyFourDb - textSize),
-               static_cast<int>(textSize * 4.0f),
-               static_cast<int>(textSize * 2.0f),
-               Justification::centred,
-               false);
-    g.drawText("48dB",
-               static_cast<int>((width / 2.0f) - (textSize * 2.0f)),
-               static_cast<int>(fortyEightDb - textSize),
-               static_cast<int>(textSize * 4.0f),
-               static_cast<int>(textSize * 2.0f),
-               Justification::centred,
-               false);
+    g.drawText("0dB", static_cast<int>((width / 2.0f) - textSize), static_cast<int>(redSize - textSize),
+               static_cast<int>(textSize * 2.0f), static_cast<int>(textSize * 2.0f), Justification::centred, false);
+    g.drawText("6dB", static_cast<int>((width / 2.0f) - textSize), static_cast<int>(sixDb - textSize),
+               static_cast<int>(textSize * 2.0f), static_cast<int>(textSize * 2.0f), Justification::centred, false);
+    g.drawText("12dB", static_cast<int>((width / 2.0f) - (textSize * 2.0f)), static_cast<int>(twelveDb - textSize),
+               static_cast<int>(textSize * 4.0f), static_cast<int>(textSize * 2.0f), Justification::centred, false);
+    g.drawText("24dB", static_cast<int>((width / 2.0f) - (textSize * 2.0f)), static_cast<int>(twentyFourDb - textSize),
+               static_cast<int>(textSize * 4.0f), static_cast<int>(textSize * 2.0f), Justification::centred, false);
+    g.drawText("48dB", static_cast<int>((width / 2.0f) - (textSize * 2.0f)), static_cast<int>(fortyEightDb - textSize),
+               static_cast<int>(textSize * 4.0f), static_cast<int>(textSize * 2.0f), Justification::centred, false);
 }
 
-void VuMeterControl::resized()
-{
-}
+void VuMeterControl::resized() {}
 
-void VuMeterControl::timerCallback()
-{
-    if (processor)
-    {
+void VuMeterControl::timerCallback() {
+    if (processor) {
         float levLeft = processor->getLeftLevel();
         float levRight = processor->getRightLevel();
         const float minus60 = static_cast<float>(std::pow(10.0, -60.0 / 20.0));
@@ -183,22 +126,16 @@ void VuMeterControl::timerCallback()
     }
 }
 
-VuMeterEditor::VuMeterEditor(AudioProcessor* processor,
-                             const Rectangle<int>& windowBounds)
-    : AudioProcessorEditor(processor),
-      parentBounds(windowBounds),
-      setPos(false)
-{
+VuMeterEditor::VuMeterEditor(AudioProcessor* processor, const Rectangle<int>& windowBounds)
+    : AudioProcessorEditor(processor), parentBounds(windowBounds), setPos(false) {
     meter = std::make_unique<VuMeterControl>(dynamic_cast<VuMeterProcessor*>(processor));
     addAndMakeVisible(*meter);
 
     setSize(128, 256);
 }
 
-VuMeterEditor::~VuMeterEditor()
-{
-    if (auto* proc = dynamic_cast<VuMeterProcessor*>(getAudioProcessor()))
-    {
+VuMeterEditor::~VuMeterEditor() {
+    if (auto* proc = dynamic_cast<VuMeterProcessor*>(getAudioProcessor())) {
         if (getParentComponent())
             parentBounds = getTopLevelComponent()->getBounds();
 
@@ -209,12 +146,10 @@ VuMeterEditor::~VuMeterEditor()
     getAudioProcessor()->editorBeingDeleted(this);
 }
 
-void VuMeterEditor::resized()
-{
+void VuMeterEditor::resized() {
     meter->setSize(getWidth(), getHeight());
 }
 
-void VuMeterEditor::paint(Graphics& g)
-{
+void VuMeterEditor::paint(Graphics& g) {
     g.fillAll(ColourScheme::getInstance().colours["Window Background"]);
 }

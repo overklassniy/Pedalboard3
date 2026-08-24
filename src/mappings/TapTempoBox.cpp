@@ -19,56 +19,43 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "TapTempoBox.h"
-#include "PluginField.h"
+
 #include "ColourScheme.h"
+#include "PluginField.h"
 
-
-TapTempoBox::TapTempoBox(PluginField* field, TextEditor* tempoEd) :
-    tempo(120.0),
-    pluginField(field),
-    tempoEditor(tempoEd)
-{
+TapTempoBox::TapTempoBox(PluginField* field, TextEditor* tempoEd)
+    : tempo(120.0), pluginField(field), tempoEditor(tempoEd) {
     setSize(300, 120);
 
     startTimer(30);
 }
 
+TapTempoBox::~TapTempoBox() {}
 
-TapTempoBox::~TapTempoBox()
-{
-}
-
-
-void TapTempoBox::paint(Graphics& g)
-{
+void TapTempoBox::paint(Graphics& g) {
     Font smallFont(juce::FontOptions().withHeight(24.0f));
     Font bigFont(juce::FontOptions().withHeight(48.0f).withStyle("Bold"));
 
     g.setColour(ColourScheme::getInstance().colours["Text Colour"]);
 
     g.setFont(smallFont);
-    g.drawText("Tap to set tempo:", 0, 0, 300, 50,
-               Justification(Justification::centred), false);
+    g.drawText("Tap to set tempo:", 0, 0, 300, 50, Justification(Justification::centred), false);
 
     // Format the tempo to 2 decimal places.
     String tempstr = String(tempo, 2);
     tempstr << " bpm";
     g.setFont(bigFont);
-    g.drawText(tempstr, 0, 50, 300, 50,
-               Justification(Justification::centred), false);
+    g.drawText(tempstr, 0, 50, 300, 50, Justification(Justification::centred), false);
 }
 
-
-void TapTempoBox::mouseDown(const MouseEvent& e)
-{
-    (void) e;
+void TapTempoBox::mouseDown(const MouseEvent& e) {
+    (void)e;
 
     double tempTempo;
     int64 ticks = Time::getHighResolutionTicks();
 
     tempTempo = tapHelper.updateTempo(Time::highResolutionTicksToSeconds(ticks));
-    if (tempTempo > 0.0)
-    {
+    if (tempTempo > 0.0) {
         tempo = tempTempo;
         pluginField->setTempo(tempo);
 
@@ -78,13 +65,10 @@ void TapTempoBox::mouseDown(const MouseEvent& e)
     }
 }
 
-
-void TapTempoBox::timerCallback()
-{
+void TapTempoBox::timerCallback() {
     double newTempo = pluginField->getTempo();
 
-    if (tempo != newTempo)
-    {
+    if (tempo != newTempo) {
         tempo = newTempo;
         repaint();
     }

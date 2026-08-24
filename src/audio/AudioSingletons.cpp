@@ -24,19 +24,16 @@
 
 AudioPluginFormatManagerSingleton AudioPluginFormatManagerSingleton::singletonInstance;
 
-AudioPluginFormatManager& AudioPluginFormatManagerSingleton::getInstance()
-{
+AudioPluginFormatManager& AudioPluginFormatManagerSingleton::getInstance() {
     return *(singletonInstance.instance);
 }
 
-void AudioPluginFormatManagerSingleton::killInstance()
-{
+void AudioPluginFormatManagerSingleton::killInstance() {
     assert(singletonInstance.instance != nullptr);
     singletonInstance.instance.reset();
 }
 
-AudioPluginFormatManagerSingleton::AudioPluginFormatManagerSingleton()
-{
+AudioPluginFormatManagerSingleton::AudioPluginFormatManagerSingleton() {
     instance = std::make_unique<AudioPluginFormatManager>();
     addDefaultFormatsToManager(*instance);
 }
@@ -45,19 +42,16 @@ AudioPluginFormatManagerSingleton::~AudioPluginFormatManagerSingleton() = defaul
 
 AudioFormatManagerSingleton AudioFormatManagerSingleton::singletonInstance;
 
-AudioFormatManager& AudioFormatManagerSingleton::getInstance()
-{
+AudioFormatManager& AudioFormatManagerSingleton::getInstance() {
     return *(singletonInstance.instance);
 }
 
-void AudioFormatManagerSingleton::killInstance()
-{
+void AudioFormatManagerSingleton::killInstance() {
     assert(singletonInstance.instance != nullptr);
     singletonInstance.instance.reset();
 }
 
-AudioFormatManagerSingleton::AudioFormatManagerSingleton()
-{
+AudioFormatManagerSingleton::AudioFormatManagerSingleton() {
     instance = std::make_unique<AudioFormatManager>();
     instance->registerBasicFormats();
 }
@@ -66,19 +60,16 @@ AudioFormatManagerSingleton::~AudioFormatManagerSingleton() = default;
 
 AudioThumbnailCacheSingleton AudioThumbnailCacheSingleton::singletonInstance;
 
-AudioThumbnailCache& AudioThumbnailCacheSingleton::getInstance()
-{
+AudioThumbnailCache& AudioThumbnailCacheSingleton::getInstance() {
     return *(singletonInstance.instance);
 }
 
-void AudioThumbnailCacheSingleton::killInstance()
-{
+void AudioThumbnailCacheSingleton::killInstance() {
     assert(singletonInstance.instance != nullptr);
     singletonInstance.instance.reset();
 }
 
-AudioThumbnailCacheSingleton::AudioThumbnailCacheSingleton()
-{
+AudioThumbnailCacheSingleton::AudioThumbnailCacheSingleton() {
     instance = std::make_unique<AudioThumbnailCache>(32);
 }
 

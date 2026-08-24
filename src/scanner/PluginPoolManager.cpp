@@ -24,25 +24,37 @@
 
 #include <spdlog/spdlog.h>
 
-namespace
-{
-bool shouldPoolPlugin(const PluginDescription& desc)
-{
-    // Skip internal plugins (Audio I/O, etc.) and AudioUnits for now.
+/// Anonymous namespace containing helpers for extracting plugin descriptions
+/// from patch XML, including nested rack and NAM processor states.
+namespace {
+/// Returns true if the plugin should be pooled (i.e. it is not an internal
+/// plugin or an AudioUnit, which are handled separately).
+///
+/// @param desc Plugin description to check.
+/// @return True if the plugin should be pooled.
+bool shouldPoolPlugin(const PluginDescription& desc) {
+    // Internal plugins (Audio I/O, etc.) and AudioUnits are not pooled yet.
     return desc.pluginFormatName != "Internal" && desc.pluginFormatName != "AudioUnit";
 }
 
-bool isSubGraphPlugin(const PluginDescription& desc)
-{
+/// Returns true if the description refers to an internal SubGraph rack node.
+/// Internal rack nodes are identified by the fileOrIdentifier field.
+///
+/// @param desc Plugin description to check.
+/// @return True if the description refers to a SubGraph rack node.
+bool isSubGraphPlugin(const PluginDescription& desc) {
     if (desc.pluginFormatName != "Internal")
         return false;
 
-    // Internal rack nodes are identified by fileOrIdentifier.
     return desc.fileOrIdentifier == "Internal:SubGraph";
 }
 
-bool isNAMProcessor(const PluginDescription& desc)
-{
+/// Returns true if the description refers to the internal NAM (Neural Amp
+/// Modeler) processor.
+///
+/// @param desc Plugin description to check.
+/// @return True if the description refers to the NAM processor.
+bool isNAMProcessor(const PluginDescription& desc) {
     if (desc.pluginFormatName != "Internal")
         return false;
 
@@ -53,8 +65,13 @@ void extractPluginsFromFilter(const XmlElement& filterElem, std::vector<PluginDe
 void extractPluginsFromNAMState(const XmlElement& filterElem, std::vector<PluginDescription>& result);
 std::vector<PluginDescription> extractPluginsFromPatchImpl(const XmlElement* patchXml);
 
-void extractPluginsFromRackState(const XmlElement& filterElem, std::vector<PluginDescription>& result)
-{
+/// Extracts plugin descriptions from a SubGraph rack state embedded in a
+/// FILTER element's STATE child. The state is base64-encoded XML with a RACK
+/// root tag containing nested FILTER elements.
+///
+/// @param filterElem FILTER element whose STATE child holds the rack XML.
+/// @param result Output vector appended with extracted plugin descriptions.
+void extractPluginsFromRackState(const XmlElement& filterElem, std::vector<PluginDescription>& result) {
     auto* stateElem = filterElem.getChildByName("STATE");
     if (stateElem == nullptr)
         return;
@@ -71,9 +88,17 @@ void extractPluginsFromRackState(const XmlElement& filterElem, std::vector<Plugi
         extractPluginsFromFilter(*rackFilter, result);
 }
 
-void extractPluginsFromNAMState(const XmlElement& filterElem, std::vector<PluginDescription>& result)
-{
-    // NAMProcessor stores: version, model path, ir path, 9 params, fx loop enabled, fx loop state
+/// Extracts plugin descriptions from a NAM processor's internal state.
+///
+/// The NAM processor stores its state as a binary stream: version, model path,
+/// IR path, 9 parameters, effects-loop enabled flag, and a SubGraph state
+/// block. The effects loop was introduced in version 2, so earlier states are
+/// skipped. The SubGraph state block uses the same RACK XML format as
+/// extractPluginsFromRackState.
+///
+/// @param filterElem FILTER element whose STATE child holds the NAM binary state.
+/// @param result Output vector appended with extracted plugin descriptions.
+void extractPluginsFromNAMState(const XmlElement& filterElem, std::vector<PluginDescription>& result) {
     auto* stateElem = filterElem.getChildByName("STATE");
     if (stateElem == nullptr)
         return;
@@ -84,7 +109,6 @@ void extractPluginsFromNAMState(const XmlElement& filterElem, std::vector<Plugin
 
     juce::MemoryInputStream stream(state, false);
 
-    // Read version
     int version = stream.readInt();
     if (version < 2)
         return; // Effects loop was added in version 2
@@ -100,10 +124,8 @@ void extractPluginsFromNAMState(const XmlElement& filterElem, std::vector<Plugin
     for (int i = 0; i < 3; ++i)
         stream.readBool();
 
-    // Read effects loop enabled
     stream.readBool();
 
-    // Read effects loop state size and data
     int fxLoopStateSize = stream.readInt();
     if (fxLoopStateSize <= 0)
         return;
@@ -121,8 +143,15 @@ void extractPluginsFromNAMState(const XmlElement& filterElem, std::vector<Plugin
         extractPluginsFromFilter(*rackFilter, result);
 }
 
-void extractPluginsFromFilter(const XmlElement& filterElem, std::vector<PluginDescription>& result)
-{
+/// Extracts plugin descriptions from a single FILTER element.
+///
+/// If the filter is a SubGraph or NAM processor, recursively extracts nested
+/// plugins from their internal state. Otherwise, if the plugin is poolable,
+/// adds it directly to the result vector.
+///
+/// @param filterElem FILTER element to extract plugin descriptions from.
+/// @param result Output vector appended with extracted plugin descriptions.
+void extractPluginsFromFilter(const XmlElement& filterElem, std::vector<PluginDescription>& result) {
     auto* descElem = filterElem.getChildByName("PLUGIN");
     if (descElem == nullptr)
         return;
@@ -131,14 +160,12 @@ void extractPluginsFromFilter(const XmlElement& filterElem, std::vector<PluginDe
     if (!desc.loadFromXml(*descElem))
         return;
 
-    if (isSubGraphPlugin(desc))
-    {
+    if (isSubGraphPlugin(desc)) {
         extractPluginsFromRackState(filterElem, result);
         return;
     }
 
-    if (isNAMProcessor(desc))
-    {
+    if (isNAMProcessor(desc)) {
         extractPluginsFromNAMState(filterElem, result);
         return;
     }
@@ -147,8 +174,15 @@ void extractPluginsFromFilter(const XmlElement& filterElem, std::vector<PluginDe
         result.push_back(desc);
 }
 
-std::vector<PluginDescription> extractPluginsFromPatchImpl(const XmlElement* patchXml)
-{
+/// Extracts all plugin descriptions from a patch XML element.
+///
+/// Accepts either a Patch root element (containing a FILTERGRAPH child) or a
+/// FILTERGRAPH element directly. Returns an empty vector if the XML is null or
+/// contains no FILTER elements.
+///
+/// @param patchXml XML element of the patch (Patch root or FILTERGRAPH).
+/// @return Vector of plugin descriptions extracted from the patch.
+std::vector<PluginDescription> extractPluginsFromPatchImpl(const XmlElement* patchXml) {
     std::vector<PluginDescription> result;
 
     if (!patchXml)
@@ -169,82 +203,64 @@ std::vector<PluginDescription> extractPluginsFromPatchImpl(const XmlElement* pat
 }
 } // namespace
 
-// Singleton instance
 std::unique_ptr<PluginPoolManager> PluginPoolManager::instance = nullptr;
 
-PluginPoolManager& PluginPoolManager::getInstance()
-{
-    if (!instance)
-    {
+PluginPoolManager& PluginPoolManager::getInstance() {
+    if (!instance) {
         instance = std::unique_ptr<PluginPoolManager>(new PluginPoolManager());
     }
     return *instance;
 }
 
-void PluginPoolManager::killInstance()
-{
-    if (instance)
-    {
+void PluginPoolManager::killInstance() {
+    if (instance) {
         instance.reset();
         spdlog::info("[PluginPoolManager] Singleton instance destroyed");
     }
 }
 
-PluginPoolManager::PluginPoolManager() : Thread("PluginPoolLoader")
-{
+PluginPoolManager::PluginPoolManager() : Thread("PluginPoolLoader") {
     spdlog::info("[PluginPoolManager] Initialized with preloadRange={}", preloadRange);
 }
 
-PluginPoolManager::~PluginPoolManager()
-{
-    // Stop background thread
+PluginPoolManager::~PluginPoolManager() {
     signalThreadShouldExit();
     notify();
     stopThread(5000);
 
-    // Clear pool
     clear();
 
     spdlog::info("[PluginPoolManager] Destroyed");
 }
 
-void PluginPoolManager::setPreloadRange(int patchesAhead)
-{
+void PluginPoolManager::setPreloadRange(int patchesAhead) {
     preloadRange = juce::jlimit(1, 5, patchesAhead);
     spdlog::info("[PluginPoolManager] Preload range set to {}", preloadRange);
 }
 
-void PluginPoolManager::setMemoryLimit(size_t bytes)
-{
+void PluginPoolManager::setMemoryLimit(size_t bytes) {
     memoryLimit = bytes;
 }
 
-size_t PluginPoolManager::getPoolMemoryUsage() const
-{
+size_t PluginPoolManager::getPoolMemoryUsage() const {
     ScopedLock lock(poolLock);
 
-    // Rough estimate: count number of plugins * average plugin size
-    // Real implementation would query each plugin's memory footprint
+    // Each plugin's actual memory footprint is not queried; a fixed average
+    // of ~20 MB per instance is used instead.
     size_t estimate = 0;
-    for (const auto& [key, pooled] : pluginPool)
-    {
-        if (pooled && pooled->instance)
-        {
-            // Estimate ~20MB per plugin instance (very rough)
+    for (const auto& [key, pooled] : pluginPool) {
+        if (pooled && pooled->instance) {
             estimate += 20 * 1024 * 1024;
         }
     }
     return estimate;
 }
 
-void PluginPoolManager::clear()
-{
+void PluginPoolManager::clear() {
     ScopedLock lock(poolLock);
 
-    // Stop any pending loads
     loadQueue.clear();
 
-    // Release all plugins
     pluginPool.clear();
     patchDefinitions.clear();
     patchPluginRequirements.clear();
@@ -256,21 +272,17 @@ void PluginPoolManager::clear()
     spdlog::info("[PluginPoolManager] Pool cleared");
 }
 
-void PluginPoolManager::addPatchDefinition(int patchIndex, std::unique_ptr<XmlElement> patchXml)
-{
+void PluginPoolManager::addPatchDefinition(int patchIndex, std::unique_ptr<XmlElement> patchXml) {
     if (!patchXml)
         return;
 
     ScopedLock lock(poolLock);
 
-    // Store the patch definition
     patchDefinitions[patchIndex] = std::move(patchXml);
 
-    // Extract plugin requirements
     auto plugins = extractPluginsFromPatch(patchDefinitions[patchIndex].get());
     std::vector<String> identifiers;
-    for (const auto& desc : plugins)
-    {
+    for (const auto& desc : plugins) {
         identifiers.push_back(createPluginIdentifier(desc));
     }
     patchPluginRequirements[patchIndex] = std::move(identifiers);
@@ -279,8 +291,7 @@ void PluginPoolManager::addPatchDefinition(int patchIndex, std::unique_ptr<XmlEl
                   patchPluginRequirements[patchIndex].size());
 }
 
-void PluginPoolManager::setCurrentPosition(int setlistIndex)
-{
+void PluginPoolManager::setCurrentPosition(int setlistIndex) {
     int oldPosition = currentPatchIndex.exchange(setlistIndex);
 
     if (oldPosition == setlistIndex)
@@ -302,8 +313,7 @@ void PluginPoolManager::setCurrentPosition(int setlistIndex)
         if (!isPatchReady(setlistIndex))
             loadQueue.push_back(setlistIndex);
 
-        for (int i = 1; i <= preloadRange; ++i)
-        {
+        for (int i = 1; i <= preloadRange; ++i) {
             int nextIndex = setlistIndex + i;
             if (patchDefinitions.count(nextIndex) > 0 && !isPatchReady(nextIndex))
                 loadQueue.push_back(nextIndex);
@@ -315,24 +325,20 @@ void PluginPoolManager::setCurrentPosition(int setlistIndex)
             loadQueue.push_back(prevIndex);
     }
 
-    // Wake up background thread
     if (!isThreadRunning())
         startThread();
     else
         notify();
 
-    // Release plugins outside new window
     releaseUnusedPlugins();
 }
 
-bool PluginPoolManager::isPatchReady(int patchIndex) const
-{
+bool PluginPoolManager::isPatchReady(int patchIndex) const {
     ScopedLock lock(poolLock);
     return loadedPatches.count(patchIndex) > 0;
 }
 
-float PluginPoolManager::getPatchLoadProgress(int patchIndex) const
-{
+float PluginPoolManager::getPatchLoadProgress(int patchIndex) const {
     ScopedLock lock(poolLock);
 
     if (loadedPatches.count(patchIndex) > 0)
@@ -345,43 +351,37 @@ float PluginPoolManager::getPatchLoadProgress(int patchIndex) const
     return 0.0f;
 }
 
-AudioPluginInstance* PluginPoolManager::getOrCreatePlugin(const PluginDescription& desc)
-{
+AudioPluginInstance* PluginPoolManager::getOrCreatePlugin(const PluginDescription& desc) {
     String identifier = createPluginIdentifier(desc);
 
     {
         ScopedLock lock(poolLock);
 
         auto it = pluginPool.find(identifier);
-        if (it != pluginPool.end() && it->second && it->second->instance)
-        {
+        if (it != pluginPool.end() && it->second && it->second->instance) {
             spdlog::debug("[PluginPoolManager] Returning cached plugin: {}", desc.name.toStdString());
             return it->second->instance.get();
         }
     }
 
-    // Not in pool - create new instance
     spdlog::info("[PluginPoolManager] Creating new plugin: {}", desc.name.toStdString());
 
     String errorMessage;
     auto newInstance =
         AudioPluginFormatManagerSingleton::getInstance().createPluginInstance(desc, 44100.0, 512, errorMessage);
 
-    if (!newInstance)
-    {
+    if (!newInstance) {
         spdlog::error("[PluginPoolManager] Failed to create plugin {}: {}", desc.name.toStdString(),
                       errorMessage.toStdString());
         return nullptr;
     }
 
-    // Configure stereo layout
     AudioProcessor::BusesLayout stereoLayout;
     stereoLayout.inputBuses.add(AudioChannelSet::stereo());
     stereoLayout.outputBuses.add(AudioChannelSet::stereo());
     if (newInstance->checkBusesLayoutSupported(stereoLayout))
         newInstance->setBusesLayout(stereoLayout);
 
-    // Store in pool
     {
         ScopedLock lock(poolLock);
 
@@ -396,8 +396,7 @@ AudioPluginInstance* PluginPoolManager::getOrCreatePlugin(const PluginDescriptio
     }
 }
 
-AudioPluginInstance* PluginPoolManager::getPluginByIdentifier(const String& identifier)
-{
+AudioPluginInstance* PluginPoolManager::getPluginByIdentifier(const String& identifier) {
     ScopedLock lock(poolLock);
 
     auto it = pluginPool.find(identifier);
@@ -407,40 +406,31 @@ AudioPluginInstance* PluginPoolManager::getPluginByIdentifier(const String& iden
     return nullptr;
 }
 
-void PluginPoolManager::addListener(PluginPoolListener* listener)
-{
+void PluginPoolManager::addListener(PluginPoolListener* listener) {
     listeners.add(listener);
 }
 
-void PluginPoolManager::removeListener(PluginPoolListener* listener)
-{
+void PluginPoolManager::removeListener(PluginPoolListener* listener) {
     listeners.remove(listener);
 }
 
-void PluginPoolManager::run()
-{
+void PluginPoolManager::run() {
     spdlog::info("[PluginPoolManager] Background loader thread started");
 
-    while (!threadShouldExit())
-    {
+    while (!threadShouldExit()) {
         int patchToLoad = -1;
 
         {
             ScopedLock lock(poolLock);
-            if (!loadQueue.empty())
-            {
+            if (!loadQueue.empty()) {
                 patchToLoad = loadQueue.front();
                 loadQueue.erase(loadQueue.begin());
             }
         }
 
-        if (patchToLoad >= 0)
-        {
+        if (patchToLoad >= 0) {
             loadPatchPlugins(patchToLoad);
-        }
-        else
-        {
-            // Wait for more work
+        } else {
             wait(-1);
         }
     }
@@ -448,24 +438,19 @@ void PluginPoolManager::run()
     spdlog::info("[PluginPoolManager] Background loader thread stopped");
 }
 
-void PluginPoolManager::queuePatchLoad(int patchIndex)
-{
+void PluginPoolManager::queuePatchLoad(int patchIndex) {
     ScopedLock lock(poolLock);
 
-    // Add to queue if not already there and not already loaded
-    if (loadedPatches.count(patchIndex) == 0)
-    {
+    if (loadedPatches.count(patchIndex) == 0) {
         bool found = std::find(loadQueue.begin(), loadQueue.end(), patchIndex) != loadQueue.end();
-        if (!found)
-        {
+        if (!found) {
             loadQueue.push_back(patchIndex);
             notify();
         }
     }
 }
 
-void PluginPoolManager::loadPatchPlugins(int patchIndex)
-{
+void PluginPoolManager::loadPatchPlugins(int patchIndex) {
     spdlog::info("[PluginPoolManager] Loading patch {}", patchIndex);
 
     std::vector<PluginDescription> plugins;
@@ -474,8 +459,7 @@ void PluginPoolManager::loadPatchPlugins(int patchIndex)
         ScopedLock lock(poolLock);
 
         auto it = patchDefinitions.find(patchIndex);
-        if (it == patchDefinitions.end())
-        {
+        if (it == patchDefinitions.end()) {
             spdlog::warn("[PluginPoolManager] Patch {} not found in definitions", patchIndex);
             return;
         }
@@ -484,49 +468,43 @@ void PluginPoolManager::loadPatchPlugins(int patchIndex)
         patchLoadProgress[patchIndex] = 0.0f;
     }
 
-    if (plugins.empty())
-    {
+    if (plugins.empty()) {
         ScopedLock lock(poolLock);
         loadedPatches.insert(patchIndex);
         patchLoadProgress[patchIndex] = 1.0f;
-        MessageManager::callAsync([this, patchIndex]()
-                                  { listeners.call(&PluginPoolListener::patchReady, patchIndex); });
+        MessageManager::callAsync(
+            [this, patchIndex]() { listeners.call(&PluginPoolListener::patchReady, patchIndex); });
         return;
     }
 
-    // Load each plugin
     int loaded = 0;
-    for (const auto& desc : plugins)
-    {
+    for (const auto& desc : plugins) {
         if (threadShouldExit())
             return;
 
-        // Check if need to abort (position changed significantly)
+        // Abort if the current position has moved far enough that this patch
+        // is no longer within the preload window.
         int currentPos = currentPatchIndex.load();
-        if (std::abs(patchIndex - currentPos) > preloadRange + 1)
-        {
+        if (std::abs(patchIndex - currentPos) > preloadRange + 1) {
             spdlog::info("[PluginPoolManager] Aborting load of patch {} (too far from current {})", patchIndex,
                          currentPos);
             return;
         }
 
-        // Load the plugin
         getOrCreatePlugin(desc);
         loaded++;
 
-        // Update progress
         float progress = static_cast<float>(loaded) / static_cast<float>(plugins.size());
         {
             ScopedLock lock(poolLock);
             patchLoadProgress[patchIndex] = progress;
         }
 
-        // Notify listeners on message thread
-        MessageManager::callAsync([this, patchIndex, progress]()
-                                  { listeners.call(&PluginPoolListener::patchLoadingProgress, patchIndex, progress); });
+        MessageManager::callAsync([this, patchIndex, progress]() {
+            listeners.call(&PluginPoolListener::patchLoadingProgress, patchIndex, progress);
+        });
     }
 
-    // Mark as loaded
     {
         ScopedLock lock(poolLock);
         loadedPatches.insert(patchIndex);
@@ -535,24 +513,20 @@ void PluginPoolManager::loadPatchPlugins(int patchIndex)
 
     spdlog::info("[PluginPoolManager] Patch {} fully loaded ({} plugins)", patchIndex, plugins.size());
 
-    // Notify listeners
     MessageManager::callAsync([this, patchIndex]() { listeners.call(&PluginPoolListener::patchReady, patchIndex); });
 }
 
-std::vector<PluginDescription> PluginPoolManager::extractPluginsFromPatch(const XmlElement* patchXml)
-{
+std::vector<PluginDescription> PluginPoolManager::extractPluginsFromPatch(const XmlElement* patchXml) {
     return extractPluginsFromPatchImpl(patchXml);
 }
 
 #if defined(PEDALBOARD3_TESTS)
-std::vector<PluginDescription> PluginPoolManager::extractPluginsFromPatchForTest(const XmlElement* patchXml)
-{
+std::vector<PluginDescription> PluginPoolManager::extractPluginsFromPatchForTest(const XmlElement* patchXml) {
     return extractPluginsFromPatchImpl(patchXml);
 }
 #endif
 
-void PluginPoolManager::releaseUnusedPlugins()
-{
+void PluginPoolManager::releaseUnusedPlugins() {
     ScopedLock lock(poolLock);
 
     int currentPos = currentPatchIndex.load();
@@ -560,50 +534,40 @@ void PluginPoolManager::releaseUnusedPlugins()
     // Build set of plugins needed by patches in current window
     std::set<String> neededPlugins;
 
-    for (int i = currentPos - 1; i <= currentPos + preloadRange; ++i)
-    {
-        if (i >= 0 && patchPluginRequirements.count(i) > 0)
-        {
+    for (int i = currentPos - 1; i <= currentPos + preloadRange; ++i) {
+        if (i >= 0 && patchPluginRequirements.count(i) > 0) {
             for (const auto& id : patchPluginRequirements[i])
                 neededPlugins.insert(id);
         }
     }
 
-    // Find and release plugins outside window
     std::vector<String> toRemove;
-    for (const auto& [key, pooled] : pluginPool)
-    {
+    for (const auto& [key, pooled] : pluginPool) {
         if (neededPlugins.count(key) == 0)
             toRemove.push_back(key);
     }
 
-    for (const auto& key : toRemove)
-    {
+    for (const auto& key : toRemove) {
         spdlog::debug("[PluginPoolManager] Releasing unused plugin: {}", key.toStdString());
         pluginPool.erase(key);
     }
 
     // Also remove loaded status for patches outside window
     std::vector<int> patchesToUnload;
-    for (int patch : loadedPatches)
-    {
+    for (int patch : loadedPatches) {
         if (patch < currentPos - 1 || patch > currentPos + preloadRange)
             patchesToUnload.push_back(patch);
     }
-    for (int patch : patchesToUnload)
-    {
+    for (int patch : patchesToUnload) {
         loadedPatches.erase(patch);
         patchLoadProgress.erase(patch);
     }
 
-    if (!toRemove.empty())
-    {
+    if (!toRemove.empty()) {
         spdlog::info("[PluginPoolManager] Released {} unused plugins", toRemove.size());
     }
 }
 
-String PluginPoolManager::createPluginIdentifier(const PluginDescription& desc)
-{
-    // Create unique identifier: format + name + uid
+String PluginPoolManager::createPluginIdentifier(const PluginDescription& desc) {
     return desc.pluginFormatName + "|" + desc.name + "|" + String(desc.uniqueId);
 }

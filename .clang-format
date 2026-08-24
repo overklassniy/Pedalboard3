@@ -13,16 +13,7 @@ IndentPPDirectives: BeforeHash
 NamespaceIndentation: None
 
 # Braces
-BreakBeforeBraces: Allman
-BraceWrapping:
-  AfterClass: true
-  AfterControlStatement: Always
-  AfterEnum: true
-  AfterFunction: true
-  AfterNamespace: true
-  AfterStruct: true
-  BeforeElse: true
-  BeforeCatch: true
+BreakBeforeBraces: Attach
 
 # Line width
 ColumnLimit: 120

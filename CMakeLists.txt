@@ -90,8 +90,8 @@ juce_add_gui_app(Pedalboard3
     PRODUCT_NAME "Pedalboard3"
     COMPANY_NAME "Pedalboard3 Project"
     BUNDLE_ID "com.pedalboard3.app"
-    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/icon/icon-512.png"
-    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/icon/icon-48.png"
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/icon-512.png"
+    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/icon-48.png"
 )
 
 # Generate JUCE header

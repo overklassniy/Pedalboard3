@@ -18,16 +18,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "MappingsDialog.h"
-#include "ColourScheme.h"
 #include "MappingEntryOsc.h"
 
-MappingEntryOsc::MappingEntryOsc(MappingsDialog* dlg, int arrayIndex,
-                                 const String& oscAddress, int oscParam,
+#include "ColourScheme.h"
+#include "MappingsDialog.h"
+
+MappingEntryOsc::MappingEntryOsc(MappingsDialog* dlg, int arrayIndex, const String& oscAddress, int oscParam,
                                  const StringArray& possibleAddresses)
-    : mappingsDialog(dlg)
-    , index(arrayIndex)
-{
+    : mappingsDialog(dlg), index(arrayIndex) {
     paramComboBox = std::make_unique<ComboBox>("paramComboBox");
     addAndMakeVisible(paramComboBox.get());
     paramComboBox->setEditableText(false);
@@ -75,19 +73,15 @@ MappingEntryOsc::MappingEntryOsc(MappingsDialog* dlg, int arrayIndex,
     for (i = 0; i < possibleAddresses.size(); ++i)
         addressEditor->addItem(possibleAddresses[i], i + 1);
 
-    if (oscAddress != "")
-    {
-        for (i = 0; i < addressEditor->getNumItems(); ++i)
-        {
-            if (addressEditor->getItemText(i) == oscAddress)
-            {
+    if (oscAddress != "") {
+        for (i = 0; i < addressEditor->getNumItems(); ++i) {
+            if (addressEditor->getItemText(i) == oscAddress) {
                 addressEditor->setSelectedId(i + 1);
                 textExists = true;
                 break;
             }
         }
-        if (!textExists)
-        {
+        if (!textExists) {
             addressEditor->addItem(oscAddress, addressEditor->getNumItems() + 1);
             addressEditor->setSelectedId(addressEditor->getNumItems());
         }
@@ -95,12 +89,9 @@ MappingEntryOsc::MappingEntryOsc(MappingsDialog* dlg, int arrayIndex,
 
     addressEditor->addListener(this);
 
-    addressLabel->setColour(TextEditor::textColourId,
-                            ColourScheme::getInstance().colours["Text Colour"]);
-    oscParamLabel->setColour(TextEditor::textColourId,
-                             ColourScheme::getInstance().colours["Text Colour"]);
-    oscParamSlider->setColour(Slider::textBoxTextColourId,
-                              ColourScheme::getInstance().colours["Text Colour"]);
+    addressLabel->setColour(TextEditor::textColourId, ColourScheme::getInstance().colours["Text Colour"]);
+    oscParamLabel->setColour(TextEditor::textColourId, ColourScheme::getInstance().colours["Text Colour"]);
+    oscParamSlider->setColour(Slider::textBoxTextColourId, ColourScheme::getInstance().colours["Text Colour"]);
     oscParamSlider->setColour(Slider::textBoxBackgroundColourId,
                               ColourScheme::getInstance().colours["Text Editor Colour"]);
 
@@ -109,8 +100,7 @@ MappingEntryOsc::MappingEntryOsc(MappingsDialog* dlg, int arrayIndex,
     setSize(728, 400);
 }
 
-MappingEntryOsc::~MappingEntryOsc()
-{
+MappingEntryOsc::~MappingEntryOsc() {
     paramComboBox.reset();
     addressLabel.reset();
     addressEditor.reset();
@@ -118,16 +108,14 @@ MappingEntryOsc::~MappingEntryOsc()
     oscParamSlider.reset();
 }
 
-void MappingEntryOsc::paint(Graphics& g)
-{
+void MappingEntryOsc::paint(Graphics& g) {
     g.setColour(ColourScheme::getInstance().colours["Vector Colour"]);
 
     g.setColour(Colour(0x80000000));
     g.strokePath(internalPath1, PathStrokeType(5.0000f, PathStrokeType::curved, PathStrokeType::rounded));
 }
 
-void MappingEntryOsc::resized()
-{
+void MappingEntryOsc::resized() {
     paramComboBox->setBounds(576, 8, 144, 24);
     addressLabel->setBounds(8, 8, 96, 24);
     addressEditor->setBounds(104, 8, 272, 24);
@@ -139,25 +127,18 @@ void MappingEntryOsc::resized()
     internalPath1.lineTo(556.0f, 28.0f);
 }
 
-void MappingEntryOsc::comboBoxChanged(ComboBox* comboBoxThatHasChanged)
-{
-    if (comboBoxThatHasChanged == paramComboBox.get())
-    {
+void MappingEntryOsc::comboBoxChanged(ComboBox* comboBoxThatHasChanged) {
+    if (comboBoxThatHasChanged == paramComboBox.get()) {
         mappingsDialog->setParameter(index, paramComboBox->getSelectedId() - 1);
-    }
-    else if (comboBoxThatHasChanged == addressEditor.get())
-    {
+    } else if (comboBoxThatHasChanged == addressEditor.get()) {
         int i;
         bool textExists = false;
         String tempstr = addressEditor->getText();
 
-        if (tempstr != "")
-        {
+        if (tempstr != "") {
             // Add the new text to the combobox if the user typed it in.
-            for (i = 0; i < addressEditor->getNumItems(); ++i)
-            {
-                if (addressEditor->getItemText(i) == tempstr)
-                {
+            for (i = 0; i < addressEditor->getNumItems(); ++i) {
+                if (addressEditor->getItemText(i) == tempstr) {
                     textExists = true;
                     break;
                 }
@@ -171,36 +152,29 @@ void MappingEntryOsc::comboBoxChanged(ComboBox* comboBoxThatHasChanged)
     }
 }
 
-void MappingEntryOsc::sliderValueChanged(Slider* sliderThatWasMoved)
-{
-    if (sliderThatWasMoved == oscParamSlider.get())
-    {
+void MappingEntryOsc::sliderValueChanged(Slider* sliderThatWasMoved) {
+    if (sliderThatWasMoved == oscParamSlider.get()) {
         mappingsDialog->setOscParameter(index, static_cast<int>(sliderThatWasMoved->getValue()));
     }
 }
 
-void MappingEntryOsc::textEditorTextChanged(TextEditor& editor)
-{
+void MappingEntryOsc::textEditorTextChanged(TextEditor& editor) {
     mappingsDialog->setAddress(index, editor.getText());
 }
 
-void MappingEntryOsc::textEditorReturnKeyPressed(TextEditor& editor)
-{
+void MappingEntryOsc::textEditorReturnKeyPressed(TextEditor& editor) {
     mappingsDialog->setAddress(index, editor.getText());
 }
 
-void MappingEntryOsc::textEditorEscapeKeyPressed(TextEditor& /*editor*/)
-{
+void MappingEntryOsc::textEditorEscapeKeyPressed(TextEditor& /*editor*/) {
     mappingsDialog->updateListBox();
 }
 
-void MappingEntryOsc::textEditorFocusLost(TextEditor& editor)
-{
+void MappingEntryOsc::textEditorFocusLost(TextEditor& editor) {
     mappingsDialog->setAddress(index, editor.getText());
 }
 
-void MappingEntryOsc::addParameter(const String& param)
-{
+void MappingEntryOsc::addParameter(const String& param) {
     String paramName = param;
 
     if (paramName.isEmpty())
@@ -209,7 +183,6 @@ void MappingEntryOsc::addParameter(const String& param)
     paramComboBox->addItem(paramName, paramComboBox->getNumItems() + 1);
 }
 
-void MappingEntryOsc::selectParameter(int index)
-{
+void MappingEntryOsc::selectParameter(int index) {
     paramComboBox->setSelectedId(index + 1, true);
 }

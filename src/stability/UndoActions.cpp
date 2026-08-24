@@ -26,16 +26,13 @@
 //
 // The target FilterGraph::addFilter returns void, so we capture the node
 // count before and after the call to identify the newly added node.
-static juce::AudioProcessorGraph::NodeID addFilterAndGetNodeId(FilterGraph& graph,
-                                                               const juce::PluginDescription* desc, double x,
-                                                               double y)
-{
+static juce::AudioProcessorGraph::NodeID addFilterAndGetNodeId(FilterGraph& graph, const juce::PluginDescription* desc,
+                                                               double x, double y) {
     int countBefore = graph.getNumFilters();
     graph.addFilter(desc, x, y);
     int countAfter = graph.getNumFilters();
 
-    if (countAfter <= countBefore)
-    {
+    if (countAfter <= countBefore) {
         spdlog::error("[UndoActions] addFilter did not increase node count (before={}, after={})", countBefore,
                       countAfter);
         return juce::AudioProcessorGraph::NodeID();
@@ -51,10 +48,8 @@ static juce::AudioProcessorGraph::NodeID addFilterAndGetNodeId(FilterGraph& grap
 
 // AddPluginAction
 
-bool AddPluginAction::perform()
-{
-    spdlog::debug("[AddPluginAction::perform] About to call addFilter for: {}",
-                  pluginDescription.name.toStdString());
+bool AddPluginAction::perform() {
+    spdlog::debug("[AddPluginAction::perform] About to call addFilter for: {}", pluginDescription.name.toStdString());
     spdlog::default_logger()->flush();
 
     // Add the plugin using the regular method and retrieve the node ID
@@ -71,10 +66,8 @@ bool AddPluginAction::perform()
     return result;
 }
 
-bool AddPluginAction::undo()
-{
-    if (nodeId != juce::AudioProcessorGraph::NodeID())
-    {
+bool AddPluginAction::undo() {
+    if (nodeId != juce::AudioProcessorGraph::NodeID()) {
         filterGraph.removeFilter(nodeId);
         return true;
     }
@@ -83,26 +76,22 @@ bool AddPluginAction::undo()
 
 // RemovePluginAction
 
-bool RemovePluginAction::perform()
-{
+bool RemovePluginAction::perform() {
     filterGraph.removeFilter(nodeId);
     return true;
 }
 
-bool RemovePluginAction::undo()
-{
+bool RemovePluginAction::undo() {
     // Recreate the plugin
     auto newId = addFilterAndGetNodeId(filterGraph, &pluginDescription, x, y);
 
-    if (newId != juce::AudioProcessorGraph::NodeID())
-    {
+    if (newId != juce::AudioProcessorGraph::NodeID()) {
         // Note: The node ID may be different after recreation.
         // Update our stored nodeId to the new one for future operations.
         nodeId = newId;
 
         // Restore all connections that involved this node
-        for (const auto& conn : connections)
-        {
+        for (const auto& conn : connections) {
             // Update connection references to use new node ID
             auto srcNode = (conn.source.nodeID == nodeId) ? newId : conn.source.nodeID;
             auto destNode = (conn.destination.nodeID == nodeId) ? newId : conn.destination.nodeID;
@@ -116,26 +105,22 @@ bool RemovePluginAction::undo()
 
 // AddConnectionAction
 
-bool AddConnectionAction::perform()
-{
+bool AddConnectionAction::perform() {
     return filterGraph.addConnection(sourceNode, sourceChannel, destNode, destChannel);
 }
 
-bool AddConnectionAction::undo()
-{
+bool AddConnectionAction::undo() {
     filterGraph.removeConnection(sourceNode, sourceChannel, destNode, destChannel);
     return true;
 }
 
 // RemoveConnectionAction
 
-bool RemoveConnectionAction::perform()
-{
+bool RemoveConnectionAction::perform() {
     filterGraph.removeConnection(sourceNode, sourceChannel, destNode, destChannel);
     return true;
 }
 
-bool RemoveConnectionAction::undo()
-{
+bool RemoveConnectionAction::undo() {
     return filterGraph.addConnection(sourceNode, sourceChannel, destNode, destChannel);
 }

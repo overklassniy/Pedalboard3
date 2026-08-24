@@ -22,16 +22,14 @@
 
 #include <cmath>
 
-TapTempoHelper::TapTempoHelper()
-{
+TapTempoHelper::TapTempoHelper() {
     for (int i = 0; i < NumValues; ++i)
         times[i] = 0.0;
 }
 
 TapTempoHelper::~TapTempoHelper() = default;
 
-double TapTempoHelper::updateTempo(double seconds)
-{
+double TapTempoHelper::updateTempo(double seconds) {
     double tempd;
     double delta = 0.0;
     int numCounted = 0;
@@ -40,8 +38,7 @@ double TapTempoHelper::updateTempo(double seconds)
     const double lowerLimit = (60.0 / 30.0); // 30 BPM => 2 seconds between taps
 
     // Check if we need to blank the times.
-    for (int i = 0; i < NumValues; ++i)
-    {
+    for (int i = 0; i < NumValues; ++i) {
         if (times[i] <= 0.0)
             blankTimes = true;
         else if (std::fabs(times[i] - seconds) > lowerLimit)
@@ -49,13 +46,10 @@ double TapTempoHelper::updateTempo(double seconds)
     }
 
     // Blank the times if necessary.
-    if (blankTimes)
-    {
+    if (blankTimes) {
         for (int i = 0; i < NumValues; ++i)
             times[i] = seconds;
-    }
-    else
-    {
+    } else {
         // Update the stored values (shift right).
         for (int i = (NumValues - 1); i > 0; --i)
             times[i] = times[i - 1];
@@ -63,20 +57,17 @@ double TapTempoHelper::updateTempo(double seconds)
     }
 
     // Add up the differences between stored values.
-    for (int i = 1; i < NumValues; ++i)
-    {
+    for (int i = 1; i < NumValues; ++i) {
         tempd = std::fabs(times[i] - times[i - 1]);
 
-        if (tempd > 0.0)
-        {
+        if (tempd > 0.0) {
             delta += tempd;
             ++numCounted;
         }
     }
 
     // Take the average as the tempo.
-    if (numCounted > 0)
-    {
+    if (numCounted > 0) {
         retval = delta / static_cast<double>(numCounted);
         retval = (1.0 / retval) * 60.0; // BPM calculation
     }

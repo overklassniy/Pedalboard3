@@ -23,11 +23,9 @@
 
 #include <spdlog/spdlog.h>
 
-
 // BlacklistListModel
 
-void BlacklistListModel::refresh()
-{
+void BlacklistListModel::refresh() {
     items.clear();
 
     auto& blacklist = PluginBlacklist::getInstance();
@@ -43,8 +41,7 @@ void BlacklistListModel::refresh()
         items.add("ID: " + id);
 }
 
-void BlacklistListModel::paintListBoxItem(int rowNumber, Graphics& g, int width, int height, bool rowIsSelected)
-{
+void BlacklistListModel::paintListBoxItem(int rowNumber, Graphics& g, int width, int height, bool rowIsSelected) {
     auto& colours = ColourScheme::getInstance().colours;
 
     if (rowIsSelected)
@@ -57,16 +54,14 @@ void BlacklistListModel::paintListBoxItem(int rowNumber, Graphics& g, int width,
     g.setColour(colours["Text Colour"]);
     g.setFont(Font(FontOptions().withHeight(13.0f)));
 
-    if (rowNumber >= 0 && rowNumber < items.size())
-    {
+    if (rowNumber >= 0 && rowNumber < items.size()) {
         g.drawText(items[rowNumber], 8, 0, width - 16, height, Justification::centredLeft, true);
     }
 }
 
 // BlacklistComponent
 
-BlacklistComponent::BlacklistComponent()
-{
+BlacklistComponent::BlacklistComponent() {
     auto& colours = ColourScheme::getInstance().colours;
 
     // Title
@@ -109,14 +104,12 @@ BlacklistComponent::BlacklistComponent()
     setSize(500, 400);
 }
 
-void BlacklistComponent::paint(Graphics& g)
-{
+void BlacklistComponent::paint(Graphics& g) {
     auto& colours = ColourScheme::getInstance().colours;
     g.fillAll(colours["Window Background"]);
 }
 
-void BlacklistComponent::resized()
-{
+void BlacklistComponent::resized() {
     auto bounds = getLocalBounds().reduced(16);
 
     titleLabel->setBounds(bounds.removeFromTop(30));
@@ -137,24 +130,18 @@ void BlacklistComponent::resized()
     listBox->setBounds(bounds);
 }
 
-void BlacklistComponent::buttonClicked(Button* button)
-{
-    if (button == removeButton.get())
-    {
+void BlacklistComponent::buttonClicked(Button* button) {
+    if (button == removeButton.get()) {
         auto selectedRow = listBox->getSelectedRow();
-        if (selectedRow >= 0)
-        {
+        if (selectedRow >= 0) {
             auto item = listModel.getItemAt(selectedRow);
             auto& blacklist = PluginBlacklist::getInstance();
 
-            if (item.startsWith("Path: "))
-            {
+            if (item.startsWith("Path: ")) {
                 auto path = item.substring(6);
                 blacklist.removeFromBlacklist(path);
                 spdlog::info("[BlacklistWindow] Removed path from blacklist: {}", path.toStdString());
-            }
-            else if (item.startsWith("ID: "))
-            {
+            } else if (item.startsWith("ID: ")) {
                 auto id = item.substring(4);
                 blacklist.removeFromBlacklistById(id);
                 spdlog::info("[BlacklistWindow] Removed ID from blacklist: {}", id.toStdString());
@@ -162,22 +149,17 @@ void BlacklistComponent::buttonClicked(Button* button)
 
             refreshList();
         }
-    }
-    else if (button == clearAllButton.get())
-    {
+    } else if (button == clearAllButton.get()) {
         PluginBlacklist::getInstance().clearBlacklist();
         spdlog::info("[BlacklistWindow] Cleared entire blacklist");
         refreshList();
-    }
-    else if (button == closeButton.get())
-    {
+    } else if (button == closeButton.get()) {
         if (auto* window = findParentComponentOfClass<BlacklistWindow>())
             window->closeButtonPressed();
     }
 }
 
-void BlacklistComponent::refreshList()
-{
+void BlacklistComponent::refreshList() {
     listModel.refresh();
     listBox->updateContent();
     listBox->repaint();
@@ -189,16 +171,14 @@ std::unique_ptr<BlacklistWindow> BlacklistWindow::instance;
 
 BlacklistWindow::BlacklistWindow()
     : DocumentWindow("Plugin Blacklist", ColourScheme::getInstance().colours["Window Background"],
-                     DocumentWindow::closeButton)
-{
+                     DocumentWindow::closeButton) {
     setContentOwned(new BlacklistComponent(), true);
     setResizable(true, false);
     setUsingNativeTitleBar(true);
     centreWithSize(500, 400);
 }
 
-void BlacklistWindow::showWindow()
-{
+void BlacklistWindow::showWindow() {
     if (!instance)
         instance = std::make_unique<BlacklistWindow>();
 

@@ -19,16 +19,13 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "AudioRecorderEditor.h"
-#include "RecorderProcessor.h"
-#include "ColourScheme.h"
 
-AudioRecorderEditor::AudioRecorderEditor(RecorderProcessor* processor,
-                                         const Rectangle<int>& windowBounds,
+#include "ColourScheme.h"
+#include "RecorderProcessor.h"
+
+AudioRecorderEditor::AudioRecorderEditor(RecorderProcessor* processor, const Rectangle<int>& windowBounds,
                                          AudioThumbnail& thumbnail)
-    : AudioProcessorEditor(processor),
-      parentBounds(windowBounds),
-      setPos(false)
-{
+    : AudioProcessorEditor(processor), parentBounds(windowBounds), setPos(false) {
     controls = std::make_unique<AudioRecorderControl>(processor, thumbnail);
     controls->setWaveformBackground(Colour(0xFFEEECE1).darker(0.05f));
     controls->setTopLeftPosition(4, 4);
@@ -39,10 +36,8 @@ AudioRecorderEditor::AudioRecorderEditor(RecorderProcessor* processor,
     startTimer(60);
 }
 
-AudioRecorderEditor::~AudioRecorderEditor()
-{
-    if (auto* proc = dynamic_cast<RecorderProcessor*>(getAudioProcessor()))
-    {
+AudioRecorderEditor::~AudioRecorderEditor() {
+    if (auto* proc = dynamic_cast<RecorderProcessor*>(getAudioProcessor())) {
         if (getParentComponent())
             parentBounds = getTopLevelComponent()->getBounds();
 
@@ -53,26 +48,19 @@ AudioRecorderEditor::~AudioRecorderEditor()
     getAudioProcessor()->editorBeingDeleted(this);
 }
 
-void AudioRecorderEditor::resized()
-{
+void AudioRecorderEditor::resized() {
     controls->setSize(getWidth() - 8, getHeight() - 8);
 }
 
-void AudioRecorderEditor::paint(Graphics& g)
-{
+void AudioRecorderEditor::paint(Graphics& g) {
     g.fillAll(ColourScheme::getInstance().colours["Window Background"]);
 }
 
-void AudioRecorderEditor::timerCallback()
-{
-    if (!setPos)
-    {
-        if (parentBounds.isEmpty())
-        {
+void AudioRecorderEditor::timerCallback() {
+    if (!setPos) {
+        if (parentBounds.isEmpty()) {
             setPos = true;
-        }
-        else if (ComponentPeer* peer = getPeer())
-        {
+        } else if (ComponentPeer* peer = getPeer()) {
             peer->setBounds(parentBounds, false);
             setPos = true;
             stopTimer();

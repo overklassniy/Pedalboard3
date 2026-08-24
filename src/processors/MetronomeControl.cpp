@@ -19,16 +19,14 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "MetronomeControl.h"
-#include "PedalboardProcessors.h"
-#include "JuceHelperStuff.h"
-#include "Vectors.h"
+
 #include "ColourScheme.h"
+#include "JuceHelperStuff.h"
+#include "PedalboardProcessors.h"
+#include "Vectors.h"
 
 MetronomeControl::MetronomeControl(MetronomeProcessor* proc, bool editors)
-    : processor(proc),
-      playing(false),
-      showFileEditors(editors)
-{
+    : processor(proc), playing(false), showFileEditors(editors) {
     syncButton = std::make_unique<ToggleButton>("syncButton");
     addAndMakeVisible(*syncButton);
     syncButton->setTooltip("Sync metronome playback to the main transport");
@@ -39,13 +37,7 @@ MetronomeControl::MetronomeControl(MetronomeProcessor* proc, bool editors)
     addAndMakeVisible(*playPauseButton);
     playPauseButton->setName("playPauseButton");
 
-    accentFile = std::make_unique<FilenameComponent>("accentFile",
-                                                     File(),
-                                                     true,
-                                                     false,
-                                                     false,
-                                                     "*.wav;*.aif",
-                                                     "",
+    accentFile = std::make_unique<FilenameComponent>("accentFile", File(), true, false, false, "*.wav;*.aif", "",
                                                      "<no file loaded>");
     addAndMakeVisible(*accentFile);
     accentFile->setName("accentFile");
@@ -58,13 +50,7 @@ MetronomeControl::MetronomeControl(MetronomeProcessor* proc, bool editors)
     accentLabel->setColour(TextEditor::textColourId, Colours::black);
     accentLabel->setColour(TextEditor::backgroundColourId, Colour(0x0));
 
-    clickFile = std::make_unique<FilenameComponent>("clickFile",
-                                                    File(),
-                                                    true,
-                                                    false,
-                                                    false,
-                                                    "*.wav;*.aif",
-                                                    "",
+    clickFile = std::make_unique<FilenameComponent>("clickFile", File(), true, false, false, "*.wav;*.aif", "",
                                                     "<no file loaded>");
     addAndMakeVisible(*clickFile);
     clickFile->setName("clickFile");
@@ -79,7 +65,8 @@ MetronomeControl::MetronomeControl(MetronomeProcessor* proc, bool editors)
 
     numeratorLabel = std::make_unique<Label>("numeratorLabel", "4");
     addAndMakeVisible(*numeratorLabel);
-    numeratorLabel->setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 250.0f, juce::Font::bold)));
+    numeratorLabel->setFont(
+        juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 250.0f, juce::Font::bold)));
     numeratorLabel->setJustificationType(Justification::centred);
     numeratorLabel->setEditable(true, true, false);
     numeratorLabel->setColour(TextEditor::textColourId, Colours::black);
@@ -88,7 +75,8 @@ MetronomeControl::MetronomeControl(MetronomeProcessor* proc, bool editors)
 
     denominatorLabel = std::make_unique<Label>("denominatorLabel", "4");
     addAndMakeVisible(*denominatorLabel);
-    denominatorLabel->setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 250.0f, juce::Font::bold)));
+    denominatorLabel->setFont(
+        juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 250.0f, juce::Font::bold)));
     denominatorLabel->setJustificationType(Justification::centred);
     denominatorLabel->setEditable(true, true, false);
     denominatorLabel->setColour(TextEditor::textColourId, Colours::black);
@@ -97,7 +85,8 @@ MetronomeControl::MetronomeControl(MetronomeProcessor* proc, bool editors)
 
     separatorLabel = std::make_unique<Label>("separatorLabel", "/");
     addAndMakeVisible(*separatorLabel);
-    separatorLabel->setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 250.0f, juce::Font::bold)));
+    separatorLabel->setFont(
+        juce::Font(juce::FontOptions(juce::Font::getDefaultSerifFontName(), 250.0f, juce::Font::bold)));
     separatorLabel->setJustificationType(Justification::centred);
     separatorLabel->setEditable(false, false, false);
     separatorLabel->setColour(TextEditor::textColourId, Colours::black);
@@ -105,10 +94,8 @@ MetronomeControl::MetronomeControl(MetronomeProcessor* proc, bool editors)
 
     String tempstr;
 
-    playImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::playbutton_svg,
-                                                        Vectors::playbutton_svgSize));
-    pauseImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::pausebutton_svg,
-                                                         Vectors::pausebutton_svgSize));
+    playImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::playbutton_svg, Vectors::playbutton_svgSize));
+    pauseImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::pausebutton_svg, Vectors::pausebutton_svgSize));
     playPauseButton->setImages(playImage.get());
     playPauseButton->setColour(DrawableButton::backgroundColourId,
                                ColourScheme::getInstance().colours["Button Colour"]);
@@ -130,8 +117,7 @@ MetronomeControl::MetronomeControl(MetronomeProcessor* proc, bool editors)
     clickFile->setCurrentFile(processor->getClickFile(), false);
     accentFile->setCurrentFile(processor->getAccentFile(), false);
 
-    if (!showFileEditors)
-    {
+    if (!showFileEditors) {
         clickLabel->setVisible(false);
         clickFile->setVisible(false);
         accentLabel->setVisible(false);
@@ -141,18 +127,14 @@ MetronomeControl::MetronomeControl(MetronomeProcessor* proc, bool editors)
     setSize(170, 100);
 }
 
-MetronomeControl::~MetronomeControl()
-{
+MetronomeControl::~MetronomeControl() {
     processor->removeChangeListener(this);
     removeAllChildren();
 }
 
-void MetronomeControl::paint(Graphics& /*g*/)
-{
-}
+void MetronomeControl::paint(Graphics& /*g*/) {}
 
-void MetronomeControl::resized()
-{
+void MetronomeControl::resized() {
     syncButton->setBounds(0, getHeight() - 23, 168, 24);
     playPauseButton->setBounds(getWidth() - 26, 0, 24, 24);
     accentFile->setBounds(56, 24, getWidth() - 58, 24);
@@ -165,15 +147,13 @@ void MetronomeControl::resized()
 
     float fontSize = getHeight() * (250.0f / 400.0f);
     juce::Font resizedFont(juce::FontOptions(juce::Font::getDefaultSerifFontName(),
-                                              (fontSize > 14.0f) ? fontSize : 14.0f,
-                                              juce::Font::bold));
+                                             (fontSize > 14.0f) ? fontSize : 14.0f, juce::Font::bold));
 
     numeratorLabel->setFont(resizedFont);
     denominatorLabel->setFont(resizedFont);
     separatorLabel->setFont(resizedFont);
 
-    if (!showFileEditors)
-    {
+    if (!showFileEditors) {
         playPauseButton->setTopLeftPosition(0, 0);
         numeratorLabel->setBounds(0, 24, proportionOfWidth(0.4896f), getHeight() - 48);
         denominatorLabel->setBounds(proportionOfWidth(0.5104f), 24, proportionOfWidth(0.4896f), getHeight() - 48);
@@ -189,16 +169,11 @@ void MetronomeControl::resized()
     syncButton->setToggleState(processor->getParameter(MetronomeProcessor::SyncToMainTransport) > 0.5f, false);
 }
 
-void MetronomeControl::buttonClicked(Button* buttonThatWasClicked)
-{
-    if (buttonThatWasClicked == syncButton.get())
-    {
+void MetronomeControl::buttonClicked(Button* buttonThatWasClicked) {
+    if (buttonThatWasClicked == syncButton.get()) {
         bool val = syncButton->getToggleState();
-        processor->setParameter(MetronomeProcessor::SyncToMainTransport,
-                                val ? 1.0f : 0.0f);
-    }
-    else if (buttonThatWasClicked == playPauseButton.get())
-    {
+        processor->setParameter(MetronomeProcessor::SyncToMainTransport, val ? 1.0f : 0.0f);
+    } else if (buttonThatWasClicked == playPauseButton.get()) {
         if (!playing)
             playPauseButton->setImages(pauseImage.get());
         else
@@ -208,41 +183,31 @@ void MetronomeControl::buttonClicked(Button* buttonThatWasClicked)
     }
 }
 
-void MetronomeControl::labelTextChanged(Label* labelThatHasChanged)
-{
-    if (labelThatHasChanged == numeratorLabel.get())
-    {
+void MetronomeControl::labelTextChanged(Label* labelThatHasChanged) {
+    if (labelThatHasChanged == numeratorLabel.get()) {
         float tempf = static_cast<float>(numeratorLabel->getText().getIntValue());
         processor->setParameter(MetronomeProcessor::Numerator, tempf);
-    }
-    else if (labelThatHasChanged == denominatorLabel.get())
-    {
+    } else if (labelThatHasChanged == denominatorLabel.get()) {
         float tempf = static_cast<float>(denominatorLabel->getText().getIntValue());
         processor->setParameter(MetronomeProcessor::Denominator, tempf);
     }
 }
 
-void MetronomeControl::filenameComponentChanged(FilenameComponent* fileComponentThatHasChanged)
-{
+void MetronomeControl::filenameComponentChanged(FilenameComponent* fileComponentThatHasChanged) {
     if (fileComponentThatHasChanged == accentFile.get())
         processor->setAccentFile(fileComponentThatHasChanged->getCurrentFile());
     else if (fileComponentThatHasChanged == clickFile.get())
         processor->setClickFile(fileComponentThatHasChanged->getCurrentFile());
 }
 
-void MetronomeControl::changeListenerCallback(ChangeBroadcaster* source)
-{
-    if (source == processor)
-    {
+void MetronomeControl::changeListenerCallback(ChangeBroadcaster* source) {
+    if (source == processor) {
         String tempstr;
 
-        if (processor->isPlaying())
-        {
+        if (processor->isPlaying()) {
             playPauseButton->setImages(pauseImage.get());
             playing = true;
-        }
-        else
-        {
+        } else {
             playPauseButton->setImages(playImage.get());
             playing = false;
         }

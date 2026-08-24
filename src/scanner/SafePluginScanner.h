@@ -29,32 +29,42 @@
 ///
 /// Note: This class wraps PluginDirectoryScanner rather than inheriting from it,
 /// since JUCE's PluginDirectoryScanner methods aren't virtual.
-class SafePluginScanner
-{
+class SafePluginScanner {
   public:
-    /// Create a safe plugin scanner.
-    /// @param listToAddTo The KnownPluginList to add discovered plugins to
-    /// @param formatToScan The plugin format to scan
-    /// @param directoriesToSearch Directories to search for plugins
-    /// @param searchRecursively Whether to search subdirectories
-    /// @param deadMansPedalFile File for tracking crashed plugins (JUCE crash protection)
-    /// @param useOutOfProcess Whether to use out-of-process scanning (default: true)
+    /// Creates a safe plugin scanner.
+    ///
+    /// @param listToAddTo Receives discovered plugin descriptions.
+    /// @param formatToScan Plugin format to scan for.
+    /// @param directoriesToSearch Search paths for plugin files.
+    /// @param searchRecursively Whether to traverse subdirectories.
+    /// @param deadMansPedalFile Used by JUCE for crash tracking.
+    /// @param useOutOfProcess Selects out-of-process scanning when true (the default).
     SafePluginScanner(juce::KnownPluginList& listToAddTo, juce::AudioPluginFormat& formatToScan,
                       juce::FileSearchPath directoriesToSearch, bool searchRecursively,
                       const juce::File& deadMansPedalFile, bool useOutOfProcess = true);
 
+    /// Stops the scanner client if running.
     ~SafePluginScanner();
 
-    /// Scan the next plugin file.
-    /// @param dontRescanIfAlreadyInList Skip plugins already in the list
-    /// @param nameOfPluginBeingScanned Output: name of the plugin being scanned
-    /// @return true if there are more plugins to scan
+    /// Scans the next plugin file.
+    ///
+    /// When dontRescanIfAlreadyInList is true, plugins already in the list are
+    /// skipped. nameOfPluginBeingScanned is set to the name of the plugin being
+    /// scanned. Returns true if there are more plugins to scan.
+    ///
+    /// @param dontRescanIfAlreadyInList If true, skip plugins already in the list.
+    /// @param nameOfPluginBeingScanned Set to the name of the plugin being scanned.
+    /// @return True if there are more plugins to scan.
     bool scanNextFile(bool dontRescanIfAlreadyInList, juce::String& nameOfPluginBeingScanned);
 
     /// Get scan progress (0.0 to 1.0).
+    ///
+    /// @return Scan progress from 0.0 to 1.0.
     float getProgress() const;
 
     /// Get the next file that will be scanned.
+    ///
+    /// @return Path of the next plugin file to be scanned, or empty if none remain.
     juce::String getNextPluginFileThatWillBeScanned() const;
 
     /// Check if out-of-process scanning is being used.
@@ -81,12 +91,12 @@ class SafePluginScanner
 class SafePluginListComponent : public juce::Component,
                                 public juce::TableListBoxModel,
                                 public juce::Button::Listener,
-                                private juce::Timer
-{
+                                private juce::Timer {
   public:
     SafePluginListComponent(juce::AudioPluginFormatManager& formatManager, juce::KnownPluginList& listToRepresent,
                             const juce::File& deadMansPedalFile, juce::PropertiesFile* propertiesToUse = nullptr);
 
+    /// Cancels any ongoing scan and destroys the component.
     ~SafePluginListComponent() override;
 
     // Component overrides
@@ -113,8 +123,11 @@ class SafePluginListComponent : public juce::Component,
     bool isScanning() const { return scanning; }
 
   private:
+    /// Periodically scans the next plugin file and updates the UI.
     void timerCallback() override;
+    /// Refreshes the table from the current plugin list.
     void updateList();
+    /// Resets the scan UI and releases the scanner after a scan completes.
     void scanFinished();
 
     juce::AudioPluginFormatManager& formatManager;
@@ -139,4 +152,3 @@ class SafePluginListComponent : public juce::Component,
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SafePluginListComponent)
 };
-

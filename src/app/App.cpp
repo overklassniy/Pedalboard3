@@ -19,19 +19,21 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "App.h"
-#include "MainPanel.h"
+
+#include "AudioSingletons.h"
 #include "BranchesLAF.h"
 #include "ColourScheme.h"
-#include "AudioSingletons.h"
+#include "MainPanel.h"
 #include "PropertiesSingleton.h"
+#include "TrayIcon.h"
 
 /// Main application window holding the top-level MainPanel.
-class MainWindow : public juce::DocumentWindow
-{
+class MainWindow : public juce::DocumentWindow {
   public:
-    MainWindow(juce::String name)
-        : DocumentWindow(name, juce::Colours::black, DocumentWindow::allButtons)
-    {
+    /// Creates the main window and its MainPanel content.
+    ///
+    /// @param name The window title to display in the native title bar.
+    MainWindow(juce::String name) : DocumentWindow(name, juce::Colours::black, DocumentWindow::allButtons) {
         setUsingNativeTitleBar(true);
         setContentOwned(new MainPanel(&commandManager), true);
 
@@ -39,10 +41,8 @@ class MainWindow : public juce::DocumentWindow
         setVisible(true);
     }
 
-    void closeButtonPressed() override
-    {
-        juce::JUCEApplication::getInstance()->systemRequestedQuit();
-    }
+    /// Requests the application to quit when the window is closed.
+    void closeButtonPressed() override { juce::JUCEApplication::getInstance()->systemRequestedQuit(); }
 
   private:
     juce::ApplicationCommandManager commandManager;
@@ -50,8 +50,10 @@ class MainWindow : public juce::DocumentWindow
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)
 };
 
-void Pedalboard3App::initialise(const juce::String& commandLine)
-{
+/// Creates the properties singleton and main window at startup.
+///
+/// @param commandLine The command-line arguments passed to the application (currently unused).
+void Pedalboard3App::initialise(const juce::String& commandLine) {
     juce::ignoreUnused(commandLine);
 
     // Set up application properties storage before the UI is created.
@@ -60,8 +62,8 @@ void Pedalboard3App::initialise(const juce::String& commandLine)
     mainWindow = std::make_unique<MainWindow>(getApplicationName());
 }
 
-void Pedalboard3App::shutdown()
-{
+/// Destroys the main window and tears down all audio singletons.
+void Pedalboard3App::shutdown() {
     mainWindow = nullptr;
     AudioPluginFormatManagerSingleton::killInstance();
     AudioFormatManagerSingleton::killInstance();
@@ -69,9 +71,27 @@ void Pedalboard3App::shutdown()
     PropertiesSingleton::killInstance();
 }
 
-void Pedalboard3App::anotherInstanceStarted(const juce::String& commandLine)
-{
+/// Called when a second instance is launched; currently unused.
+///
+/// @param commandLine The command-line arguments passed to the second instance (currently unused).
+void Pedalboard3App::anotherInstanceStarted(const juce::String& commandLine) {
     juce::ignoreUnused(commandLine);
+}
+
+/// Shows or hides the system tray icon.
+///
+/// The tray icon is not used on macOS, where the Dock serves the same role.
+///
+/// @param val True to show the tray icon; false to hide it.
+void Pedalboard3App::showTrayIcon(bool val) {
+#ifndef JUCE_MAC
+    if (val && !trayIcon)
+        trayIcon = std::make_unique<TrayIcon>(mainWindow.get());
+    else if (!val && trayIcon)
+        trayIcon = nullptr;
+#else
+    juce::ignoreUnused(val);
+#endif
 }
 
 /// Required JUCE application macro.

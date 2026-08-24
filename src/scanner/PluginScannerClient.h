@@ -26,42 +26,61 @@
 ///
 /// Launches the scanner process, sends scan requests, and handles responses.
 /// If the scanner crashes, it's automatically restarted for the next scan.
-class PluginScannerClient
-{
+class PluginScannerClient {
   public:
     PluginScannerClient();
     ~PluginScannerClient();
 
-    /// Scan a plugin file using the out-of-process scanner.
-    /// @param pluginPath Full path to the plugin file
-    /// @param formatName Plugin format name (e.g., "VST3")
-    /// @param results Output array for found plugin descriptions
-    /// @return true if scan completed successfully
+    /// Scans a plugin file using the out-of-process scanner.
+    ///
+    /// @param pluginPath Full path to the plugin file.
+    /// @param formatName Plugin format name (e.g. "VST3").
+    /// @param results Output array filled with the discovered plugin descriptions.
+    /// @return True if the scan completed successfully.
     bool scanPlugin(const juce::String& pluginPath, const juce::String& formatName,
                     juce::OwnedArray<juce::PluginDescription>& results);
 
     /// Check if the scanner process is currently running.
+    ///
+    /// @return True if the scanner process is running.
     bool isScannerRunning() const;
 
     /// Explicitly start the scanner process.
     /// Usually called automatically by scanPlugin().
+    ///
+    /// @return True if the scanner started successfully.
     bool startScanner();
 
     /// Stop the scanner process.
     void stopScanner();
 
     /// Get the path to the scanner executable.
+    ///
+    /// @return File object pointing to the scanner executable.
     static juce::File getScannerExecutable();
 
     /// Listener interface for scan progress updates.
-    class Listener
-    {
+    class Listener {
       public:
         virtual ~Listener() = default;
+        /// Called when the scanner process has started and is ready.
         virtual void scannerStarted() {}
+        /// Called when the scanner process has stopped.
         virtual void scannerStopped() {}
+        /// Called when a scan of a specific plugin is about to begin.
+        ///
+        /// @param pluginPath Path of the plugin about to be scanned.
         virtual void scanProgress(const juce::String& pluginPath) {}
+        /// Called when a scan of a specific plugin has finished. success
+        /// indicates whether the scan succeeded.
+        ///
+        /// @param pluginPath Path of the plugin that was scanned.
+        /// @param success True if the scan succeeded.
         virtual void scanComplete(const juce::String& pluginPath, bool success) {}
+        /// Called when the scanner process crashed. lastPlugin is the plugin
+        /// that was being scanned at the time of the crash.
+        ///
+        /// @param lastPlugin Path of the plugin being scanned when the crash occurred.
         virtual void scannerCrashed(const juce::String& lastPlugin) {}
     };
 
@@ -71,9 +90,23 @@ class PluginScannerClient
     void removeListener(Listener* listener);
 
   private:
+    /// Starts the scanner process if it is not already running.
+    ///
+    /// @return True if the scanner is running after this call.
     bool ensureScannerRunning();
+    /// Sends a scan request to the scanner process.
+    ///
+    /// @param request Scan request to send.
+    /// @return True if the request was sent successfully.
     bool sendRequest(const PluginScannerIPC::ScanRequest& request);
+    /// Waits for a scan response from the scanner process, up to timeoutMs.
+    ///
+    /// @param response Output parameter filled with the received scan response.
+    /// @param timeoutMs Maximum time to wait in milliseconds.
+    /// @return True if a response was received within the timeout.
     bool waitForResponse(PluginScannerIPC::ScanResponse& response, int timeoutMs);
+    /// Handles a scanner crash by blacklisting the current plugin and
+    /// cleaning up the scanner process.
     void handleScannerCrash();
 
     // Platform-specific handles stored as void* to avoid Windows header in header file
@@ -86,4 +119,3 @@ class PluginScannerClient
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginScannerClient)
 };
-

@@ -19,34 +19,26 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "OutputToggleProcessor.h"
+
 #include "OutputToggleEditor.h"
 
-OutputToggleProcessor::OutputToggleProcessor():
-toggle(false),
-fade(0.0f)
-{
+OutputToggleProcessor::OutputToggleProcessor() : toggle(false), fade(0.0f) {
     setPlayConfigDetails(1, 2, 0, 0);
 }
 
-OutputToggleProcessor::~OutputToggleProcessor()
-{
+OutputToggleProcessor::~OutputToggleProcessor() {}
 
-}
-
-Component *OutputToggleProcessor::getControls()
-{
-    OutputToggleControl *retval = new OutputToggleControl(this);
+Component* OutputToggleProcessor::getControls() {
+    OutputToggleControl* retval = new OutputToggleControl(this);
 
     return retval;
 }
 
-void OutputToggleProcessor::updateEditorBounds(const Rectangle<int>& bounds)
-{
+void OutputToggleProcessor::updateEditorBounds(const Rectangle<int>& bounds) {
     editorBounds = bounds;
 }
 
-void OutputToggleProcessor::fillInPluginDescription(PluginDescription &description) const
-{
+void OutputToggleProcessor::fillInPluginDescription(PluginDescription& description) const {
     description.name = "Output Toggle";
     description.descriptiveName = "Simple output toggle processor.";
     description.pluginFormatName = "Internal";
@@ -59,58 +51,37 @@ void OutputToggleProcessor::fillInPluginDescription(PluginDescription &descripti
     description.numOutputChannels = 2;
 }
 
-void OutputToggleProcessor::processBlock(juce::AudioBuffer<float> &buffer,
-                                         juce::MidiBuffer &midiMessages)
-{
+void OutputToggleProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     int i;
     float tempf;
-    float *data[2];
+    float* data[2];
 
     jassert(buffer.getNumChannels() > 1);
 
     data[0] = buffer.getWritePointer(0);
     data[1] = buffer.getWritePointer(1);
 
-    //if(!toggle)
-    //{
-    //    for(i=0;i<buffer.getNumSamples();++i)
-    //    {
-    //        data[0][i] = data[0][i];
-    //        data[1][i] = 0.0f;
-    //    }
-    //}
-    //else
-    //{
-    //    for(i=0;i<buffer.getNumSamples();++i)
-    //    {
-    //        data[1][i] = data[0][i];
-    //        data[0][i] = 0.0f;
-    //    }
-    //}
-
-    for(i=0;i<buffer.getNumSamples();++i)
-    {
-        if(!toggle && (fade > 0.0f))
+    // Crossfade between the two outputs based on the fade value.
+    for (i = 0; i < buffer.getNumSamples(); ++i) {
+        if (!toggle && (fade > 0.0f))
             fade -= 0.001f;
-        else if(toggle && (fade < 1.0f))
+        else if (toggle && (fade < 1.0f))
             fade += 0.001f;
 
         tempf = data[0][i];
-        data[0][i] = tempf * (1.0f-fade);
+        data[0][i] = tempf * (1.0f - fade);
         data[1][i] = tempf * fade;
     }
 }
 
-AudioProcessorEditor *OutputToggleProcessor::createEditor()
-{
+AudioProcessorEditor* OutputToggleProcessor::createEditor() {
     return new OutputToggleEditor(this, editorBounds);
 }
 
-const String OutputToggleProcessor::getParameterText(int parameterIndex)
-{
+const String OutputToggleProcessor::getParameterText(int parameterIndex) {
     String retval;
 
-    if(toggle)
+    if (toggle)
         retval = "Output 1";
     else
         retval = "Output 2";
@@ -118,13 +89,11 @@ const String OutputToggleProcessor::getParameterText(int parameterIndex)
     return retval;
 }
 
-void OutputToggleProcessor::setParameter(int parameterIndex, float newValue)
-{
+void OutputToggleProcessor::setParameter(int parameterIndex, float newValue) {
     toggle = newValue > 0.5f;
 }
 
-void OutputToggleProcessor::getStateInformation(juce::MemoryBlock &destData)
-{
+void OutputToggleProcessor::getStateInformation(juce::MemoryBlock& destData) {
     XmlElement xml("Pedalboard2OutputToggleSettings");
 
     xml.setAttribute("toggle", toggle);
@@ -137,14 +106,11 @@ void OutputToggleProcessor::getStateInformation(juce::MemoryBlock &destData)
     copyXmlToBinary(xml, destData);
 }
 
-void OutputToggleProcessor::setStateInformation(const void *data, int sizeInBytes)
-{
+void OutputToggleProcessor::setStateInformation(const void* data, int sizeInBytes) {
     std::unique_ptr<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
 
-    if (xmlState != nullptr)
-    {
-        if (xmlState->hasTagName("Pedalboard2OutputToggleSettings"))
-        {
+    if (xmlState != nullptr) {
+        if (xmlState->hasTagName("Pedalboard2OutputToggleSettings")) {
             toggle = xmlState->getBoolAttribute("toggle", false);
 
             editorBounds.setX(xmlState->getIntAttribute("editorX"));

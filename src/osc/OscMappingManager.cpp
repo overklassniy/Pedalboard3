@@ -19,40 +19,31 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "OscMappingManager.h"
+
 #include "BypassableInstance.h"
+#include "MainPanel.h"
 
 OscMapping::OscMapping(OscMappingManager* manager, FilterGraph* graph, uint32 pluginId, int param,
                        const String& oscAddress, int oscParam)
-    : Mapping(graph, pluginId, param)
-    , mappingManager(manager)
-    , address(oscAddress)
-    , parameter(oscParam)
-{
-}
+    : Mapping(graph, pluginId, param), mappingManager(manager), address(oscAddress), parameter(oscParam) {}
 
 OscMapping::OscMapping(OscMappingManager* manager, FilterGraph* graph, XmlElement* e)
-    : Mapping(graph, e)
-    , mappingManager(manager)
-{
-    if (e)
-    {
+    : Mapping(graph, e), mappingManager(manager) {
+    if (e) {
         address = e->getStringAttribute("address");
         parameter = e->getIntAttribute("parameterIndex");
     }
 }
 
-OscMapping::~OscMapping()
-{
+OscMapping::~OscMapping() {
     mappingManager->unregisterMapping(this);
 }
 
-void OscMapping::messageReceived(float val)
-{
+void OscMapping::messageReceived(float val) {
     updateParameter(val);
 }
 
-XmlElement* OscMapping::getXml() const
-{
+XmlElement* OscMapping::getXml() const {
     auto* retval = new XmlElement("OscMapping");
 
     retval->setAttribute("pluginId", static_cast<int>(getPluginId()));
@@ -63,44 +54,32 @@ XmlElement* OscMapping::getXml() const
     return retval;
 }
 
-void OscMapping::setAddress(const String& oscAddress)
-{
+void OscMapping::setAddress(const String& oscAddress) {
     address = oscAddress;
     mappingManager->unregisterMapping(this);
     mappingManager->registerMapping(address, this);
 }
 
-void OscMapping::setParameterIndex(int val)
-{
+void OscMapping::setParameterIndex(int val) {
     parameter = val;
 }
 
 OscAppMapping::OscAppMapping(OscMappingManager* manager, const String& oscAddress, int oscParam, CommandID commandId)
-    : oscManager(manager)
-    , address(oscAddress)
-    , parameter(oscParam)
-    , id(commandId)
-{
-}
+    : oscManager(manager), address(oscAddress), parameter(oscParam), id(commandId) {}
 
-OscAppMapping::OscAppMapping(OscMappingManager* manager, XmlElement* e)
-    : oscManager(manager)
-{
-    if (e)
-    {
+OscAppMapping::OscAppMapping(OscMappingManager* manager, XmlElement* e) : oscManager(manager) {
+    if (e) {
         address = e->getStringAttribute("address");
         parameter = e->getIntAttribute("parameterIndex");
         id = static_cast<CommandID>(e->getIntAttribute("commandId"));
     }
 }
 
-OscAppMapping::~OscAppMapping()
-{
+OscAppMapping::~OscAppMapping() {
     oscManager->unregisterAppMapping(this);
 }
 
-XmlElement* OscAppMapping::getXml() const
-{
+XmlElement* OscAppMapping::getXml() const {
     auto* retval = new XmlElement("OscAppMapping");
 
     retval->setAttribute("address", address);
@@ -110,13 +89,9 @@ XmlElement* OscAppMapping::getXml() const
     return retval;
 }
 
-OscMappingManager::OscMappingManager(ApplicationCommandManager* manager)
-    : appManager(manager)
-{
-}
+OscMappingManager::OscMappingManager(ApplicationCommandManager* manager) : appManager(manager) {}
 
-OscMappingManager::~OscMappingManager()
-{
+OscMappingManager::~OscMappingManager() {
     // Collect all mappings and delete them (they are owned by this manager).
     std::vector<OscMapping*> tempMappings;
     std::vector<OscAppMapping*> tempAppMappings;
@@ -135,18 +110,15 @@ OscMappingManager::~OscMappingManager()
         delete m;
 }
 
-void OscMappingManager::messageReceived(const juce::OSCMessage& message)
-{
+void OscMappingManager::messageReceived(const juce::OSCMessage& message) {
     const String address = message.getAddressPattern().toString();
 
-    // Collect float and int arguments from the OSC message.
-    // JUCE OSC arguments are accessed via OSCArgument which supports isFloat32(),
-    // isInt32(), isString(), isBlob().
+    // JUCE OSC arguments are accessed via OSCArgument which supports
+    // isFloat32(), isInt32(), isString(), and isBlob().
     std::vector<float> floatArgs;
     std::vector<int> intArgs;
 
-    for (const auto& arg : message)
-    {
+    for (const auto& arg : message) {
         if (arg.isFloat32())
             floatArgs.push_back(arg.getFloat32());
         else if (arg.isInt32())
@@ -162,30 +134,24 @@ void OscMappingManager::messageReceived(const juce::OSCMessage& message)
 
     // MIDI over OSC: check if any MIDI processors are registered at this address.
     auto it = midiProcessors.lower_bound(address);
-    if (it != midiProcessors.end())
-    {
+    if (it != midiProcessors.end()) {
         std::unique_ptr<juce::MidiMessage> tempMess;
 
         // MIDI over OSC can be delivered as:
         // 1. A blob with 4 MIDI bytes (JUCE OSC blob - we extract first 4 bytes)
         // 2. Three int arguments (status, data1, data2)
         // 3. Three float arguments (status, data1, data2) - cast to int
-        if (intArgs.size() > 2)
-        {
+        if (intArgs.size() > 2) {
             tempMess = std::make_unique<juce::MidiMessage>(intArgs[0], intArgs[1], intArgs[2]);
-        }
-        else if (floatArgs.size() > 2)
-        {
+        } else if (floatArgs.size() > 2) {
             tempMess = std::make_unique<juce::MidiMessage>(
                 static_cast<int>(floatArgs[0]), static_cast<int>(floatArgs[1]), static_cast<int>(floatArgs[2]));
         }
 
-        if (tempMess)
-        {
+        if (tempMess) {
             tempMess->setTimeStamp(Time::getMillisecondCounter() / 1000.0);
 
-            for (; it != midiProcessors.upper_bound(address); ++it)
-            {
+            for (; it != midiProcessors.upper_bound(address); ++it) {
                 if (it->second)
                     it->second->addMidiMessage(*tempMess);
             }
@@ -193,35 +159,32 @@ void OscMappingManager::messageReceived(const juce::OSCMessage& message)
     }
 }
 
-void OscMappingManager::handleFloatMessage(const String& address, int index, float val)
-{
+void OscMappingManager::handleFloatMessage(const String& address, int index, float val) {
     // Caller (messageReceived) already holds containerLock.
 
     // Check against any OscMappings.
-    for (auto it = mappings.lower_bound(address); it != mappings.upper_bound(address); ++it)
-    {
+    for (auto it = mappings.lower_bound(address); it != mappings.upper_bound(address); ++it) {
         if (it->second->getParameterIndex() == index)
             it->second->messageReceived(val);
     }
 
     // Check against any OscAppMappings (trigger on val > 0.5).
-    if (val > 0.5f)
-    {
-        for (auto it = appMappings.lower_bound(address); it != appMappings.upper_bound(address); ++it)
-        {
-            if (it->second->getParameterIndex() == index)
-            {
-                // Application command invocation will be wired in Phase 3
-                // when MainPanel is ported. For now, we just track the
-                // command ID and tap tempo.
+    if (val > 0.5f) {
+        for (auto it = appMappings.lower_bound(address); it != appMappings.upper_bound(address); ++it) {
+            if (it->second->getParameterIndex() == index) {
                 CommandID id = it->second->getId();
+                auto* panel = dynamic_cast<MainPanel*>(appManager->getFirstCommandTarget(MainPanel::TransportPlay));
 
-                if (id != 0) // TransportTapTempo will be handled here
-                {
-                    // TODO: Phase 3 - invoke via MainPanel::invokeCommandFromOtherThread(id)
-                    // For tap tempo:
-                    // double tempo = tapHelper.updateTempo(Time::highResolutionTicksToSeconds(Time::getHighResolutionTicks()));
-                    // panel->updateTempoFromOtherThread(tempo);
+                if (panel) {
+                    if (id != MainPanel::TransportTapTempo)
+                        panel->invokeCommandFromOtherThread(id);
+                    else {
+                        double tempo =
+                            tapHelper.updateTempo(Time::highResolutionTicksToSeconds(Time::getHighResolutionTicks()));
+
+                        if (tempo > 0.0)
+                            panel->updateTempoFromOtherThread(tempo);
+                    }
                 }
             }
         }
@@ -231,31 +194,26 @@ void OscMappingManager::handleFloatMessage(const String& address, int index, flo
     uniqueAddresses.addIfNotAlreadyThere(address);
 }
 
-void OscMappingManager::handleMIDIMessage(const String& address, const juce::MidiMessage& midiMessage)
-{
+void OscMappingManager::handleMIDIMessage(const String& address, const juce::MidiMessage& midiMessage) {
     const ScopedLock sl(containerLock);
 
-    for (auto it = midiProcessors.lower_bound(address); it != midiProcessors.upper_bound(address); ++it)
-    {
+    for (auto it = midiProcessors.lower_bound(address); it != midiProcessors.upper_bound(address); ++it) {
         if (it->second)
             it->second->addMidiMessage(midiMessage);
     }
 }
 
-void OscMappingManager::registerMapping(const String& address, OscMapping* mapping)
-{
+void OscMappingManager::registerMapping(const String& address, OscMapping* mapping) {
     const ScopedLock sl(containerLock);
     jassert(mapping);
     mappings.insert({address, mapping});
 }
 
-void OscMappingManager::unregisterMapping(OscMapping* mapping)
-{
+void OscMappingManager::unregisterMapping(OscMapping* mapping) {
     const ScopedLock sl(containerLock);
     jassert(mapping);
 
-    for (auto it = mappings.begin(); it != mappings.end();)
-    {
+    for (auto it = mappings.begin(); it != mappings.end();) {
         if (it->second == mapping)
             it = mappings.erase(it);
         else
@@ -263,19 +221,16 @@ void OscMappingManager::unregisterMapping(OscMapping* mapping)
     }
 }
 
-void OscMappingManager::registerAppMapping(OscAppMapping* mapping)
-{
+void OscMappingManager::registerAppMapping(OscAppMapping* mapping) {
     const ScopedLock sl(containerLock);
     jassert(mapping);
     appMappings.insert({mapping->getAddress(), mapping});
 }
 
-void OscMappingManager::unregisterAppMapping(OscAppMapping* mapping)
-{
+void OscMappingManager::unregisterAppMapping(OscAppMapping* mapping) {
     const ScopedLock sl(containerLock);
 
-    for (auto it = appMappings.begin(); it != appMappings.end();)
-    {
+    for (auto it = appMappings.begin(); it != appMappings.end();) {
         if (it->second == mapping)
             it = appMappings.erase(it);
         else
@@ -283,16 +238,13 @@ void OscMappingManager::unregisterAppMapping(OscAppMapping* mapping)
     }
 }
 
-void OscMappingManager::registerMIDIProcessor(const String& address, BypassableInstance* processor)
-{
+void OscMappingManager::registerMIDIProcessor(const String& address, BypassableInstance* processor) {
     const ScopedLock sl(containerLock);
     jassert(processor);
 
     // Remove any existing entry for this processor to avoid duplicates.
-    for (auto it = midiProcessors.begin(); it != midiProcessors.end(); ++it)
-    {
-        if (it->second == processor)
-        {
+    for (auto it = midiProcessors.begin(); it != midiProcessors.end(); ++it) {
+        if (it->second == processor) {
             midiProcessors.erase(it);
             break;
         }
@@ -301,29 +253,23 @@ void OscMappingManager::registerMIDIProcessor(const String& address, BypassableI
     midiProcessors.insert({address, processor});
 }
 
-void OscMappingManager::unregisterMIDIProcessor(BypassableInstance* processor)
-{
+void OscMappingManager::unregisterMIDIProcessor(BypassableInstance* processor) {
     const ScopedLock sl(containerLock);
 
-    for (auto it = midiProcessors.begin(); it != midiProcessors.end(); ++it)
-    {
-        if (it->second == processor)
-        {
+    for (auto it = midiProcessors.begin(); it != midiProcessors.end(); ++it) {
+        if (it->second == processor) {
             midiProcessors.erase(it);
             break;
         }
     }
 }
 
-const String OscMappingManager::getMIDIProcessorAddress(BypassableInstance* processor) const
-{
+const String OscMappingManager::getMIDIProcessorAddress(BypassableInstance* processor) const {
     const ScopedLock sl(containerLock);
     String retval;
 
-    for (const auto& pair : midiProcessors)
-    {
-        if (pair.second == processor)
-        {
+    for (const auto& pair : midiProcessors) {
+        if (pair.second == processor) {
             retval = pair.first;
             break;
         }
@@ -332,19 +278,16 @@ const String OscMappingManager::getMIDIProcessorAddress(BypassableInstance* proc
     return retval;
 }
 
-int OscMappingManager::getNumAppMappings() const
-{
+int OscMappingManager::getNumAppMappings() const {
     const ScopedLock sl(containerLock);
     return static_cast<int>(appMappings.size());
 }
 
-OscAppMapping* OscMappingManager::getAppMapping(int index)
-{
+OscAppMapping* OscMappingManager::getAppMapping(int index) {
     const ScopedLock sl(containerLock);
     int i = 0;
 
-    for (auto& pair : appMappings)
-    {
+    for (auto& pair : appMappings) {
         if (i == index)
             return pair.second;
         ++i;
@@ -353,14 +296,12 @@ OscAppMapping* OscMappingManager::getAppMapping(int index)
     return nullptr;
 }
 
-StringArray OscMappingManager::getReceivedAddresses() const
-{
+StringArray OscMappingManager::getReceivedAddresses() const {
     const ScopedLock sl(containerLock);
     return uniqueAddresses;
 }
 
-OscInput::OscInput()
-{
+OscInput::OscInput() {
     // Configure as no-audio, no-MIDI: remove default stereo buses.
     AudioProcessor::BusesLayout emptyLayout;
     setBusesLayout(emptyLayout);
@@ -368,8 +309,7 @@ OscInput::OscInput()
 
 OscInput::~OscInput() = default;
 
-void OscInput::fillInPluginDescription(PluginDescription& description) const
-{
+void OscInput::fillInPluginDescription(PluginDescription& description) const {
     description.name = "OSC Input";
     description.descriptiveName = "Dummy AudioProcessor so we can see at a glance which plugins have OSC mappings.";
     description.pluginFormatName = "Internal";

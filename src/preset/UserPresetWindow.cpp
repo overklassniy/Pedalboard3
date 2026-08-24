@@ -20,9 +20,7 @@
 
 #include "UserPresetWindow.h"
 
-UserPresetWindow::UserPresetWindow(KnownPluginList* knownPlugins) :
-    knownPluginList(knownPlugins)
-{
+UserPresetWindow::UserPresetWindow(KnownPluginList* knownPlugins) : knownPluginList(knownPlugins) {
     presetList = std::make_unique<TreeView>();
     addAndMakeVisible(*presetList);
     presetList->setName("presetList");
@@ -64,24 +62,18 @@ UserPresetWindow::UserPresetWindow(KnownPluginList* knownPlugins) :
     setSize(600, 400);
 }
 
-
-UserPresetWindow::~UserPresetWindow()
-{
+UserPresetWindow::~UserPresetWindow() {
     presetList->setRootItem(nullptr);
 }
 
-
-void UserPresetWindow::paint(Graphics& g)
-{
+void UserPresetWindow::paint(Graphics& g) {
     g.fillAll(Colour(0xffeeece1));
 
     g.setColour(Colour(0x40000000));
     g.fillRect(7, 7, getWidth() - 104, getHeight() - 13);
 }
 
-
-void UserPresetWindow::resized()
-{
+void UserPresetWindow::resized() {
     presetList->setBounds(8, 8, getWidth() - 106, getHeight() - 15);
     renameButton->setBounds(getWidth() - 90, 8, 82, 24);
     copyButton->setBounds(getWidth() - 90, 40, 82, 24);
@@ -90,26 +82,19 @@ void UserPresetWindow::resized()
     exportButton->setBounds(getWidth() - 90, 136, 82, 24);
 }
 
-
-void UserPresetWindow::buttonClicked(Button* buttonThatWasClicked)
-{
-    if (buttonThatWasClicked == copyButton.get())
-    {
+void UserPresetWindow::buttonClicked(Button* buttonThatWasClicked) {
+    if (buttonThatWasClicked == copyButton.get()) {
         PresetItem* selected = dynamic_cast<PresetItem*>(presetList->getSelectedItem(0));
 
-        if (selected)
-        {
-            AlertWindow win("Copy Preset",
-                            "Enter a name for the duplicate preset:",
-                            MessageBoxIconType::NoIcon);
+        if (selected) {
+            AlertWindow win("Copy Preset", "Enter a name for the duplicate preset:", MessageBoxIconType::NoIcon);
 
             win.addTextEditor("presetName", "");
 
             win.addButton("Cancel", 0);
             win.addButton("Ok", 1, KeyPress(KeyPress::returnKey));
 
-            if (win.runModalLoop())
-            {
+            if (win.runModalLoop()) {
                 String tempstr;
                 File srcPreset = selected->getFile();
 
@@ -118,28 +103,23 @@ void UserPresetWindow::buttonClicked(Button* buttonThatWasClicked)
 
                 srcPreset.copyFileTo(srcPreset.getParentDirectory().getChildFile(tempstr));
 
-                // A bit hacky, but treeHasChanged() doesn't seem to do anything.
+                // Re-open the parent item to refresh its sub-items, since
+                // treeHasChanged() does not reliably rebuild the tree.
                 selected->getParentItem()->itemOpennessChanged(true);
                 presetList->repaint();
             }
         }
-    }
-    else if (buttonThatWasClicked == removeButton.get())
-    {
+    } else if (buttonThatWasClicked == removeButton.get()) {
         PresetItem* selected = dynamic_cast<PresetItem*>(presetList->getSelectedItem(0));
 
-        if (selected)
-        {
+        if (selected) {
             File parentDir = selected->getFile().getParentDirectory();
 
-            if (!selected->getFile().deleteFile())
-            {
-                AlertWindow::showMessageBoxAsync(MessageBoxIconType::WarningIcon,
-                                                 "Preset Deletion Error",
-                                                 "Could not delete preset from the filesystem. Check your permissions.");
-            }
-            else
-            {
+            if (!selected->getFile().deleteFile()) {
+                AlertWindow::showMessageBoxAsync(
+                    MessageBoxIconType::WarningIcon, "Preset Deletion Error",
+                    "Could not delete preset from the filesystem. Check your permissions.");
+            } else {
                 // If that plugin's directory is now empty, delete it too.
                 if (!parentDir.getNumberOfChildFiles(File::findFilesAndDirectories))
                     parentDir.deleteFile();
@@ -148,9 +128,7 @@ void UserPresetWindow::buttonClicked(Button* buttonThatWasClicked)
                 presetList->repaint();
             }
         }
-    }
-    else if (buttonThatWasClicked == importButton.get())
-    {
+    } else if (buttonThatWasClicked == importButton.get()) {
         StringArray plugins;
 
         for (int i = 0; i < knownPluginList->getNumTypes(); ++i)
@@ -158,21 +136,16 @@ void UserPresetWindow::buttonClicked(Button* buttonThatWasClicked)
 
         // First get the user to select which plugin the preset is for.
         AlertWindow whichPlugin("Import Preset",
-                                "Select which plugin this preset is intended for:",
-                                MessageBoxIconType::NoIcon);
+                                "Select which plugin this preset is intended for:", MessageBoxIconType::NoIcon);
 
         whichPlugin.addComboBox("plugins", plugins);
         whichPlugin.addButton("Cancel", 0);
         whichPlugin.addButton("Ok", 1, KeyPress(KeyPress::returnKey));
 
-        if (whichPlugin.runModalLoop())
-        {
-            FileChooser phil("Import preset",
-                             File(),
-                             "*.fxp");
+        if (whichPlugin.runModalLoop()) {
+            FileChooser phil("Import preset", File(), "*.fxp");
 
-            if (phil.browseForFileToOpen())
-            {
+            if (phil.browseForFileToOpen()) {
                 String pluginName = whichPlugin.getComboBoxComponent("plugins")->getText();
                 File presetDir = File::getSpecialLocation(File::userApplicationDataDirectory)
                                      .getChildFile("Pedalboard3")
@@ -180,13 +153,11 @@ void UserPresetWindow::buttonClicked(Button* buttonThatWasClicked)
                 File pluginDir = presetDir.getChildFile(pluginName);
                 File srcPreset = phil.getResult();
 
-                if (!pluginDir.exists())
-                {
-                    if (!pluginDir.createDirectory())
-                    {
-                        AlertWindow::showMessageBoxAsync(MessageBoxIconType::WarningIcon,
-                                                         "Preset Import Error",
-                                                         "Could not create a directory for this plugin. Check your permissions.");
+                if (!pluginDir.exists()) {
+                    if (!pluginDir.createDirectory()) {
+                        AlertWindow::showMessageBoxAsync(
+                            MessageBoxIconType::WarningIcon, "Preset Import Error",
+                            "Could not create a directory for this plugin. Check your permissions.");
                     }
 
                     phil.getResult().copyFileTo(pluginDir.getChildFile(srcPreset.getFileName()));
@@ -196,42 +167,30 @@ void UserPresetWindow::buttonClicked(Button* buttonThatWasClicked)
                 }
             }
         }
-    }
-    else if (buttonThatWasClicked == exportButton.get())
-    {
+    } else if (buttonThatWasClicked == exportButton.get()) {
         PresetItem* selected = dynamic_cast<PresetItem*>(presetList->getSelectedItem(0));
 
-        if (selected)
-        {
-            FileChooser phil("Export preset",
-                             File(),
-                             "*.fxp");
+        if (selected) {
+            FileChooser phil("Export preset", File(), "*.fxp");
 
             if (phil.browseForFileToSave(true))
                 selected->getFile().copyFileTo(phil.getResult().withFileExtension("fxp"));
         }
-    }
-    else if (buttonThatWasClicked == renameButton.get())
-    {
+    } else if (buttonThatWasClicked == renameButton.get()) {
         PresetItem* selected = dynamic_cast<PresetItem*>(presetList->getSelectedItem(0));
 
-        if (selected)
-        {
-            AlertWindow win("Rename Preset",
-                            "Enter a new name for the selected preset:",
-                            MessageBoxIconType::NoIcon);
+        if (selected) {
+            AlertWindow win("Rename Preset", "Enter a new name for the selected preset:", MessageBoxIconType::NoIcon);
 
             win.addTextEditor("presetName", "");
 
             win.addButton("Cancel", 0);
             win.addButton("Ok", 1, KeyPress(KeyPress::returnKey));
 
-            if (win.runModalLoop())
-            {
+            if (win.runModalLoop()) {
                 File newFile = selected->getFile().getParentDirectory();
 
-                newFile = newFile.getChildFile(win.getTextEditorContents("presetName"))
-                             .withFileExtension("fxp");
+                newFile = newFile.getChildFile(win.getTextEditorContents("presetName")).withFileExtension("fxp");
 
                 selected->getFile().moveFileTo(newFile);
 

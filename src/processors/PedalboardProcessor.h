@@ -22,20 +22,23 @@
 #define PEDALBOARDPROCESSOR_H_
 
 #include <JuceHeader.h>
-
 #include <stdint.h>
 
 /// Abstract base of all the internal processors.
-class PedalboardProcessor : public AudioPluginInstance
-{
+class PedalboardProcessor : public AudioPluginInstance {
   public:
+    /// Defaulted destructor; subclasses are responsible for their own cleanup.
     ~PedalboardProcessor() override = default;
 
     /// Returns the component which is added to the instance's PluginComponent.
     ///
     /// Will be deleted by the caller.
+    ///
+    /// @return The controls component for this processor.
     virtual Component* getControls() = 0;
     /// Returns the size of the controls component.
+    ///
+    /// @return The width and height of the controls component.
     virtual Point<int> getSize() = 0;
 };
 

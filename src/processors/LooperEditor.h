@@ -21,10 +21,10 @@
 #ifndef LOOPEREDITOR_H_
 #define LOOPEREDITOR_H_
 
+#include "WaveformDisplay.h"
+
 #include <JuceHeader.h>
 #include <memory>
-
-#include "WaveformDisplay.h"
 
 class LooperProcessor;
 
@@ -35,28 +35,49 @@ class LooperEditor : public AudioProcessorEditor,
                      public ChangeListener,
                      public juce::Button::Listener,
                      public juce::Label::Listener,
-                     public juce::Slider::Listener
-{
+                     public juce::Slider::Listener {
   public:
+    /// Creates the full editor with the associated processor and thumbnail.
+    ///
+    /// @param proc The looper processor to associate with this editor.
+    /// @param thumbnail The audio thumbnail to display in the waveform view.
     LooperEditor(LooperProcessor* proc, AudioThumbnail* thumbnail);
+    /// Removes change listeners and child components.
     ~LooperEditor() override;
 
     /// Called when the user selects a sound file.
+    ///
+    /// @param filenameComp The filename component whose selected file changed.
     void filenameComponentChanged(FilenameComponent* filenameComp) override;
     /// Called on each timer tick to update the read position.
     void timerCallback() override;
     /// Called when the waveform display or processor broadcasts a change.
+    ///
+    /// @param source The change broadcaster that triggered the callback.
     void changeListenerCallback(ChangeBroadcaster* source) override;
 
     /// Changes the waveform display background colour.
+    ///
+    /// @param col The new background colour for the waveform display.
     void setWaveformBackground(const Colour& col);
     /// Clears the waveform display.
     void clearDisplay();
 
+    /// Empty paint override.
     void paint(Graphics& g) override;
+    /// Lays out the waveform display, controls and level sliders.
     void resized() override;
+    /// Handles sync, play/pause, return-to-zero, record and autoplay clicks.
+    ///
+    /// @param buttonThatWasClicked The button that was clicked by the user.
     void buttonClicked(Button* buttonThatWasClicked) override;
+    /// Updates the time signature numerator or denominator.
+    ///
+    /// @param labelThatHasChanged The label whose text was edited.
     void labelTextChanged(Label* labelThatHasChanged) override;
+    /// Updates the loop or input level parameter.
+    ///
+    /// @param sliderThatWasMoved The slider whose value changed.
     void sliderValueChanged(Slider* sliderThatWasMoved) override;
 
   private:

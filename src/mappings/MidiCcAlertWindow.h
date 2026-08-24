@@ -29,15 +29,17 @@
 class MidiCcAlertWindow : public AlertWindow,
                           public AsyncUpdater,
                           public juce::ComboBox::Listener,
-                          public MidiMappingManager::MidiLearnCallback
-{
+                          public MidiMappingManager::MidiLearnCallback {
   public:
+    /// Creates the alert window with a MIDI CC combo box and OK/Cancel buttons.
+    ///
+    /// @param midi The MidiMappingManager used for MIDI learn.
     MidiCcAlertWindow(MidiMappingManager* midi);
     ~MidiCcAlertWindow() override;
 
     /// Updates the combo box when we receive a MIDI CC message.
     void handleAsyncUpdate() override;
-    /// So we know when to listen for MIDI learn messages.
+    /// Registers a MIDI learn callback when the user selects the learn entry.
     void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override;
 
     /// Called when we receive a MIDI CC message.

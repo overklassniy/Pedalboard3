@@ -18,19 +18,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "Vectors.h"
-#include "ColourScheme.h"
-#include "PropertiesSingleton.h"
-#include "JuceHelperStuff.h"
-
 #include "ColourSchemeEditor.h"
 
-ColourSchemeEditor::ColourSchemeEditor()
-{
-    colourEditor = std::make_unique<ColourSelector>(
-        ColourSelector::showAlphaChannel | ColourSelector::showColourAtTop |
-            ColourSelector::showSliders | ColourSelector::showColourspace,
-        0);
+#include "ColourScheme.h"
+#include "JuceHelperStuff.h"
+#include "PropertiesSingleton.h"
+#include "Vectors.h"
+
+ColourSchemeEditor::ColourSchemeEditor() {
+    colourEditor = std::make_unique<ColourSelector>(ColourSelector::showAlphaChannel | ColourSelector::showColourAtTop |
+                                                        ColourSelector::showSliders | ColourSelector::showColourspace,
+                                                    0);
     addAndMakeVisible(*colourEditor);
     colourEditor->setName("colourEditor");
 
@@ -46,28 +44,22 @@ ColourSchemeEditor::ColourSchemeEditor()
     presetSelector->setTextWhenNoChoicesAvailable("(no choices)");
     presetSelector->addListener(this);
 
-    deleteButton = std::make_unique<DrawableButton>("deleteButton",
-                                                     DrawableButton::ImageOnButtonBackground);
+    deleteButton = std::make_unique<DrawableButton>("deleteButton", DrawableButton::ImageOnButtonBackground);
     addAndMakeVisible(*deleteButton);
     deleteButton->setName("deleteButton");
 
-    saveButton = std::make_unique<DrawableButton>("saveButton",
-                                                   DrawableButton::ImageOnButtonBackground);
+    saveButton = std::make_unique<DrawableButton>("saveButton", DrawableButton::ImageOnButtonBackground);
     addAndMakeVisible(*saveButton);
     saveButton->setName("saveButton");
 
-    newButton = std::make_unique<DrawableButton>("newButton",
-                                                  DrawableButton::ImageOnButtonBackground);
+    newButton = std::make_unique<DrawableButton>("newButton", DrawableButton::ImageOnButtonBackground);
     addAndMakeVisible(*newButton);
     newButton->setName("newButton");
 
     Colour tempCol = ColourScheme::getInstance().colours["Button Colour"];
-    std::unique_ptr<Drawable> newImage(loadSVGFromMemory(Vectors::newbutton_svg,
-                                                         Vectors::newbutton_svgSize));
-    std::unique_ptr<Drawable> saveImage(loadSVGFromMemory(Vectors::savebutton_svg,
-                                                          Vectors::savebutton_svgSize));
-    std::unique_ptr<Drawable> deleteImage(loadSVGFromMemory(Vectors::deletebutton_svg,
-                                                            Vectors::deletebutton_svgSize));
+    std::unique_ptr<Drawable> newImage(loadSVGFromMemory(Vectors::newbutton_svg, Vectors::newbutton_svgSize));
+    std::unique_ptr<Drawable> saveImage(loadSVGFromMemory(Vectors::savebutton_svg, Vectors::savebutton_svgSize));
+    std::unique_ptr<Drawable> deleteImage(loadSVGFromMemory(Vectors::deletebutton_svg, Vectors::deletebutton_svgSize));
 
     newButton->setImages(newImage.get());
     newButton->setColour(DrawableButton::backgroundColourId, tempCol);
@@ -97,8 +89,7 @@ ColourSchemeEditor::ColourSchemeEditor()
     File settingsDir = JuceHelperStuff::getAppDataFolder();
 
     settingsDir.findChildFiles(presets, File::findFiles, false, "*.colourscheme");
-    for (int i = 0; i < presets.size(); ++i)
-    {
+    for (int i = 0; i < presets.size(); ++i) {
         String tempstr = presets[i].getFileNameWithoutExtension();
 
         presetSelector->addItem(tempstr, i + 1);
@@ -113,36 +104,24 @@ ColourSchemeEditor::ColourSchemeEditor()
     setSize(550, 375);
 }
 
-
-ColourSchemeEditor::~ColourSchemeEditor()
-{
+ColourSchemeEditor::~ColourSchemeEditor() {
     // Check if the selected preset has been saved.
-    if (!ColourScheme::getInstance().doesColoursMatchPreset(presetSelector->getText()))
-    {
-        if (AlertWindow::showOkCancelBox(MessageBoxIconType::WarningIcon,
-                                         "Colour scheme not saved",
-                                         "Save current scheme?",
-                                         "Yes",
-                                         "No"))
-        {
+    if (!ColourScheme::getInstance().doesColoursMatchPreset(presetSelector->getText())) {
+        if (AlertWindow::showOkCancelBox(MessageBoxIconType::WarningIcon, "Colour scheme not saved",
+                                         "Save current scheme?", "Yes", "No")) {
             ColourScheme::getInstance().savePreset(presetSelector->getText());
         }
     }
 
     // Save the selected preset to the properties file.
-    PropertiesSingleton::getInstance().getUserSettings()->setValue("colourScheme",
-                                                                   presetSelector->getText());
+    PropertiesSingleton::getInstance().getUserSettings()->setValue("colourScheme", presetSelector->getText());
 }
 
-
-void ColourSchemeEditor::paint(Graphics& g)
-{
+void ColourSchemeEditor::paint(Graphics& g) {
     g.fillAll(ColourScheme::getInstance().colours["Window Background"]);
 }
 
-
-void ColourSchemeEditor::resized()
-{
+void ColourSchemeEditor::resized() {
     colourEditor->setBounds(192, 40, getWidth() - 200, getHeight() - 48);
     colourSelector->setBounds(8, 40, 176, getHeight() - 48);
     presetSelector->setBounds(8, 8, getWidth() - 106, 24);
@@ -151,11 +130,8 @@ void ColourSchemeEditor::resized()
     newButton->setBounds(getWidth() - 92, 8, 24, 24);
 }
 
-
-void ColourSchemeEditor::comboBoxChanged(ComboBox* comboBoxThatHasChanged)
-{
-    if (comboBoxThatHasChanged == presetSelector.get())
-    {
+void ColourSchemeEditor::comboBoxChanged(ComboBox* comboBoxThatHasChanged) {
+    if (comboBoxThatHasChanged == presetSelector.get()) {
         ColourScheme::getInstance().loadPreset(presetSelector->getText());
 
         // Update colourEditor.
@@ -165,10 +141,8 @@ void ColourSchemeEditor::comboBoxChanged(ComboBox* comboBoxThatHasChanged)
             int row = colourSelector->getSelectedRow();
             std::map<String, Colour>& colours = ColourScheme::getInstance().colours;
 
-            for (it = colours.begin(); it != colours.end(); ++it, ++i)
-            {
-                if (i == row)
-                {
+            for (it = colours.begin(); it != colours.end(); ++it, ++i) {
+                if (i == row) {
                     colourEditor->setCurrentColour(it->second);
                     break;
                 }
@@ -179,38 +153,23 @@ void ColourSchemeEditor::comboBoxChanged(ComboBox* comboBoxThatHasChanged)
     }
 }
 
-
-int ColourSchemeEditor::getNumRows()
-{
+int ColourSchemeEditor::getNumRows() {
     return static_cast<int>(ColourScheme::getInstance().colours.size());
 }
 
-
-void ColourSchemeEditor::paintListBoxItem(int rowNumber,
-                                          Graphics& g,
-                                          int width,
-                                          int height,
-                                          bool rowIsSelected)
-{
+void ColourSchemeEditor::paintListBoxItem(int rowNumber, Graphics& g, int width, int height, bool rowIsSelected) {
     int i = 0;
     std::map<String, Colour>::iterator it;
     std::map<String, Colour>& colours = ColourScheme::getInstance().colours;
 
     g.fillAll(colours["Dialog Inner Background"]);
 
-    for (it = colours.begin(); it != colours.end(); ++it, ++i)
-    {
-        if (i == rowNumber)
-        {
+    for (it = colours.begin(); it != colours.end(); ++it, ++i) {
+        if (i == rowNumber) {
             // Colour in the background.
-            if (rowIsSelected)
-            {
-                ColourGradient basil(colours["List Selected Colour"].brighter(0.4f),
-                                     0.0f,
-                                     0.0f,
-                                     colours["List Selected Colour"].darker(0.125f),
-                                     0.0f,
-                                     static_cast<float>(height),
+            if (rowIsSelected) {
+                ColourGradient basil(colours["List Selected Colour"].brighter(0.4f), 0.0f, 0.0f,
+                                     colours["List Selected Colour"].darker(0.125f), 0.0f, static_cast<float>(height),
                                      false);
 
                 g.setGradientFill(basil);
@@ -218,9 +177,7 @@ void ColourSchemeEditor::paintListBoxItem(int rowNumber,
                 g.fillAll();
 
                 g.setColour(colours["List Selected Colour"].contrasting());
-            }
-            else
-            {
+            } else {
                 g.fillAll(it->second);
 
                 g.setColour(it->second.contrasting());
@@ -234,41 +191,29 @@ void ColourSchemeEditor::paintListBoxItem(int rowNumber,
     }
 }
 
-
-void ColourSchemeEditor::listBoxItemClicked(int row, const MouseEvent& e)
-{
-    (void) e;
+void ColourSchemeEditor::listBoxItemClicked(int row, const MouseEvent& e) {
+    (void)e;
 
     int i = 0;
     std::map<String, Colour>::iterator it;
     std::map<String, Colour>& colours = ColourScheme::getInstance().colours;
 
-    for (it = colours.begin(); it != colours.end(); ++it, ++i)
-    {
-        if (i == row)
-        {
+    for (it = colours.begin(); it != colours.end(); ++it, ++i) {
+        if (i == row) {
             colourEditor->setCurrentColour(it->second);
             break;
         }
     }
 }
 
-
-void ColourSchemeEditor::buttonClicked(Button* button)
-{
-    if (button == newButton.get())
-    {
+void ColourSchemeEditor::buttonClicked(Button* button) {
+    if (button == newButton.get()) {
         presetSelector->addItem("New Colour Scheme", presetSelector->getNumItems() + 1);
         presetSelector->setSelectedId(presetSelector->getNumItems());
-    }
-    else if (button == saveButton.get())
-    {
+    } else if (button == saveButton.get()) {
         ColourScheme::getInstance().savePreset(presetSelector->getText());
-    }
-    else if (button == deleteButton.get())
-    {
-        if (presetSelector->getNumItems() > 1)
-        {
+    } else if (button == deleteButton.get()) {
+        if (presetSelector->getNumItems() > 1) {
             File tempFile;
             String tempstr;
             StringArray presetsArray;
@@ -279,10 +224,8 @@ void ColourSchemeEditor::buttonClicked(Button* button)
             tempFile = settingsDir.getChildFile(tempstr);
             tempFile.deleteFile();
 
-            if (presetSelector->getSelectedId() > 1)
-            {
-                for (int i = 0; i < presetSelector->getNumItems(); ++i)
-                {
+            if (presetSelector->getSelectedId() > 1) {
+                for (int i = 0; i < presetSelector->getNumItems(); ++i) {
                     tempstr = presetSelector->getItemText(i);
                     if (presetSelector->getText() != tempstr)
                         presetsArray.add(tempstr);
@@ -297,20 +240,15 @@ void ColourSchemeEditor::buttonClicked(Button* button)
     }
 }
 
-
-void ColourSchemeEditor::changeListenerCallback(ChangeBroadcaster* source)
-{
-    if (source == colourEditor.get())
-    {
+void ColourSchemeEditor::changeListenerCallback(ChangeBroadcaster* source) {
+    if (source == colourEditor.get()) {
         int i = 0;
         std::map<String, Colour>::iterator it;
         int row = colourSelector->getSelectedRow();
         std::map<String, Colour>& colours = ColourScheme::getInstance().colours;
 
-        for (it = colours.begin(); it != colours.end(); ++it, ++i)
-        {
-            if (i == row)
-            {
+        for (it = colours.begin(); it != colours.end(); ++it, ++i) {
+            if (i == row) {
                 Colour tempCol = ColourScheme::getInstance().colours["Button Colour"];
 
                 it->second = colourEditor->getCurrentColour();
@@ -332,10 +270,7 @@ void ColourSchemeEditor::changeListenerCallback(ChangeBroadcaster* source)
     }
 }
 
-
-Drawable* ColourSchemeEditor::loadSVGFromMemory(const void* dataToInitialiseFrom,
-                                                size_t sizeInBytes)
-{
+Drawable* ColourSchemeEditor::loadSVGFromMemory(const void* dataToInitialiseFrom, size_t sizeInBytes) {
     Drawable* retval = nullptr;
 
     MemoryBlock memBlock(dataToInitialiseFrom, sizeInBytes);

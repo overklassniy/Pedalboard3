@@ -22,7 +22,6 @@
 #define PLUGINCOMPONENT_H_
 
 #include <JuceHeader.h>
-
 #include <map>
 #include <memory>
 
@@ -34,10 +33,13 @@ class PluginPinComponent;
 class PluginComponent : public juce::Component,
                         public juce::ChangeBroadcaster,
                         public juce::Button::Listener,
-                        public juce::Label::Listener
-{
+                        public juce::Label::Listener {
   public:
+    /// Constructs a component for the given graph node.
+    ///
+    /// @param n The graph node this component represents.
     PluginComponent(AudioProcessorGraph::Node::Ptr n);
+    /// Deletes the component and any open editor window.
     ~PluginComponent() override;
 
     /// Draws the component.
@@ -57,15 +59,15 @@ class PluginComponent : public juce::Component,
     void mouseUp(const juce::MouseEvent& e) override;
 
     /// Used to open the plugin's editor/delete the plugin.
-    void buttonClicked(juce::Button *button) override;
+    void buttonClicked(juce::Button* button) override;
 
     /// Called when the user changes the plugin's name.
-    void labelTextChanged(juce::Label *label) override;
+    void labelTextChanged(juce::Label* label) override;
     /// Sets the plugin's name.
     void setUserName(const juce::String& val);
 
     /// Sets the plugin window for this plugin.
-    void setWindow(PluginEditorWindow *val);
+    void setWindow(PluginEditorWindow* val);
     /// Saves the plugin window's state.
     void saveWindowState();
 
@@ -88,19 +90,19 @@ class PluginComponent : public juce::Component,
 
     /// Returns a cached MemoryBlock for the indexed program.
     ///
-    /// index is the indexed program to restore. memBlock is the MemoryBlock
-    /// to write the cached program into. Will be empty if we didn't have the
-    /// indexed program cached.
-    ///
     /// After retrieving the cached program, it will get deleted from the cache.
+    ///
+    /// @param index The indexed program to restore.
+    /// @param memBlock The MemoryBlock to write the cached program into. Will be empty if we didn't have the indexed
+    /// program cached.
     void getCachedPreset(int index, juce::MemoryBlock& memBlock);
 
-    /// Returns the position for the indexed input pin.
-    PluginPinComponent *getInputPin(int index) { return inputPins[index]; }
-    /// Returns the position for the indexed output pin.
-    PluginPinComponent *getOutputPin(int index) { return outputPins[index]; }
-    /// Returns the position for the indexed parameter pin.
-    PluginPinComponent *getParamPin(int index) { return paramPins[index]; }
+    /// Returns the indexed input pin.
+    PluginPinComponent* getInputPin(int index) { return inputPins[index]; }
+    /// Returns the indexed output pin.
+    PluginPinComponent* getOutputPin(int index) { return outputPins[index]; }
+    /// Returns the indexed parameter pin.
+    PluginPinComponent* getParamPin(int index) { return paramPins[index]; }
 
     /// Returns the number of input pins.
     int getNumInputPins() const { return inputPins.size(); }
@@ -114,6 +116,8 @@ class PluginComponent : public juce::Component,
     ///
     /// This is determined by the length of the component's name, and the
     /// length of its input and output channel names.
+    ///
+    /// @param onlyUpdateWidth If true, only update the component's width, keeping the current height.
     void determineSize(bool onlyUpdateWidth = false);
     /// Helper method to create the necessary pins for the plugin.
     void createPins();
@@ -132,7 +136,7 @@ class PluginComponent : public juce::Component,
     /// The plugin this component represents.
     AudioProcessorGraph::Node::Ptr node;
     /// Window for the plugin.
-    PluginEditorWindow *pluginWindow;
+    PluginEditorWindow* pluginWindow;
 
     /// The name of the plugin.
     juce::String pluginName;
@@ -144,35 +148,35 @@ class PluginComponent : public juce::Component,
     /// Used to draw the names of the output channels.
     juce::OwnedArray<juce::GlyphArrangement> outputText;
 
-    /// Keeps track of the positions of the input pins.
-    juce::Array<PluginPinComponent *> inputPins;
-    /// Keeps track of the positions of the output pins.
-    juce::Array<PluginPinComponent *> outputPins;
-    /// Keeps track of the positions of the parameter/midi pins.
-    juce::Array<PluginPinComponent *> paramPins;
+    /// The input pins for this plugin.
+    juce::Array<PluginPinComponent*> inputPins;
+    /// The output pins for this plugin.
+    juce::Array<PluginPinComponent*> outputPins;
+    /// The parameter/midi pins for this plugin.
+    juce::Array<PluginPinComponent*> paramPins;
 
-    /// Used to move the component about the plugin field.
+    /// Whether the component is currently being dragged.
     bool beingDragged;
-    /// Used to move the component about the plugin field.
+    /// Horizontal mouse offset captured at the start of a drag.
     int dragX;
-    /// Used to move the component about the plugin field.
+    /// Vertical mouse offset captured at the start of a drag.
     int dragY;
 
     /// Any cached presets we have.
-    std::map<int, std::shared_ptr<juce::MemoryBlock> > cachedPresets;
+    std::map<int, std::shared_ptr<juce::MemoryBlock>> cachedPresets;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginComponent)
 };
 
 /// Component representing an input or output pin for a plugin.
-class PluginPinComponent : public juce::Component
-{
+class PluginPinComponent : public juce::Component {
   public:
+    /// Constructs a pin for the given plugin.
     ///
-    /// dir is whether this is an input (false) or output (true) pin.
-    /// id is the uid of the plugin this pin is for.
-    /// chan is the input/output channel of the plugin this pin represents.
-    /// param is whether this is an audio or parameter(/midi) pin.
+    /// @param dir Whether this is an input (false) or output (true) pin.
+    /// @param id The uid of the plugin this pin is for.
+    /// @param chan The input/output channel of the plugin this pin represents.
+    /// @param param Whether this is an audio or parameter(/midi) pin.
     PluginPinComponent(bool dir, AudioProcessorGraph::NodeID id, int chan, bool param);
     ~PluginPinComponent() override;
 
@@ -209,10 +213,13 @@ class PluginPinComponent : public juce::Component
 };
 
 /// Window displaying a plugin's editor.
-class PluginEditorWindow : public juce::DocumentWindow
-{
+class PluginEditorWindow : public juce::DocumentWindow {
   public:
-    PluginEditorWindow(juce::AudioProcessorEditor *editor, PluginComponent *c);
+    /// Creates a document window wrapping the given plugin editor.
+    ///
+    /// @param editor The plugin editor to display in the window.
+    /// @param c The PluginComponent this window belongs to.
+    PluginEditorWindow(juce::AudioProcessorEditor* editor, PluginComponent* c);
     ~PluginEditorWindow() override;
 
     /// Used to close the window.
@@ -220,29 +227,32 @@ class PluginEditorWindow : public juce::DocumentWindow
 
   private:
     /// The 'parent' PluginComponent.
-    PluginComponent *component;
+    PluginComponent* component;
 
     /// Wrapper Component holding a PresetBar and an AudioProcessorEditor.
-    class EditorWrapper : public juce::Component
-    {
+    class EditorWrapper : public juce::Component {
       public:
-        EditorWrapper(juce::AudioProcessorEditor *ed, PluginComponent *comp);
+        /// Wraps a PresetBar above the plugin editor.
+        ///
+        /// @param ed The plugin editor to wrap.
+        /// @param comp The PluginComponent this wrapper belongs to.
+        EditorWrapper(juce::AudioProcessorEditor* ed, PluginComponent* comp);
         ~EditorWrapper() override;
 
         /// So we can resize our child components.
         void resized() override;
 
         /// So we know when the editor's bounds have changed.
-        void childBoundsChanged(juce::Component *child) override;
+        void childBoundsChanged(juce::Component* child) override;
 
       private:
         /// Our copy of the preset bar.
-        PresetBar *presetBar;
+        PresetBar* presetBar;
         /// Our copy of the editor component.
-        juce::AudioProcessorEditor *editor;
+        juce::AudioProcessorEditor* editor;
 
         /// The 'parent' PluginComponent.
-        PluginComponent *component;
+        PluginComponent* component;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EditorWrapper)
     };
@@ -251,17 +261,16 @@ class PluginEditorWindow : public juce::DocumentWindow
 };
 
 /// Component representing a connection between two plugins.
-class PluginConnection : public juce::Component,
-                         public juce::ChangeListener
-{
+class PluginConnection : public juce::Component, public juce::ChangeListener {
   public:
+    /// Constructs a connection between two plugin pins.
     ///
-    /// s is the source plugin pin. d is the destination plugin pin.
-    /// allOutputs: if true, the user was holding shift when they created
-    /// this connection; when they release the mouse button, connections
-    /// should be made for all the outputs following this one in its source,
-    /// and all the inputs following it in its destination.
-    PluginConnection(PluginPinComponent *s, PluginPinComponent *d = nullptr, bool allOutputs = false);
+    /// @param s The source plugin pin.
+    /// @param d The destination plugin pin.
+    /// @param allOutputs If true, the user was holding shift when they created this connection; when they release the
+    /// mouse button, connections should be made for all the outputs following this one in its source, and all the
+    /// inputs following it in its destination.
+    PluginConnection(PluginPinComponent* s, PluginPinComponent* d = nullptr, bool allOutputs = false);
     ~PluginConnection() override;
 
     /// Draws the connection.
@@ -270,22 +279,29 @@ class PluginConnection : public juce::Component,
     /// Used to select the connection (e.g. to delete it).
     void mouseDown(const juce::MouseEvent& e) override;
     /// Used to ensure clicks only count when the mouse is over the actual curve.
+    ///
+    /// @param x The x coordinate of the click, relative to this component.
+    /// @param y The y coordinate of the click, relative to this component.
+    /// @return True if the click is over the drawn curve (and not over the source pin), false otherwise.
     bool hitTest(int x, int y) override;
 
     /// Updates the component when the source or destination is moved.
-    void changeListenerCallback(juce::ChangeBroadcaster *changedObject) override;
+    void changeListenerCallback(juce::ChangeBroadcaster* changedObject) override;
 
     /// Used to drag the connection to another pin.
+    ///
+    /// @param x The x coordinate to drag to, relative to the parent field.
+    /// @param y The y coordinate to drag to, relative to the parent field.
     void drag(int x, int y);
     /// Sets the destination pin of this connection.
-    void setDestination(PluginPinComponent *d);
+    void setDestination(PluginPinComponent* d);
     /// Sets whether this connection is representing all outputs or not.
     void setRepresentsAllOutputs(bool val);
 
     /// Returns this connection's source pin.
-    const PluginPinComponent *getSource() const { return source; }
+    const PluginPinComponent* getSource() const { return source; }
     /// Returns this connection's destination pin.
-    const PluginPinComponent *getDestination() const { return destination; }
+    const PluginPinComponent* getDestination() const { return destination; }
 
     /// Returns whether this connection is selected or not.
     bool getSelected() const { return selected; }
@@ -297,15 +313,23 @@ class PluginConnection : public juce::Component,
   private:
     /// Helper method to help determine the component's size/bezier curve.
     ///
-    /// sX etc. are coordinates relative to the parent component.
+    /// @param sX Source x coordinate, relative to the parent component; modified in place.
+    /// @param sY Source y coordinate, relative to the parent component; modified in place.
+    /// @param dX Destination x coordinate, relative to the parent component; modified in place.
+    /// @param dY Destination y coordinate, relative to the parent component; modified in place.
     void getPoints(int& sX, int& sY, int& dX, int& dY);
     /// Helper method to work out (and update) the component's bounds.
+    ///
+    /// @param sX Source x coordinate.
+    /// @param sY Source y coordinate.
+    /// @param dX Destination x coordinate.
+    /// @param dY Destination y coordinate.
     void updateBounds(int sX, int sY, int dX, int dY);
 
     /// The source plugin pin.
-    PluginPinComponent *source;
+    PluginPinComponent* source;
     /// The destination plugin pin.
-    PluginPinComponent *destination;
+    PluginPinComponent* destination;
 
     /// The bezier curve that the connection is drawn as.
     juce::Path drawnCurve;

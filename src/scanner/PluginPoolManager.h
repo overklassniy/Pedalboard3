@@ -29,25 +29,30 @@
 class FilterGraph;
 
 /// A cached plugin instance with its state.
-struct PooledPlugin
-{
+struct PooledPlugin {
     std::unique_ptr<AudioPluginInstance> instance;
     PluginDescription description;
-    bool isActive = false; // Currently in use by active patch
-    int refCount = 0;      // How many patches in window need this
+    /// True when the plugin is currently in use by the active patch.
+    bool isActive = false;
+    /// Number of patches in the preload window that need this plugin.
+    int refCount = 0;
     Time lastUsed;
 };
 
 /// Listener interface for pool loading progress notifications.
-class PluginPoolListener
-{
+class PluginPoolListener {
   public:
     virtual ~PluginPoolListener() = default;
 
     /// Called when a patch's plugins are being loaded.
+    ///
+    /// @param patchIndex Index of the patch being loaded.
+    /// @param progress Loading progress from 0.0 to 1.0.
     virtual void patchLoadingProgress(int patchIndex, float progress) = 0;
 
     /// Called when a patch is fully loaded and ready.
+    ///
+    /// @param patchIndex Index of the patch that is now ready.
     virtual void patchReady(int patchIndex) = 0;
 };
 
@@ -56,8 +61,7 @@ class PluginPoolListener
 /// Instead of loading/unloading entire patches, this maintains a live pool of
 /// plugins for the current patch plus N patches ahead/behind in the setlist.
 /// This matches the Gig Performer architecture for zero-gap switching.
-class PluginPoolManager : private Thread
-{
+class PluginPoolManager : private Thread {
   public:
     // Singleton access
 
@@ -72,15 +76,21 @@ class PluginPoolManager : private Thread
     // Configuration
 
     /// Sets how many patches ahead to preload (1-5).
+    ///
+    /// @param patchesAhead Number of patches to preload ahead of the current position.
     void setPreloadRange(int patchesAhead);
 
     /// Gets the current preload range.
     int getPreloadRange() const { return preloadRange; }
 
     /// Sets the memory limit for the pool (optional, 0 = unlimited).
+    ///
+    /// @param bytes Maximum memory in bytes, or 0 for unlimited.
     void setMemoryLimit(size_t bytes);
 
     /// Gets estimated memory usage of the pool.
+    ///
+    /// @return Estimated memory usage in bytes.
     size_t getPoolMemoryUsage() const;
 
     // Setlist Management
@@ -90,10 +100,15 @@ class PluginPoolManager : private Thread
 
     /// Adds a patch's XML definition to the pool's knowledge.
     /// Call this for each patch in the setlist.
+    ///
+    /// @param patchIndex Index of the patch in the setlist.
+    /// @param patchXml XML definition of the patch; ownership is transferred.
     void addPatchDefinition(int patchIndex, std::unique_ptr<XmlElement> patchXml);
 
     /// Removes a patch definition and its associated plugin requirements.
     /// Call this when a patch is deleted from the setlist.
+    ///
+    /// @param patchIndex Index of the patch to remove.
     void removePatchDefinition(int patchIndex);
 
     /// Gets the number of known patch definitions.
@@ -103,24 +118,38 @@ class PluginPoolManager : private Thread
 
     /// Sets the current setlist position and triggers background preloading.
     /// This slides the loading window to keep prev/next patches ready.
+    ///
+    /// @param setlistIndex Index of the current patch in the setlist.
     void setCurrentPosition(int setlistIndex);
 
     /// Gets the current position.
     int getCurrentPosition() const { return currentPatchIndex.load(); }
 
     /// Checks if a patch is fully loaded and ready for instant switch.
+    ///
+    /// @param patchIndex Index of the patch to check.
+    /// @return True if the patch is fully loaded.
     bool isPatchReady(int patchIndex) const;
 
     /// Gets loading progress for a patch (0.0 to 1.0).
+    ///
+    /// @param patchIndex Index of the patch to query.
+    /// @return Loading progress from 0.0 to 1.0.
     float getPatchLoadProgress(int patchIndex) const;
 
     // Plugin Access
 
     /// Gets or creates a plugin instance from the pool.
     /// Returns nullptr if plugin couldn't be created.
+    ///
+    /// @param desc Plugin description identifying the plugin to get or create.
+    /// @return The plugin instance, or nullptr if creation failed.
     AudioPluginInstance* getOrCreatePlugin(const PluginDescription& desc);
 
     /// Gets a plugin by its identifier string (from pool).
+    ///
+    /// @param identifier Plugin identifier string created by createPluginIdentifier.
+    /// @return The plugin instance, or nullptr if not found in the pool.
     AudioPluginInstance* getPluginByIdentifier(const String& identifier);
 
     // Listeners
@@ -139,20 +168,31 @@ class PluginPoolManager : private Thread
 
     // Thread implementation (background loading)
 
+    /// Background thread entry point that processes the load queue.
     void run() override;
 
     /// Queue a patch for background loading.
+    ///
+    /// @param patchIndex Index of the patch to queue.
     void queuePatchLoad(int patchIndex);
 
     /// Load a single patch's plugins (called from background thread).
+    ///
+    /// @param patchIndex Index of the patch to load.
     void loadPatchPlugins(int patchIndex);
 
     /// Parse plugin descriptions from patch XML.
+    ///
+    /// @param patchXml XML element of the patch (Patch root or FILTERGRAPH).
+    /// @return Vector of plugin descriptions extracted from the patch.
     std::vector<PluginDescription> extractPluginsFromPatch(const XmlElement* patchXml);
 
 #if defined(PEDALBOARD3_TESTS)
   public:
     /// Test-only helper to exercise patch plugin extraction.
+    ///
+    /// @param patchXml XML element of the patch (Patch root or FILTERGRAPH).
+    /// @return Vector of plugin descriptions extracted from the patch.
     static std::vector<PluginDescription> extractPluginsFromPatchForTest(const XmlElement* patchXml);
 
   private:
@@ -162,6 +202,9 @@ class PluginPoolManager : private Thread
     void releaseUnusedPlugins();
 
     /// Creates identifier string for a plugin description.
+    ///
+    /// @param desc Plugin description to identify.
+    /// @return Identifier string in the form "format|name|uniqueId".
     static String createPluginIdentifier(const PluginDescription& desc);
 
     // Data

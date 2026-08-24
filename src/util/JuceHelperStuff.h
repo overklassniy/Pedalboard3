@@ -23,35 +23,55 @@
 
 #include <JuceHeader.h>
 
-namespace JuceHelperStuff
-{
+/// Collection of helper functions for common JUCE tasks.
+namespace JuceHelperStuff {
 
-/// Helper method to load an SVG image from memory into a drawable.
-Drawable* loadSVGFromMemory(const void* dataToInitialiseFrom,
-                            size_t sizeInBytes);
+/// Loads an SVG image from memory into a Drawable.
+///
+/// @param dataToInitialiseFrom Pointer to the raw SVG data.
+/// @param sizeInBytes Length of the SVG data in bytes.
+/// @return A heap-allocated Drawable, or nullptr if the data could not be parsed as valid SVG.
+Drawable* loadSVGFromMemory(const void* dataToInitialiseFrom, size_t sizeInBytes);
 
-/// Helper method to create a native window with the proper icon.
-int showModalDialog(const String& dialogTitle,
-                    Component* contentComponent,
-                    Component* componentToCentreAround,
-                    const Colour& backgroundColour,
-                    bool escapeKeyTriggersCloseButton,
-                    bool shouldBeResizable = false,
+/// Shows a modal dialog window with the application icon set.
+///
+/// The dialog is centred around componentToCentreAround and uses a native
+/// title bar.
+///
+/// @param dialogTitle Title of the dialog window.
+/// @param contentComponent Content component to display in the dialog.
+/// @param componentToCentreAround Component to centre the dialog around.
+/// @param backgroundColour Background colour of the dialog.
+/// @param escapeKeyTriggersCloseButton Whether the escape key closes the dialog.
+/// @param shouldBeResizable Whether the dialog should be resizable.
+/// @param useBottomRightCornerResizer Whether to show a bottom-right resizer.
+/// @return The modal loop's exit code.
+int showModalDialog(const String& dialogTitle, Component* contentComponent, Component* componentToCentreAround,
+                    const Colour& backgroundColour, bool escapeKeyTriggersCloseButton, bool shouldBeResizable = false,
                     bool useBottomRightCornerResizer = false);
 
-/// Helper method to create a native window with the proper icon.
-void showNonModalDialog(const String& dialogTitle,
-                        Component* contentComponent,
-                        Component* componentToCentreAround,
-                        const Colour& backgroundColour,
-                        bool escapeKeyTriggersCloseButton,
-                        bool shouldBeResizable = false,
-                        bool useBottomRightCornerResizer = false,
+/// Shows a non-modal dialog window with the application icon set.
+///
+/// Unlike showModalDialog this does not block.
+///
+/// @param dialogTitle Title of the dialog window.
+/// @param contentComponent Content component to display in the dialog.
+/// @param componentToCentreAround Component to centre the dialog around.
+/// @param backgroundColour Background colour of the dialog.
+/// @param escapeKeyTriggersCloseButton Whether the escape key closes the dialog.
+/// @param shouldBeResizable Whether the dialog should be resizable.
+/// @param useBottomRightCornerResizer Whether to show a bottom-right resizer.
+/// @param stayOnTop When true the dialog is kept above other windows.
+void showNonModalDialog(const String& dialogTitle, Component* contentComponent, Component* componentToCentreAround,
+                        const Colour& backgroundColour, bool escapeKeyTriggersCloseButton,
+                        bool shouldBeResizable = false, bool useBottomRightCornerResizer = false,
                         bool stayOnTop = false);
 
 /// Returns the application data folder for Pedalboard3.
+///
+/// @return The application data folder File.
 File getAppDataFolder();
 
-}
+} // namespace JuceHelperStuff
 
 #endif

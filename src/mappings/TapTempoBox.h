@@ -28,10 +28,12 @@
 class PluginField;
 
 /// Simple component letting the user tap the tempo.
-class TapTempoBox : public Component,
-                    public Timer
-{
+class TapTempoBox : public Component, public Timer {
   public:
+    /// Creates the tap tempo box.
+    ///
+    /// @param field The PluginField to send tempo updates to.
+    /// @param tempoEd The text editor that displays the current tempo.
     TapTempoBox(PluginField* field, TextEditor* tempoEd);
     ~TapTempoBox() override;
 

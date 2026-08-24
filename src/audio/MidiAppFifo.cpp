@@ -21,13 +21,8 @@
 #include "MidiAppFifo.h"
 
 MidiAppFifo::MidiAppFifo()
-    : idFifo(BufferSize)
-    , tempoFifo(BufferSize)
-    , patchChangeFifo(BufferSize)
-    , paramChangeFifo(BufferSize)
-{
-    for (int i = 0; i < BufferSize; ++i)
-    {
+    : idFifo(BufferSize), tempoFifo(BufferSize), patchChangeFifo(BufferSize), paramChangeFifo(BufferSize) {
+    for (int i = 0; i < BufferSize; ++i) {
         idBuffer[i] = 0;
         tempoBuffer[i] = 0;
         patchChangeBuffer[i] = 0;
@@ -37,8 +32,7 @@ MidiAppFifo::MidiAppFifo()
 
 MidiAppFifo::~MidiAppFifo() = default;
 
-void MidiAppFifo::writeID(CommandID id)
-{
+void MidiAppFifo::writeID(CommandID id) {
     const juce::SpinLock::ScopedLockType sl(writeLock);
     int start1, size1, start2, size2;
 
@@ -52,8 +46,7 @@ void MidiAppFifo::writeID(CommandID id)
     idFifo.finishedWrite(size1 + size2);
 }
 
-CommandID MidiAppFifo::readID()
-{
+CommandID MidiAppFifo::readID() {
     int start1, size1, start2, size2;
     CommandID retval = static_cast<CommandID>(-1);
 
@@ -69,8 +62,7 @@ CommandID MidiAppFifo::readID()
     return retval;
 }
 
-void MidiAppFifo::writeTempo(double tempo)
-{
+void MidiAppFifo::writeTempo(double tempo) {
     const juce::SpinLock::ScopedLockType sl(writeLock);
     int start1, size1, start2, size2;
 
@@ -84,8 +76,7 @@ void MidiAppFifo::writeTempo(double tempo)
     tempoFifo.finishedWrite(size1 + size2);
 }
 
-double MidiAppFifo::readTempo()
-{
+double MidiAppFifo::readTempo() {
     int start1, size1, start2, size2;
     double retval = 120.0;
 
@@ -101,8 +92,7 @@ double MidiAppFifo::readTempo()
     return retval;
 }
 
-void MidiAppFifo::writePatchChange(int index)
-{
+void MidiAppFifo::writePatchChange(int index) {
     const juce::SpinLock::ScopedLockType sl(writeLock);
     int start1, size1, start2, size2;
 
@@ -116,8 +106,7 @@ void MidiAppFifo::writePatchChange(int index)
     patchChangeFifo.finishedWrite(size1 + size2);
 }
 
-int MidiAppFifo::readPatchChange()
-{
+int MidiAppFifo::readPatchChange() {
     int start1, size1, start2, size2;
     int retval = 0;
 
@@ -133,8 +122,7 @@ int MidiAppFifo::readPatchChange()
     return retval;
 }
 
-void MidiAppFifo::writeParamChange(FilterGraph* graph, uint32 pluginId, int paramIndex, float value)
-{
+void MidiAppFifo::writeParamChange(FilterGraph* graph, uint32 pluginId, int paramIndex, float value) {
     const juce::SpinLock::ScopedLockType sl(writeLock);
     int start1, size1, start2, size2;
 
@@ -148,8 +136,7 @@ void MidiAppFifo::writeParamChange(FilterGraph* graph, uint32 pluginId, int para
     paramChangeFifo.finishedWrite(size1 + size2);
 }
 
-bool MidiAppFifo::readParamChange(PendingParamChange& out)
-{
+bool MidiAppFifo::readParamChange(PendingParamChange& out) {
     if (paramChangeFifo.getNumReady() <= 0)
         return false;
 

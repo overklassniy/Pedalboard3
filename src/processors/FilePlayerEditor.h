@@ -21,20 +21,21 @@
 #ifndef FILEPLAYEREDITOR_H_
 #define FILEPLAYEREDITOR_H_
 
+#include "FilePlayerControl.h"
+
 #include <JuceHeader.h>
 #include <memory>
-
-#include "FilePlayerControl.h"
 
 class FilePlayerProcessor;
 
 /// The full editor for FilePlayerProcessor.
-class FilePlayerEditor : public AudioProcessorEditor,
-                         public Timer
-{
+class FilePlayerEditor : public AudioProcessorEditor, public Timer {
   public:
-    FilePlayerEditor(FilePlayerProcessor* processor,
-                     const Rectangle<int>& windowBounds);
+    /// Creates the editor with the file player controls and restores window bounds.
+    ///
+    /// @param processor The file player processor to associate with this editor.
+    /// @param windowBounds The saved window bounds to restore.
+    FilePlayerEditor(FilePlayerProcessor* processor, const Rectangle<int>& windowBounds);
     ~FilePlayerEditor() override;
 
     /// Resizes the controls to fill the window.

@@ -20,17 +20,16 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "FilterGraph.h"
-#include "InternalFilters.h"
-#include "BypassableInstance.h"
+
 #include "AudioSingletons.h"
+#include "BypassableInstance.h"
+#include "InternalFilters.h"
+#include "PropertiesSingleton.h"
 
 const int FilterGraph::midiChannelNumber = 0x1000;
 
 FilterGraph::FilterGraph()
-    : FileBasedDocument(filenameSuffix, filenameWildcard,
-                         "Load a filter graph", "Save a filter graph")
-    , lastUID(0)
-{
+    : FileBasedDocument(filenameSuffix, filenameWildcard, "Load a filter graph", "Save a filter graph"), lastUID(0) {
     InternalPluginFormat internalFormat;
 
     // Create default I/O nodes. Audio input and MIDI input are enabled by default.
@@ -41,28 +40,23 @@ FilterGraph::FilterGraph()
     setChangedFlag(false);
 }
 
-FilterGraph::~FilterGraph()
-{
+FilterGraph::~FilterGraph() {
     graph.clear();
 }
 
-int FilterGraph::getNumFilters() const
-{
+int FilterGraph::getNumFilters() const {
     return graph.getNumNodes();
 }
 
-AudioProcessorGraph::Node::Ptr FilterGraph::getNode(int index) const
-{
+AudioProcessorGraph::Node::Ptr FilterGraph::getNode(int index) const {
     return graph.getNode(index);
 }
 
-AudioProcessorGraph::Node::Ptr FilterGraph::getNodeForId(AudioProcessorGraph::NodeID uid) const
-{
+AudioProcessorGraph::Node::Ptr FilterGraph::getNodeForId(AudioProcessorGraph::NodeID uid) const {
     return graph.getNodeForId(uid);
 }
 
-void FilterGraph::addFilter(const PluginDescription* desc, double x, double y)
-{
+void FilterGraph::addFilter(const PluginDescription* desc, double x, double y) {
     if (desc == nullptr)
         return;
 
@@ -70,11 +64,8 @@ void FilterGraph::addFilter(const PluginDescription* desc, double x, double y)
     auto tempInstance = AudioPluginFormatManagerSingleton::getInstance().createPluginInstance(
         *desc, graph.getSampleRate(), graph.getBlockSize(), errorMessage);
 
-    if (tempInstance == nullptr)
-    {
-        AlertWindow::showMessageBox(AlertWindow::WarningIcon,
-                                     TRANS("Couldn't create filter"),
-                                     errorMessage);
+    if (tempInstance == nullptr) {
+        AlertWindow::showMessageBox(AlertWindow::WarningIcon, TRANS("Couldn't create filter"), errorMessage);
         return;
     }
 
@@ -89,119 +80,97 @@ void FilterGraph::addFilter(const PluginDescription* desc, double x, double y)
 
     auto node = graph.addNode(std::move(instance));
 
-    if (node != nullptr)
-    {
+    if (node != nullptr) {
         node->properties.set("x", x);
         node->properties.set("y", y);
         changed();
     }
 }
 
-void FilterGraph::addFilter(std::unique_ptr<AudioPluginInstance> plugin, double x, double y)
-{
+void FilterGraph::addFilter(std::unique_ptr<AudioPluginInstance> plugin, double x, double y) {
     if (plugin == nullptr)
         return;
 
     auto instance = std::make_unique<BypassableInstance>(std::move(plugin));
     auto node = graph.addNode(std::move(instance));
 
-    if (node != nullptr)
-    {
+    if (node != nullptr) {
         node->properties.set("x", x);
         node->properties.set("y", y);
         changed();
-    }
-    else
-    {
-        AlertWindow::showMessageBox(AlertWindow::WarningIcon,
-                                     TRANS("Couldn't create filter"),
-                                     "Failed to add plugin to graph");
+    } else {
+        AlertWindow::showMessageBox(AlertWindow::WarningIcon, TRANS("Couldn't create filter"),
+                                    "Failed to add plugin to graph");
     }
 }
 
-void FilterGraph::addFilter(std::unique_ptr<AudioProcessor> plugin, double x, double y)
-{
+void FilterGraph::addFilter(std::unique_ptr<AudioProcessor> plugin, double x, double y) {
     if (plugin == nullptr)
         return;
 
     auto node = graph.addNode(std::move(plugin));
 
-    if (node != nullptr)
-    {
+    if (node != nullptr) {
         node->properties.set("x", x);
         node->properties.set("y", y);
         changed();
-    }
-    else
-    {
-        AlertWindow::showMessageBox(AlertWindow::WarningIcon,
-                                     TRANS("Couldn't create filter"),
-                                     "Failed to add plugin to graph");
+    } else {
+        AlertWindow::showMessageBox(AlertWindow::WarningIcon, TRANS("Couldn't create filter"),
+                                    "Failed to add plugin to graph");
     }
 }
 
-void FilterGraph::removeFilter(AudioProcessorGraph::NodeID id)
-{
+void FilterGraph::removeFilter(AudioProcessorGraph::NodeID id) {
     if (graph.removeNode(id))
         changed();
 }
 
-void FilterGraph::disconnectFilter(AudioProcessorGraph::NodeID id)
-{
+void FilterGraph::disconnectFilter(AudioProcessorGraph::NodeID id) {
     if (graph.disconnectNode(id))
         changed();
 }
 
-void FilterGraph::removeIllegalConnections()
-{
+void FilterGraph::removeIllegalConnections() {
     if (graph.removeIllegalConnections())
         changed();
 }
 
-void FilterGraph::setNodePosition(AudioProcessorGraph::NodeID nodeId, double x, double y)
-{
+void FilterGraph::setNodePosition(AudioProcessorGraph::NodeID nodeId, double x, double y) {
     auto n = graph.getNodeForId(nodeId);
 
-    if (n != nullptr)
-    {
+    if (n != nullptr) {
         n->properties.set("x", jlimit(0.0, 1.0, x));
         n->properties.set("y", jlimit(0.0, 1.0, y));
     }
 }
 
-void FilterGraph::getNodePosition(AudioProcessorGraph::NodeID nodeId, double& x, double& y) const
-{
+void FilterGraph::getNodePosition(AudioProcessorGraph::NodeID nodeId, double& x, double& y) const {
     x = y = 0;
 
     auto n = graph.getNodeForId(nodeId);
 
-    if (n != nullptr)
-    {
+    if (n != nullptr) {
         x = n->properties.getWithDefault("x", 0.0);
         y = n->properties.getWithDefault("y", 0.0);
     }
 }
 
-std::vector<AudioProcessorGraph::Connection> FilterGraph::getConnections() const
-{
+std::vector<AudioProcessorGraph::Connection> FilterGraph::getConnections() const {
     return graph.getConnections();
 }
 
 bool FilterGraph::connectionExists(AudioProcessorGraph::NodeID sourceFilterUID, int sourceFilterChannel,
-                                   AudioProcessorGraph::NodeID destFilterUID, int destFilterChannel) const
-{
+                                   AudioProcessorGraph::NodeID destFilterUID, int destFilterChannel) const {
     return graph.isConnected({{sourceFilterUID, sourceFilterChannel}, {destFilterUID, destFilterChannel}});
 }
 
 bool FilterGraph::canConnect(AudioProcessorGraph::NodeID sourceFilterUID, int sourceFilterChannel,
-                             AudioProcessorGraph::NodeID destFilterUID, int destFilterChannel) const
-{
+                             AudioProcessorGraph::NodeID destFilterUID, int destFilterChannel) const {
     return graph.canConnect({{sourceFilterUID, sourceFilterChannel}, {destFilterUID, destFilterChannel}});
 }
 
 bool FilterGraph::addConnection(AudioProcessorGraph::NodeID sourceFilterUID, int sourceFilterChannel,
-                                AudioProcessorGraph::NodeID destFilterUID, int destFilterChannel)
-{
+                                AudioProcessorGraph::NodeID destFilterUID, int destFilterChannel) {
     auto result = graph.addConnection({{sourceFilterUID, sourceFilterChannel}, {destFilterUID, destFilterChannel}});
 
     if (result)
@@ -211,14 +180,12 @@ bool FilterGraph::addConnection(AudioProcessorGraph::NodeID sourceFilterUID, int
 }
 
 void FilterGraph::removeConnection(AudioProcessorGraph::NodeID sourceFilterUID, int sourceFilterChannel,
-                                   AudioProcessorGraph::NodeID destFilterUID, int destFilterChannel)
-{
+                                   AudioProcessorGraph::NodeID destFilterUID, int destFilterChannel) {
     if (graph.removeConnection({{sourceFilterUID, sourceFilterChannel}, {destFilterUID, destFilterChannel}}))
         changed();
 }
 
-void FilterGraph::clear(bool addAudioIn, bool addMidiIn, bool addAudioOut)
-{
+void FilterGraph::clear(bool addAudioIn, bool addMidiIn, bool addAudioOut) {
     InternalPluginFormat internalFormat;
 
     graph.clear();
@@ -235,17 +202,14 @@ void FilterGraph::clear(bool addAudioIn, bool addMidiIn, bool addAudioOut)
     changed();
 }
 
-String FilterGraph::getDocumentTitle()
-{
+String FilterGraph::getDocumentTitle() {
     if (!getFile().exists())
         return "Unnamed";
 
     return getFile().getFileNameWithoutExtension();
 }
 
-Result FilterGraph::loadDocument(const File& file)
-{
-    // TODO: Implement full document loading with OSC mapping integration (Phase 2/3)
+Result FilterGraph::loadDocument(const File& file) {
     auto xml = XmlDocument::parse(file);
 
     if (xml == nullptr || !xml->hasTagName("FILTERGRAPH"))
@@ -255,9 +219,7 @@ Result FilterGraph::loadDocument(const File& file)
     return Result::ok();
 }
 
-Result FilterGraph::saveDocument(const File& file)
-{
-    // TODO: Implement full document saving with OSC mapping integration (Phase 2/3)
+Result FilterGraph::saveDocument(const File& file) {
     auto xml = createXml();
 
     if (xml == nullptr || !xml->writeTo(file))
@@ -266,23 +228,36 @@ Result FilterGraph::saveDocument(const File& file)
     return Result::ok();
 }
 
-File FilterGraph::getLastDocumentOpened()
-{
-    // TODO: Use SettingsManager (Phase 4) instead of hardcoded value
-    return File();
+File FilterGraph::getLastDocumentOpened() {
+    RecentlyOpenedFilesList recentFiles;
+    recentFiles.restoreFromString(
+        PropertiesSingleton::getInstance().getUserSettings()->getValue("recentFilterGraphFiles"));
+
+    return recentFiles.getFile(0);
 }
 
-void FilterGraph::setLastDocumentOpened(const File& file)
-{
-    // TODO: Use SettingsManager (Phase 4) to persist recent files
-    juce::ignoreUnused(file);
+void FilterGraph::setLastDocumentOpened(const File& file) {
+    RecentlyOpenedFilesList recentFiles;
+    recentFiles.restoreFromString(
+        PropertiesSingleton::getInstance().getUserSettings()->getValue("recentFilterGraphFiles"));
+
+    recentFiles.addFile(file);
+
+    PropertiesSingleton::getInstance().getUserSettings()->setValue("recentFilterGraphFiles", recentFiles.toString());
 }
 
-static std::unique_ptr<XmlElement> createNodeXml(AudioProcessorGraph::Node* const node)
-{
+/// Serializes a single graph node to an XML element.
+///
+/// Writes the node's UID, canvas position, editor window state, current program,
+/// plugin description, and saved state. Returns nullptr if the node's processor
+/// is not an AudioPluginInstance.
+///
+/// @param node The graph node to serialize.
+/// @return An XmlElement representing the node, or nullptr if the node's
+///         processor is not an AudioPluginInstance.
+static std::unique_ptr<XmlElement> createNodeXml(AudioProcessorGraph::Node* const node) {
     auto* plugin = dynamic_cast<AudioPluginInstance*>(node->getProcessor());
-    if (plugin == nullptr)
-    {
+    if (plugin == nullptr) {
         jassertfalse;
         return nullptr;
     }
@@ -309,20 +284,17 @@ static std::unique_ptr<XmlElement> createNodeXml(AudioProcessorGraph::Node* cons
     return e;
 }
 
-std::unique_ptr<XmlElement> FilterGraph::createXml() const
-{
+std::unique_ptr<XmlElement> FilterGraph::createXml() const {
     auto xml = std::make_unique<XmlElement>("FILTERGRAPH");
 
-    for (int i = 0; i < graph.getNumNodes(); ++i)
-    {
+    for (int i = 0; i < graph.getNumNodes(); ++i) {
         auto nodeXml = createNodeXml(graph.getNode(i).get());
         if (nodeXml != nullptr)
             xml->addChildElement(nodeXml.release());
     }
 
     auto connections = graph.getConnections();
-    for (const auto& fc : connections)
-    {
+    for (const auto& fc : connections) {
         auto e = std::make_unique<XmlElement>("CONNECTION");
         e->setAttribute("srcFilter", static_cast<int>(fc.source.nodeID.uid));
         e->setAttribute("srcChannel", fc.source.channelIndex);
@@ -334,21 +306,15 @@ std::unique_ptr<XmlElement> FilterGraph::createXml() const
     return xml;
 }
 
-void FilterGraph::restoreFromXml(const XmlElement& xml)
-{
+void FilterGraph::restoreFromXml(const XmlElement& xml) {
     clear(false, false, false);
 
-    // TODO: Add OSC mapping integration when OscMappingManager is ported (Phase 2)
-    for (auto* e : xml.getChildIterator())
-    {
-        if (e->getTagName() == "FILTER")
-        {
-            // TODO: Full node restoration with OSC mapping when Phase 2 is complete
+    for (auto* e : xml.getChildIterator()) {
+        if (e->getTagName() == "FILTER") {
             String errorMessage;
             PluginDescription pd;
 
-            for (auto* child : e->getChildIterator())
-            {
+            for (auto* child : e->getChildIterator()) {
                 if (pd.loadFromXml(*child))
                     break;
             }
@@ -364,13 +330,12 @@ void FilterGraph::restoreFromXml(const XmlElement& xml)
             else
                 instance = std::make_unique<BypassableInstance>(std::move(tempInstance));
 
-            auto node = graph.addNode(std::move(instance), AudioProcessorGraph::NodeID(static_cast<uint32>(e->getIntAttribute("uid"))));
+            auto node = graph.addNode(std::move(instance),
+                                      AudioProcessorGraph::NodeID(static_cast<uint32>(e->getIntAttribute("uid"))));
 
-            if (node != nullptr)
-            {
+            if (node != nullptr) {
                 auto* state = e->getChildByName("STATE");
-                if (state != nullptr)
-                {
+                if (state != nullptr) {
                     MemoryBlock m;
                     m.fromBase64Encoding(state->getAllSubText());
                     node->getProcessor()->setStateInformation(m.getData(), static_cast<int>(m.getSize()));
@@ -388,10 +353,8 @@ void FilterGraph::restoreFromXml(const XmlElement& xml)
         }
     }
 
-    for (auto* e2 : xml.getChildIterator())
-    {
-        if (e2->getTagName() == "CONNECTION")
-        {
+    for (auto* e2 : xml.getChildIterator()) {
+        if (e2->getTagName() == "CONNECTION") {
             addConnection(AudioProcessorGraph::NodeID(static_cast<uint32>(e2->getIntAttribute("srcFilter"))),
                           e2->getIntAttribute("srcChannel"),
                           AudioProcessorGraph::NodeID(static_cast<uint32>(e2->getIntAttribute("dstFilter"))),

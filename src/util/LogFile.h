@@ -21,7 +21,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-
 #include <map>
 
 /// Singleton used for logging events.
@@ -29,8 +28,7 @@
 /// Logs MIDI, OSC, and Pedalboard events to a date-stamped file in the
 /// application data directory. Also broadcasts change notifications so
 /// UI components can update in real time.
-class LogFile : public juce::ChangeBroadcaster
-{
+class LogFile : public juce::ChangeBroadcaster {
   public:
     /// Called to start logging (creates a date-stamped file).
     void start();
@@ -43,12 +41,12 @@ class LogFile : public juce::ChangeBroadcaster
 
     /// Call this to log an event.
     ///
-    /// eventType specifies which type of event this is (MIDI, OSC, Pedalboard).
-    /// message is the message to write.
-    ///
     /// Events will appear in the log like:
     /// 12:00:00:000 MIDI: Note on (v:127 n:64).
     /// i.e. <time (hrs:mins:secs:millisecs)> <eventType>: <message>
+    ///
+    /// @param eventType Which type of event this is (MIDI, OSC, Pedalboard).
+    /// @param message The message to write.
     void logEvent(const juce::String& eventType, const juce::String& message);
 
     /// Returns the contents of the log file.
@@ -61,10 +59,15 @@ class LogFile : public juce::ChangeBroadcaster
     /// since this time. Pass in a Time initialised with its default
     /// constructor if you want to see the entire log. On return this will
     /// be set to the time of the latest event in the log.
-    const juce::String& getLogContents(const juce::StringArray& eventTypes,
-                                       juce::Time& eventsSince);
+    ///
+    /// @param eventTypes Names of the event types to include in the result.
+    /// @param eventsSince On input, the earliest time to include; on output, the time of the latest event returned.
+    /// @return The filtered log contents.
+    const juce::String& getLogContents(const juce::StringArray& eventTypes, juce::Time& eventsSince);
 
     /// Returns the sole instance of the LogFile.
+    ///
+    /// @return The global LogFile instance.
     static LogFile& getInstance();
 
   private:
@@ -73,8 +76,7 @@ class LogFile : public juce::ChangeBroadcaster
     ~LogFile();
 
     /// Struct representing a single event in the log.
-    struct LogEvent
-    {
+    struct LogEvent {
         /// The event's type.
         juce::String eventType;
 

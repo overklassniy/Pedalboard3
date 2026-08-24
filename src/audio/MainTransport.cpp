@@ -22,40 +22,34 @@
 
 juce_ImplementSingleton(MainTransport)
 
-MainTransport::~MainTransport()
-{
+    MainTransport::~MainTransport() {
     removeAllChangeListeners();
     clearSingletonInstance();
 }
 
-void MainTransport::registerTransport(ChangeListener* transport)
-{
+void MainTransport::registerTransport(ChangeListener* transport) {
     addChangeListener(transport);
     transports.add(transport);
 }
 
-void MainTransport::unregisterTransport(ChangeListener* transport)
-{
+void MainTransport::unregisterTransport(ChangeListener* transport) {
     removeChangeListener(transport);
     transports.removeFirstMatchingValue(transport);
 }
 
-void MainTransport::transportFinished()
-{
+void MainTransport::transportFinished() {
     --transportsPlaying;
 
     // 1 because the MainPanel playButton is also registered as a transport
     // and will never call this method.
-    if (transportsPlaying == 1)
-    {
+    if (transportsPlaying == 1) {
         state = false;
         returnToZero = transports.size();
         sendChangeMessage();
     }
 }
 
-void MainTransport::toggleState()
-{
+void MainTransport::toggleState() {
     state = !state;
     if (state)
         transportsPlaying = transports.size();
@@ -64,14 +58,12 @@ void MainTransport::toggleState()
     sendChangeMessage();
 }
 
-void MainTransport::setReturnToZero()
-{
+void MainTransport::setReturnToZero() {
     returnToZero = transports.size();
     sendChangeMessage();
 }
 
-bool MainTransport::getReturnToZero()
-{
+bool MainTransport::getReturnToZero() {
     bool retval = returnToZero > 0;
 
     if (returnToZero > 0)
@@ -80,9 +72,4 @@ bool MainTransport::getReturnToZero()
     return retval;
 }
 
-MainTransport::MainTransport()
-    : state(false)
-    , returnToZero(0)
-    , transportsPlaying(1)
-{
-}
+MainTransport::MainTransport() : state(false), returnToZero(0), transportsPlaying(1) {}

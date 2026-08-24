@@ -21,13 +21,8 @@
 #include "MidiCcAlertWindow.h"
 
 MidiCcAlertWindow::MidiCcAlertWindow(MidiMappingManager* midi)
-    : AlertWindow("MIDI CC mapping",
-                  "Select a MIDI CC to map this command to:",
-                  AlertWindow::NoIcon)
-    , midiManager(midi)
-    , listening(false)
-    , asyncCc(-1)
-{
+    : AlertWindow("MIDI CC mapping", "Select a MIDI CC to map this command to:", AlertWindow::NoIcon),
+      midiManager(midi), listening(false), asyncCc(-1) {
     StringArray tempArr;
 
     tempArr.add("<< MIDI Learn >>");
@@ -41,29 +36,24 @@ MidiCcAlertWindow::MidiCcAlertWindow(MidiMappingManager* midi)
     getComboBoxComponent("midiCc")->setSelectedId(2);
 }
 
-MidiCcAlertWindow::~MidiCcAlertWindow()
-{
+MidiCcAlertWindow::~MidiCcAlertWindow() {
     if (listening)
         midiManager->unregisterMidiLearnCallback(this);
 }
 
-void MidiCcAlertWindow::handleAsyncUpdate()
-{
+void MidiCcAlertWindow::handleAsyncUpdate() {
     if (asyncCc > -1)
         getComboBoxComponent("midiCc")->setSelectedId(asyncCc + 2);
 }
 
-void MidiCcAlertWindow::comboBoxChanged(ComboBox* comboBoxThatHasChanged)
-{
-    if (comboBoxThatHasChanged->getSelectedId() == 1)
-    {
+void MidiCcAlertWindow::comboBoxChanged(ComboBox* comboBoxThatHasChanged) {
+    if (comboBoxThatHasChanged->getSelectedId() == 1) {
         listening = true;
         midiManager->registerMidiLearnCallback(this);
     }
 }
 
-void MidiCcAlertWindow::midiCcReceived(int val)
-{
+void MidiCcAlertWindow::midiCcReceived(int val) {
     asyncCc = val;
     triggerAsyncUpdate();
 }

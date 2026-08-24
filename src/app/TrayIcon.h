@@ -23,21 +23,29 @@
 
 #ifndef JUCE_MAC
 
-#include <JuceHeader.h>
+    #include <JuceHeader.h>
 
 /// System tray icon.
 ///
 /// Provides a system tray icon with right-click popup menu and
 /// double-click toggle for showing/hiding the main window.
-class TrayIcon : public SystemTrayIconComponent
-{
+class TrayIcon : public SystemTrayIconComponent {
   public:
+    /// Creates the tray icon, setting the application icon and tooltip.
+    ///
+    /// @param win The main document window to toggle visibility on from the tray icon.
     TrayIcon(DocumentWindow* win);
+
+    /// Destructor.
     ~TrayIcon() override;
 
     /// Called to display a PopupMenu on right-click.
+    ///
+    /// @param e The mouse event describing the click; a right-click shows the popup menu.
     void mouseDown(const MouseEvent& e) override;
     /// Called to display/hide the main window.
+    ///
+    /// @param e The mouse event describing the double-click; a left double-click toggles window visibility.
     void mouseDoubleClick(const MouseEvent& e) override;
 
   private:

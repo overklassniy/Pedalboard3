@@ -24,67 +24,82 @@
 #include "PedalboardProcessor.h"
 
 /// Simple processor which provides a VU meter.
-class VuMeterProcessor : public PedalboardProcessor
-{
+class VuMeterProcessor : public PedalboardProcessor {
   public:
+    /// Constructs the VU meter processor with 2 inputs and 0 outputs.
     VuMeterProcessor();
+    /// Destructor.
     ~VuMeterProcessor() override;
 
     /// Returns the component which is added to the instance's PluginComponent.
+    ///
+    /// @return A new VuMeterControl component; deleted by the caller.
     Component* getControls();
     /// Returns the size of the controls component.
     Point<int> getSize() override { return Point<int>(64, 128); }
 
-    /// Returns the current left level.
+    /// Returns the current left channel level (linear, 0.0 to 1.0).
     float getLeftLevel() const { return levelLeft; }
-    /// Returns the current right level.
+    /// Returns the current right channel level (linear, 0.0 to 1.0).
     float getRightLevel() const { return levelRight; }
 
     /// Updates the bounds of our editor window.
+    ///
+    /// @param bounds The new editor window bounds to store.
     void updateEditorBounds(const Rectangle<int>& bounds);
 
     /// Provides a description of the processor to the filter graph.
+    ///
+    /// @param description The plugin description to fill in.
     void fillInPluginDescription(PluginDescription& description) const override;
 
-    /// Alters the input audio's level accordingly.
+    /// Tracks peak levels per channel with gradual decay; audio passes through unmodified.
+    ///
+    /// @param buffer The audio buffer to measure peak levels from.
+    /// @param midiMessages The MIDI buffer (unused).
     void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) override;
 
     /// Returns the name of the processor.
     const String getName() const override { return "VU Meter"; }
-    /// Ignored.
+    /// No preparation needed.
     void prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) override {}
-    /// Ignored.
+    /// No resources to release.
     void releaseResources() override {}
     /// Returns the length of the plugin's tail.
     double getTailLengthSeconds() const override { return 0.0; }
-    /// We definitely want Midi input.
+    /// This processor does not accept MIDI.
     bool acceptsMidi() const override { return false; }
-    /// But we don't need to output it.
+    /// This processor does not produce MIDI.
     bool producesMidi() const override { return false; }
-    /// We have no editor.
+    /// Creates the VuMeterEditor for this processor.
     AudioProcessorEditor* createEditor() override;
-    /// We have no editor.
+    /// This processor has a custom editor.
     bool hasEditor() const override { return true; }
 
-    /// We have no programs.
+    /// No programs; returns 0.
     int getNumPrograms() override { return 0; }
-    /// We have no programs.
+    /// No programs; returns 0.
     int getCurrentProgram() override { return 0; }
-    /// We have no programs.
+    /// No programs; no-op.
     void setCurrentProgram(int index) override {}
-    /// We have no programs.
+    /// No programs; returns an empty string.
     const String getProgramName(int index) override { return ""; }
-    /// We have no programs.
+    /// No programs; no-op.
     void changeProgramName(int index, const String& newName) override {}
-    /// Loads the position of the slider and the size and position of the editor.
+    /// Serializes the editor bounds to destData.
+    ///
+    /// @param destData The memory block to serialize state into.
     void getStateInformation(juce::MemoryBlock& destData) override;
-    /// Saves the position of the slider and the size and position of the editor.
+    /// Restores the editor bounds from data.
+    ///
+    /// @param data Pointer to the serialized state data.
+    /// @param sizeInBytes Size of the serialized state data in bytes.
     void setStateInformation(const void* data, int sizeInBytes) override;
 
   private:
-    /// The current level.
+    /// Current left channel peak level with gradual decay.
     float levelLeft;
-    /// The current level.
+    /// Current right channel peak level with gradual decay.
     float levelRight;
 
     /// The editor's bounds.

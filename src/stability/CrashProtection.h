@@ -25,14 +25,16 @@
 #include <spdlog/spdlog.h>
 #include <thread>
 
-
-/// Result of a timed operation
-enum class TimedOperationResult
-{
-    Success,      ///< Operation completed successfully
-    Exception,    ///< Operation threw an exception (SEH or C++)
-    Timeout,      ///< Operation exceeded timeout
-    Cancelled     ///< Operation was cancelled
+/// Outcome of a timed, protected operation.
+enum class TimedOperationResult {
+    /// Operation completed successfully.
+    Success,
+    /// Operation threw an exception (SEH or C++).
+    Exception,
+    /// Operation exceeded the configured timeout.
+    Timeout,
+    /// Operation was cancelled before completion.
+    Cancelled
 };
 
 /// Provides defensive crash protection for risky plugin operations.
@@ -43,76 +45,94 @@ enum class TimedOperationResult
 /// - Watchdog thread to detect UI hangs
 /// - Timeout protection for hung operations
 /// - Crash state logging for diagnostics
-class CrashProtection
-{
+class CrashProtection {
   public:
-    /// Get the singleton instance
+    /// Returns the singleton instance.
+    ///
+    /// @return The global CrashProtection instance.
     static CrashProtection& getInstance();
 
-    /// Execute a function with SEH protection (Windows only).
-    /// @param operation The function to execute safely
-    /// @param operationName Name for logging
-    /// @param pluginName Optional plugin name for crash context
-    /// @return true if operation completed without exception
+    /// Executes a function with SEH protection (Windows only).
+    ///
+    /// @param operation The function to run safely.
+    /// @param operationName Name used for logging.
+    /// @param pluginName When provided, recorded in the crash context so a failing plugin can be identified.
+    /// @return True if the operation completed without throwing.
     bool executeWithProtection(std::function<void()> operation, const juce::String& operationName,
                                const juce::String& pluginName = {});
 
-    /// Execute a function with timeout protection.
-    /// Runs the operation in a separate thread and waits for completion or timeout.
-    /// @param operation The function to execute
-    /// @param operationName Name for logging
-    /// @param timeoutMs Timeout in milliseconds
-    /// @param pluginPath Optional plugin path for auto-blacklisting on timeout
-    /// @return TimedOperationResult indicating success, timeout, or exception
+    /// Executes a function with timeout protection.
+    ///
+    /// Runs operation in a separate thread and waits for completion or the
+    /// timeout.
+    ///
+    /// @param operation The function to run.
+    /// @param operationName Name used for logging.
+    /// @param timeoutMs Maximum time to wait in milliseconds.
+    /// @param pluginPath When provided, auto-blacklisted if the operation times out.
+    /// @return The outcome as a TimedOperationResult.
     TimedOperationResult executeWithTimeout(std::function<void()> operation, const juce::String& operationName,
                                             int timeoutMs, const juce::String& pluginPath = {});
 
-    /// Execute a function with both SEH protection and timeout.
+    /// Executes a function with both SEH protection and a timeout.
+    ///
     /// Combines SEH wrapping with timeout protection for maximum safety.
-    /// @param operation The function to execute
-    /// @param operationName Name for logging
-    /// @param timeoutMs Timeout in milliseconds
-    /// @param pluginPath Optional plugin path for auto-blacklisting
-    /// @return TimedOperationResult indicating the outcome
+    ///
+    /// @param operation The function to run.
+    /// @param operationName Name used for logging.
+    /// @param timeoutMs Maximum time to wait in milliseconds.
+    /// @param pluginPath When provided, auto-blacklisted on timeout.
+    /// @return The outcome as a TimedOperationResult.
     TimedOperationResult executeWithProtectionAndTimeout(std::function<void()> operation,
                                                          const juce::String& operationName, int timeoutMs,
                                                          const juce::String& pluginPath = {});
 
-    /// Set the current operation context for crash logs.
-    /// Call before risky operations so crash logs know what was happening.
+    /// Sets the current operation context for crash logs.
+    ///
+    /// Call before risky operations so crash logs record what was happening.
+    ///
+    /// @param operation Description of the current operation.
+    /// @param pluginName When provided, identifies the plugin involved.
     void setCurrentOperation(const juce::String& operation, const juce::String& pluginName = {});
 
-    /// Clear the current operation context.
-    /// Call after operation completes successfully.
+    /// Clears the current operation context.
+    ///
+    /// Call after an operation completes so stale context is not logged on a
+    /// later crash.
     void clearCurrentOperation();
 
-    /// Get the current operation for crash logging.
+    /// Returns the current operation string for crash logging.
     juce::String getCurrentOperation() const;
 
-    /// Get the current plugin name for crash logging.
+    /// Returns the current plugin name for crash logging.
     juce::String getCurrentPluginName() const;
 
-    /// Set auto-save callback to be called before risky operations.
+    /// Sets the callback invoked before risky operations to trigger auto-save.
+    ///
+    /// @param callback Function to call before risky operations.
     void setAutoSaveCallback(std::function<void()> callback);
 
-    /// Trigger the auto-save callback.
+    /// Invokes the registered auto-save callback, if any.
     void triggerAutoSave();
 
-    /// Start the watchdog thread.
-    /// @param timeoutMs Timeout in milliseconds before considering UI hung
+    /// Starts the watchdog thread.
+    ///
+    /// @param timeoutMs How long without a ping before the UI is considered hung.
     void startWatchdog(int timeoutMs = 10000);
 
-    /// Stop the watchdog thread.
+    /// Stops the watchdog thread.
     void stopWatchdog();
 
-    /// Ping the watchdog to indicate the UI is responsive.
-    /// Call this from the message thread periodically.
+    /// Pings the watchdog to indicate the UI is responsive.
+    ///
+    /// Call this periodically from the message thread.
     void pingWatchdog();
 
-    /// Check if the watchdog detected a hang.
+    /// Returns true if the watchdog has detected a UI hang.
     bool isHangDetected() const { return hangDetected.load(); }
 
-    /// Write crash context to log file.
+    /// Writes the current crash context to the log file.
+    ///
     /// Call this from a crash handler.
     void writeCrashContext();
 
@@ -123,40 +143,43 @@ class CrashProtection
     CrashProtection(const CrashProtection&) = delete;
     CrashProtection& operator=(const CrashProtection&) = delete;
 
+    /// Watchdog thread loop that flags a hang when pings stop arriving.
     void watchdogLoop();
 
+    /// Current operation description, written to crash logs.
     juce::String currentOperation;
+    /// Plugin involved in the current operation, written to crash logs.
     juce::String currentPluginName;
+    /// Guards access to the operation context strings.
     mutable juce::CriticalSection operationLock;
 
+    /// Callback invoked before risky operations to trigger auto-save.
     std::function<void()> autoSaveCallback;
 
-    // Watchdog
+    // Watchdog state
     std::atomic<bool> watchdogRunning{false};
     std::atomic<bool> hangDetected{false};
     std::atomic<std::chrono::steady_clock::time_point> lastPing;
     std::thread watchdogThread;
     int watchdogTimeoutMs = 10000;
 
-    // Timeout operation state
+    // Timeout operation state shared with the worker thread
     std::atomic<bool> timeoutOperationRunning{false};
     std::atomic<bool> timeoutOperationComplete{false};
     std::atomic<bool> timeoutOperationSuccess{false};
 };
 
-/// RAII helper to set/clear operation context.
-class ScopedOperationContext
-{
+/// RAII helper that sets the operation context on construction and clears it
+/// on destruction, so the context is always cleaned up even on early returns.
+class ScopedOperationContext {
   public:
-    ScopedOperationContext(const juce::String& operation, const juce::String& pluginName = {})
-    {
+    ScopedOperationContext(const juce::String& operation, const juce::String& pluginName = {}) {
         CrashProtection::getInstance().setCurrentOperation(operation, pluginName);
     }
 
     ~ScopedOperationContext() { CrashProtection::getInstance().clearCurrentOperation(); }
 };
 
-// Macro for wrapping risky operations
+/// Wraps a risky code block in executeWithProtection.
 #define PROTECTED_OPERATION(name, plugin, code)                                                                        \
     CrashProtection::getInstance().executeWithProtection([&]() { code; }, name, plugin)
-

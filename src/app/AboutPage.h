@@ -27,13 +27,20 @@
 /// Displays the application title, description, credits, author, license,
 /// hyperlinks to niallmoody.com and the JUCE website, version information,
 /// and the current IP address.
-class AboutPage : public juce::Component
-{
+class AboutPage : public juce::Component {
   public:
+    /// Constructs the about page, populating all labels and links.
+    ///
+    /// @param ip The current local IP address shown in the dialog.
     explicit AboutPage(const juce::String& ip);
+
+    /// Destructor.
     ~AboutPage() override;
 
+    /// Paints the background colour.
     void paint(juce::Graphics& g) override;
+
+    /// Lays out all labels, links, and the version display.
     void resized() override;
 
   private:

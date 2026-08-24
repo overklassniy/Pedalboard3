@@ -19,21 +19,15 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "Mapping.h"
-#include "FilterGraph.h"
+
 #include "BypassableInstance.h"
+#include "FilterGraph.h"
 
 Mapping::Mapping(FilterGraph* graph, uint32 pluginId, int param)
-    : filterGraph(graph)
-    , plugin(pluginId)
-    , parameter(param)
-{
-}
+    : filterGraph(graph), plugin(pluginId), parameter(param) {}
 
-Mapping::Mapping(FilterGraph* graph, XmlElement* e)
-    : filterGraph(graph)
-{
-    if (e)
-    {
+Mapping::Mapping(FilterGraph* graph, XmlElement* e) : filterGraph(graph) {
+    if (e) {
         plugin = static_cast<uint32>(e->getIntAttribute("pluginId"));
         parameter = e->getIntAttribute("parameter");
     }
@@ -41,26 +35,21 @@ Mapping::Mapping(FilterGraph* graph, XmlElement* e)
 
 Mapping::~Mapping() = default;
 
-void Mapping::updateParameter(float val)
-{
+void Mapping::updateParameter(float val) {
     auto node = filterGraph->getNodeForId(AudioProcessorGraph::NodeID(plugin));
     if (node == nullptr)
         return;
 
     AudioProcessor* filter = node->getProcessor();
 
-    if (parameter == -1)
-    {
+    if (parameter == -1) {
         auto* bypassable = dynamic_cast<BypassableInstance*>(filter);
         if (bypassable)
             bypassable->setBypass(val > 0.5f);
-    }
-    else
-    {
+    } else {
         // JUCE 8: use AudioProcessorParameter array instead of deprecated setParameter()
         auto* pluginInstance = dynamic_cast<AudioPluginInstance*>(filter);
-        if (pluginInstance != nullptr)
-        {
+        if (pluginInstance != nullptr) {
             auto& params = pluginInstance->getParameters();
             if (parameter >= 0 && parameter < params.size())
                 params[parameter]->setValue(val);
@@ -68,7 +57,6 @@ void Mapping::updateParameter(float val)
     }
 }
 
-void Mapping::setParameter(int val)
-{
+void Mapping::setParameter(int val) {
     parameter = val;
 }

@@ -18,15 +18,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "ColourScheme.h"
 #include "AboutPage.h"
 
+#include "ColourScheme.h"
 
-AboutPage::AboutPage(const juce::String& ip) :
-    ipAddress(ip)
-{
-    titleLabel = std::make_unique<juce::Label>("titleLabel",
-                                                                "Pedalboard 3");
+AboutPage::AboutPage(const juce::String& ip) : ipAddress(ip) {
+    titleLabel = std::make_unique<juce::Label>("titleLabel", "Pedalboard 3");
     addAndMakeVisible(*titleLabel);
     titleLabel->setFont(juce::Font(juce::FontOptions().withHeight(32.0f).withStyle("Bold")));
     titleLabel->setJustificationType(juce::Justification::centredLeft);
@@ -35,10 +32,9 @@ AboutPage::AboutPage(const juce::String& ip) :
     titleLabel->setColour(juce::TextEditor::textColourId, juce::Colours::black);
     titleLabel->setColour(juce::TextEditor::backgroundColourId, juce::Colour(0x0));
 
-    descriptionLabel = std::make_unique<juce::Label>(
-                          "descriptionLabel",
-                          "A simple plugin host intended for live use, with plugin\n"
-                          "parameters easily mapped to MIDI or Open Sound Control inputs.");
+    descriptionLabel = std::make_unique<juce::Label>("descriptionLabel",
+                                                     "A simple plugin host intended for live use, with plugin\n"
+                                                     "parameters easily mapped to MIDI or Open Sound Control inputs.");
     addAndMakeVisible(*descriptionLabel);
     descriptionLabel->setFont(juce::Font(juce::FontOptions().withHeight(15.0f)));
     descriptionLabel->setJustificationType(juce::Justification::topLeft);
@@ -47,10 +43,9 @@ AboutPage::AboutPage(const juce::String& ip) :
     descriptionLabel->setColour(juce::TextEditor::textColourId, juce::Colours::black);
     descriptionLabel->setColour(juce::TextEditor::backgroundColourId, juce::Colour(0x0));
 
-    creditsLabel = std::make_unique<juce::Label>(
-                          "creditsLabel",
-                          "Written using the JUCE library, with sections taken from\n"
-                          "the 'audio plugin host' example code.");
+    creditsLabel =
+        std::make_unique<juce::Label>("creditsLabel", "Written using the JUCE library, with sections taken from\n"
+                                                      "the 'audio plugin host' example code.");
     addAndMakeVisible(*creditsLabel);
     creditsLabel->setFont(juce::Font(juce::FontOptions().withHeight(15.0f)));
     creditsLabel->setJustificationType(juce::Justification::topLeft);
@@ -59,10 +54,8 @@ AboutPage::AboutPage(const juce::String& ip) :
     creditsLabel->setColour(juce::TextEditor::textColourId, juce::Colours::black);
     creditsLabel->setColour(juce::TextEditor::backgroundColourId, juce::Colour(0x0));
 
-    authorLabel = std::make_unique<juce::Label>(
-                          "authorLabel",
-                          "Author: Niall Moody\n"
-                          "License: GPL v3");
+    authorLabel = std::make_unique<juce::Label>("authorLabel", "Author: Niall Moody\n"
+                                                               "License: GPL v3");
     addAndMakeVisible(*authorLabel);
     authorLabel->setFont(juce::Font(juce::FontOptions().withHeight(15.0f)));
     authorLabel->setJustificationType(juce::Justification::topLeft);
@@ -71,22 +64,18 @@ AboutPage::AboutPage(const juce::String& ip) :
     authorLabel->setColour(juce::TextEditor::textColourId, juce::Colours::black);
     authorLabel->setColour(juce::TextEditor::backgroundColourId, juce::Colour(0x0));
 
-    niallmoodyLink = std::make_unique<juce::HyperlinkButton>(
-                          "niallmoody.com",
-                          juce::URL("http://www.niallmoody.com"));
+    niallmoodyLink = std::make_unique<juce::HyperlinkButton>("niallmoody.com", juce::URL("http://www.niallmoody.com"));
     addAndMakeVisible(*niallmoodyLink);
     niallmoodyLink->setTooltip("http://www.niallmoody.com");
     niallmoodyLink->setButtonText("niallmoody.com");
 
-    juceLink = std::make_unique<juce::HyperlinkButton>(
-                          "rawmaterialsoftware.com/juce",
-                          juce::URL("http://www.rawmaterialsoftware.com/juce"));
+    juceLink = std::make_unique<juce::HyperlinkButton>("rawmaterialsoftware.com/juce",
+                                                       juce::URL("http://www.rawmaterialsoftware.com/juce"));
     addAndMakeVisible(*juceLink);
     juceLink->setTooltip("http://www.rawmaterialsoftware.com/juce");
     juceLink->setButtonText("rawmaterialsoftware.com/juce");
 
-    versionLabel = std::make_unique<juce::Label>("versionLabel",
-                                                                  "Version: 3.0.0");
+    versionLabel = std::make_unique<juce::Label>("versionLabel", "Version: 3.0.0");
     addAndMakeVisible(*versionLabel);
     versionLabel->setFont(juce::Font(juce::FontOptions().withHeight(12.0f)));
     versionLabel->setJustificationType(juce::Justification::centredRight);
@@ -95,8 +84,7 @@ AboutPage::AboutPage(const juce::String& ip) :
     versionLabel->setColour(juce::TextEditor::textColourId, juce::Colours::black);
     versionLabel->setColour(juce::TextEditor::backgroundColourId, juce::Colour(0x0));
 
-    juceVersionLabel = std::make_unique<juce::Label>("juceVersionLabel",
-                                                                       "JUCE Version: 8.0.15");
+    juceVersionLabel = std::make_unique<juce::Label>("juceVersionLabel", "JUCE Version: 8.0.15");
     addAndMakeVisible(*juceVersionLabel);
     juceVersionLabel->setFont(juce::Font(juce::FontOptions().withHeight(12.0f)));
     juceVersionLabel->setJustificationType(juce::Justification::centredRight);
@@ -105,9 +93,7 @@ AboutPage::AboutPage(const juce::String& ip) :
     juceVersionLabel->setColour(juce::TextEditor::textColourId, juce::Colours::black);
     juceVersionLabel->setColour(juce::TextEditor::backgroundColourId, juce::Colour(0x0));
 
-    ipAddressLabel = std::make_unique<juce::Label>(
-                         "ipAddressLabel",
-                         "Current IP Address: 192.168.1.68");
+    ipAddressLabel = std::make_unique<juce::Label>("ipAddressLabel", "Current IP Address: 192.168.1.68");
     addAndMakeVisible(*ipAddressLabel);
     ipAddressLabel->setFont(juce::Font(juce::FontOptions().withHeight(15.0f)));
     ipAddressLabel->setJustificationType(juce::Justification::centredLeft);
@@ -141,22 +127,15 @@ AboutPage::AboutPage(const juce::String& ip) :
     setSize(400, 280);
 }
 
+AboutPage::~AboutPage() {}
 
-AboutPage::~AboutPage()
-{
-}
-
-
-void AboutPage::paint(juce::Graphics& g)
-{
+void AboutPage::paint(juce::Graphics& g) {
     g.fillAll(juce::Colour(0xffeeece1));
 
     g.fillAll(ColourScheme::getInstance().colours["Window Background"]);
 }
 
-
-void AboutPage::resized()
-{
+void AboutPage::resized() {
     titleLabel->setBounds(8, 8, 208, 32);
     descriptionLabel->setBounds(16, 48, getWidth() - 16, 56);
     creditsLabel->setBounds(16, 104, getWidth() - 16, 56);

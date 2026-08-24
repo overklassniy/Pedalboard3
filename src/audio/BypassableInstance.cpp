@@ -21,24 +21,17 @@
 #include "BypassableInstance.h"
 
 BypassableInstance::BypassableInstance(std::unique_ptr<AudioPluginInstance> plug)
-    : plugin(std::move(plug))
-    , tempBuffer(2, 4096)
-    , bypassRamp(0.0f)
-{
+    : plugin(std::move(plug)), tempBuffer(2, 4096), bypassRamp(0.0f) {
     jassert(plugin);
 
-    setPlayConfigDetails(plugin->getTotalNumInputChannels(),
-                         plugin->getTotalNumOutputChannels(),
-                         plugin->getSampleRate(),
-                         plugin->getBlockSize());
+    setPlayConfigDetails(plugin->getTotalNumInputChannels(), plugin->getTotalNumOutputChannels(),
+                         plugin->getSampleRate(), plugin->getBlockSize());
 }
 
 BypassableInstance::~BypassableInstance() = default;
 
-void BypassableInstance::prepareToPlay(double sampleRate, int estimatedSamplesPerBlock)
-{
-    int numChannels = juce::jmax(plugin->getTotalNumInputChannels(),
-                                 plugin->getTotalNumOutputChannels());
+void BypassableInstance::prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) {
+    int numChannels = juce::jmax(plugin->getTotalNumInputChannels(), plugin->getTotalNumOutputChannels());
 
     jassert(numChannels > 0);
 
@@ -48,20 +41,16 @@ void BypassableInstance::prepareToPlay(double sampleRate, int estimatedSamplesPe
     tempBuffer.setSize(numChannels, estimatedSamplesPerBlock * 2);
 
     plugin->setPlayHead(getPlayHead());
-    plugin->setPlayConfigDetails(plugin->getTotalNumInputChannels(),
-                                 plugin->getTotalNumOutputChannels(),
-                                 sampleRate,
+    plugin->setPlayConfigDetails(plugin->getTotalNumInputChannels(), plugin->getTotalNumOutputChannels(), sampleRate,
                                  estimatedSamplesPerBlock);
     plugin->prepareToPlay(sampleRate, estimatedSamplesPerBlock);
 }
 
-void BypassableInstance::releaseResources()
-{
+void BypassableInstance::releaseResources() {
     plugin->releaseResources();
 }
 
-void BypassableInstance::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
-{
+void BypassableInstance::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     float rampVal = bypassRamp;
     juce::MidiBuffer tempMidi;
 
@@ -69,11 +58,9 @@ void BypassableInstance::processBlock(juce::AudioBuffer<float>& buffer, juce::Mi
 
     // Pass on any MIDI messages received via OSC.
     midiCollector.removeNextBlockOfMessages(tempMidi, buffer.getNumSamples());
-    if (!midiMessages.isEmpty())
-    {
+    if (!midiMessages.isEmpty()) {
         // JUCE 8: use range-for with MidiMessageMetadata instead of deprecated Iterator
-        for (const auto metadata : midiMessages)
-        {
+        for (const auto metadata : midiMessages) {
             int chan = midiChannel.load();
             if (chan == 0 || metadata.getMessage().getChannel() == chan)
                 tempMidi.addEvent(metadata.getMessage(), metadata.samplePosition);
@@ -94,24 +81,19 @@ void BypassableInstance::processBlock(juce::AudioBuffer<float>& buffer, juce::Mi
         midiMessages.swapWith(tempMidi);
 
     // Mix the correct (bypassed or un-bypassed) audio back to the buffer.
-    for (int j = 0; j < buffer.getNumChannels(); ++j)
-    {
+    for (int j = 0; j < buffer.getNumChannels(); ++j) {
         auto* origData = tempBuffer.getWritePointer(j);
         auto* newData = buffer.getWritePointer(j);
 
         rampVal = bypassRamp;
-        for (int i = 0; i < buffer.getNumSamples(); ++i)
-        {
+        for (int i = 0; i < buffer.getNumSamples(); ++i) {
             newData[i] = (origData[i] * rampVal) + (newData[i] * (1.0f - rampVal));
 
-            if (bypass.load() && rampVal < 1.0f)
-            {
+            if (bypass.load() && rampVal < 1.0f) {
                 rampVal += 0.001f;
                 if (rampVal > 1.0f)
                     rampVal = 1.0f;
-            }
-            else if (!bypass.load() && rampVal > 0.0f)
-            {
+            } else if (!bypass.load() && rampVal > 0.0f) {
                 rampVal -= 0.001f;
                 if (rampVal < 0.0f)
                     rampVal = 0.0f;
@@ -121,18 +103,15 @@ void BypassableInstance::processBlock(juce::AudioBuffer<float>& buffer, juce::Mi
     bypassRamp = rampVal;
 }
 
-void BypassableInstance::setBypass(bool val)
-{
+void BypassableInstance::setBypass(bool val) {
     bypass = val;
 }
 
-void BypassableInstance::setMIDIChannel(int val)
-{
+void BypassableInstance::setMIDIChannel(int val) {
     midiChannel = val;
 }
 
-void BypassableInstance::addMidiMessage(const juce::MidiMessage& message)
-{
+void BypassableInstance::addMidiMessage(const juce::MidiMessage& message) {
     int chan = midiChannel.load();
     if (chan == 0 || message.getChannel() == chan)
         midiCollector.addMessageToQueue(message);

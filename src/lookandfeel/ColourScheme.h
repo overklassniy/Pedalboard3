@@ -22,12 +22,10 @@
 #define COLOURSCHEME_H_
 
 #include <JuceHeader.h>
-
 #include <map>
 
 /// Singleton struct handling colour schemes.
-struct ColourScheme
-{
+struct ColourScheme {
   public:
     /// The map of all the available colours.
     std::map<String, Colour> colours;
@@ -35,19 +33,31 @@ struct ColourScheme
     String presetName;
 
     /// Returns the sole instance of the singleton.
+    ///
+    /// @return The single shared ColourScheme instance.
     static ColourScheme& getInstance();
 
     /// Returns a StringArray of all the available colour scheme presets.
+    ///
+    /// @return A StringArray of all available colour scheme preset names.
     const StringArray getPresets() const;
     /// Loads a colour scheme preset.
+    ///
+    /// @param name The name of the preset to load.
     void loadPreset(const String& name);
     /// Saves a colour scheme preset.
+    ///
+    /// @param name The name to save the preset under.
     void savePreset(const String& name);
 
     /// Returns true if colours == the named preset.
+    ///
+    /// @param name The name of the preset to compare against.
+    /// @return True if the current colours match the named preset, false otherwise.
     bool doesColoursMatchPreset(const String& name);
 
   private:
+    /// Loads the default preset, or creates and saves one if none exists.
     ColourScheme();
     ~ColourScheme();
 };

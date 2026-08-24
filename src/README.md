@@ -35,11 +35,11 @@ original files remain as umbrella headers for backward compatibility.
 
 - `AudioProcessor::createEditor()` is private — use `createEditorAndMakeActive()`.
 - `Font::getStringWidth` removed — use `juce::GlyphArrangement::getStringWidthInt`.
-- `Font(15.0f)` → `Font(FontOptions().withHeight(15.0f))`.
+- `Font(15.0f)` -> `Font(FontOptions().withHeight(15.0f))`.
 - `Drawable::createFromSVG(XmlElement)` is correct for 8.0.15 (NOT `createFromSVG_string`).
-- `ScopedPointer<T>` → `std::unique_ptr<T>`.
-- `node->nodeID` (uint32) → `node->nodeID.uid`.
-- `getNumConnections()`/`getConnection(i)` → `getConnections()` (returns `std::vector`).
+- `ScopedPointer<T>` -> `std::unique_ptr<T>`.
+- `node->nodeID` (uint32) -> `node->nodeID.uid`.
+- `getNumConnections()`/`getConnection(i)` -> `getConnections()` (returns `std::vector`).
 - `Graphics`: call `setColour` before `setFont` before `drawText`.
 
 ## Conventions

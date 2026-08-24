@@ -23,12 +23,9 @@ SafetyLimiterProcessor* SafetyLimiterProcessor::instance = nullptr;
 SafetyLimiterProcessor::SafetyLimiterProcessor()
     : AudioProcessor(BusesProperties()
                          .withInput("Input", AudioChannelSet::stereo(), true)
-                         .withOutput("Output", AudioChannelSet::stereo(), true))
-{
-}
+                         .withOutput("Output", AudioChannelSet::stereo(), true)) {}
 
-void SafetyLimiterProcessor::prepareToPlay(double sampleRate, int /*samplesPerBlock*/)
-{
+void SafetyLimiterProcessor::prepareToPlay(double sampleRate, int /*samplesPerBlock*/) {
     currentSampleRate = sampleRate;
 
     // Calculate timing thresholds in samples
@@ -56,8 +53,7 @@ void SafetyLimiterProcessor::prepareToPlay(double sampleRate, int /*samplesPerBl
     inputLevels[1].store(0.0f, std::memory_order_relaxed);
 
     // Initialize VU meter DSP
-    for (int ch = 0; ch < 2; ++ch)
-    {
+    for (int ch = 0; ch < 2; ++ch) {
         inputVu[ch].init(static_cast<float>(sampleRate));
         outputVu[ch].init(static_cast<float>(sampleRate));
         inputVuLevels[ch].store(0.0f, std::memory_order_relaxed);
@@ -67,16 +63,13 @@ void SafetyLimiterProcessor::prepareToPlay(double sampleRate, int /*samplesPerBl
     setInstance(this);
 }
 
-void SafetyLimiterProcessor::releaseResources()
-{
+void SafetyLimiterProcessor::releaseResources() {
     // Nothing to release
 }
 
-void SafetyLimiterProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer& /*midiMessages*/)
-{
+void SafetyLimiterProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer& /*midiMessages*/) {
     // If muted, output silence
-    if (muted.load())
-    {
+    if (muted.load()) {
         buffer.clear();
         return;
     }
@@ -88,14 +81,12 @@ void SafetyLimiterProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer
     bool dangerousDetected = false;
     bool dcDetected = false;
 
-    for (int sample = 0; sample < numSamples; ++sample)
-    {
+    for (int sample = 0; sample < numSamples; ++sample) {
         float maxPeak = 0.0f;
         float dcSum = 0.0f;
 
         // Process each channel
-        for (int ch = 0; ch < jmin(numChannels, 2); ++ch)
-        {
+        for (int ch = 0; ch < jmin(numChannels, 2); ++ch) {
             float* channelData = buffer.getWritePointer(ch);
             float inputSample = channelData[sample];
 
@@ -115,8 +106,7 @@ void SafetyLimiterProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer
 
             // Simple ultrasonic detection (track high-frequency energy)
             // This is a rough approximation - we detect large sample-to-sample changes
-            if (sample > 0)
-            {
+            if (sample > 0) {
                 float prevSample = channelData[sample - 1];
                 float delta = std::abs(inputSample - prevSample);
                 ultrasonicEnergy = ultrasonicEnergy * ultrasonicDecay + delta * delta;
@@ -125,17 +115,14 @@ void SafetyLimiterProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer
             // Apply limiting
             float outputSample = inputSample;
 
-            if (absSample > softLimitThreshold)
-            {
+            if (absSample > softLimitThreshold) {
                 // Soft knee limiting
                 float excess = absSample - softLimitThreshold;
                 float reduction = excess / (1.0f + excess);
                 float targetGain = (softLimitThreshold + reduction) / absSample;
                 currentGain = jmin(currentGain, targetGain);
                 limitingThisBlock = true;
-            }
-            else
-            {
+            } else {
                 // Release gain back to 1.0
                 currentGain = currentGain * releaseCoeff + (1.0f - releaseCoeff);
             }
@@ -149,40 +136,30 @@ void SafetyLimiterProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer
         }
 
         // Check for dangerous conditions
-        if (maxPeak > dangerousGainThreshold)
-        {
+        if (maxPeak > dangerousGainThreshold) {
             dangerousGainCounter++;
             dangerousDetected = true;
-        }
-        else
-        {
+        } else {
             dangerousGainCounter = jmax(0, dangerousGainCounter - 1);
         }
 
-        if ((dcSum / numChannels) > dcOffsetThreshold)
-        {
+        if ((dcSum / numChannels) > dcOffsetThreshold) {
             dcOffsetCounter++;
             dcDetected = true;
-        }
-        else
-        {
+        } else {
             dcOffsetCounter = jmax(0, dcOffsetCounter - 1);
         }
 
         // Check ultrasonic (threshold is empirical)
-        if (ultrasonicEnergy > 0.1f)
-        {
+        if (ultrasonicEnergy > 0.1f) {
             ultrasonicCounter++;
-        }
-        else
-        {
+        } else {
             ultrasonicCounter = jmax(0, ultrasonicCounter - 1);
         }
 
         // Trigger auto-mute if any threshold exceeded
         if (dangerousGainCounter > dangerousGainHoldSamples || dcOffsetCounter > dcOffsetHoldSamples ||
-            ultrasonicCounter > ultrasonicHoldSamples)
-        {
+            ultrasonicCounter > ultrasonicHoldSamples) {
             muted.store(true);
             muteTriggered.store(true);
             buffer.clear();
@@ -198,17 +175,14 @@ void SafetyLimiterProcessor::processBlock(AudioBuffer<float>& buffer, MidiBuffer
 }
 
 void SafetyLimiterProcessor::updateOutputLevelsFromDevice(const float* const* outputData, int numChannels,
-                                                          int numSamples)
-{
+                                                          int numSamples) {
     int chCount = jmin(numChannels, 2);
-    for (int ch = 0; ch < chCount; ++ch)
-    {
+    for (int ch = 0; ch < chCount; ++ch) {
         if (outputData[ch] == nullptr)
             continue;
         // Peak metering (existing)
         float peak = outputLevels[ch].load(std::memory_order_relaxed);
-        for (int i = 0; i < numSamples; ++i)
-        {
+        for (int i = 0; i < numSamples; ++i) {
             float s = std::abs(outputData[ch][i]);
             if (s > peak)
                 peak = s;
@@ -223,24 +197,21 @@ void SafetyLimiterProcessor::updateOutputLevelsFromDevice(const float* const* ou
         outputVu[ch].process(outputData[ch], numSamples);
         outputVuLevels[ch].store(outputVu[ch].read(), std::memory_order_relaxed);
     }
-    for (int ch = chCount; ch < 2; ++ch)
-    {
+    for (int ch = chCount; ch < 2; ++ch) {
         outputLevels[ch].store(0.0f, std::memory_order_relaxed);
         outputVuLevels[ch].store(0.0f, std::memory_order_relaxed);
     }
 }
 
-void SafetyLimiterProcessor::updateInputLevelsFromDevice(const float* const* inputData, int numChannels, int numSamples)
-{
+void SafetyLimiterProcessor::updateInputLevelsFromDevice(const float* const* inputData, int numChannels,
+                                                         int numSamples) {
     int chCount = jmin(numChannels, 2);
-    for (int ch = 0; ch < chCount; ++ch)
-    {
+    for (int ch = 0; ch < chCount; ++ch) {
         if (inputData[ch] == nullptr)
             continue;
         // Peak metering (existing)
         float peak = inputLevels[ch].load(std::memory_order_relaxed);
-        for (int i = 0; i < numSamples; ++i)
-        {
+        for (int i = 0; i < numSamples; ++i) {
             float s = std::abs(inputData[ch][i]);
             if (s > peak)
                 peak = s;
@@ -255,8 +226,7 @@ void SafetyLimiterProcessor::updateInputLevelsFromDevice(const float* const* inp
         inputVu[ch].process(inputData[ch], numSamples);
         inputVuLevels[ch].store(inputVu[ch].read(), std::memory_order_relaxed);
     }
-    for (int ch = chCount; ch < 2; ++ch)
-    {
+    for (int ch = chCount; ch < 2; ++ch) {
         inputLevels[ch].store(0.0f, std::memory_order_relaxed);
         inputVuLevels[ch].store(0.0f, std::memory_order_relaxed);
     }

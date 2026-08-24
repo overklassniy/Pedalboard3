@@ -18,49 +18,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "PedalboardProcessors.h"
-#include "PropertiesSingleton.h"
-#include "BypassableInstance.h"
-#include "JuceHelperStuff.h"
 #include "PluginComponent.h"
-#include "MappingsDialog.h"
+
+#include "BypassableInstance.h"
 #include "ColourScheme.h"
+#include "Images.h"
+#include "JuceHelperStuff.h"
+#include "MappingsDialog.h"
+#include "PedalboardProcessors.h"
 #include "PluginField.h"
 #include "PresetBar.h"
+#include "PropertiesSingleton.h"
 #include "Vectors.h"
-#include "Images.h"
 
 #include <memory>
 
 /// Generic editor that fills the background with the correct colour.
-class NiallsGenericEditor : public juce::GenericAudioProcessorEditor
-{
+class NiallsGenericEditor : public juce::GenericAudioProcessorEditor {
   public:
-    NiallsGenericEditor(AudioProcessor * const owner) :
-        juce::GenericAudioProcessorEditor(owner)
-    {
-    }
+    NiallsGenericEditor(AudioProcessor* const owner) : juce::GenericAudioProcessorEditor(owner) {}
 
     /// Fill the background the correct colour.
-    void paint(juce::Graphics& g) override
-    {
-        g.fillAll(ColourScheme::getInstance().colours["Window Background"]);
-    }
+    void paint(juce::Graphics& g) override { g.fillAll(ColourScheme::getInstance().colours["Window Background"]); }
 };
 
-PluginComponent::PluginComponent(AudioProcessorGraph::Node::Ptr n) :
-    juce::Component(),
-    node(n),
-    pluginWindow(nullptr),
-    beingDragged(false),
-    dragX(0),
-    dragY(0)
-{
-    BypassableInstance *bypassable = dynamic_cast<BypassableInstance *>(node->getProcessor());
-    PedalboardProcessor *proc = nullptr;
+PluginComponent::PluginComponent(AudioProcessorGraph::Node::Ptr n)
+    : juce::Component(), node(n), pluginWindow(nullptr), beingDragged(false), dragX(0), dragY(0) {
+    BypassableInstance* bypassable = dynamic_cast<BypassableInstance*>(node->getProcessor());
+    PedalboardProcessor* proc = nullptr;
 
     if (bypassable)
-        proc = dynamic_cast<PedalboardProcessor *>(bypassable->getPlugin());
+        proc = dynamic_cast<PedalboardProcessor*>(bypassable->getPlugin());
 
     pluginName = node->getProcessor()->getName();
 
@@ -73,21 +61,18 @@ PluginComponent::PluginComponent(AudioProcessorGraph::Node::Ptr n) :
     titleLabel->addListener(this);
     addAndMakeVisible(*titleLabel);
 
-    if ((pluginName != "Audio Input") &&
-        (pluginName != "Midi Input") &&
-        (pluginName != "Audio Output") &&
-        (pluginName != "OSC Input"))
-    {
-        std::unique_ptr<juce::Drawable> closeUp(JuceHelperStuff::loadSVGFromMemory(Vectors::closefilterbutton_svg,
-                                                                                   Vectors::closefilterbutton_svgSize));
-        std::unique_ptr<juce::Drawable> closeOver(JuceHelperStuff::loadSVGFromMemory(Vectors::closefilterbuttonover_svg,
-                                                                                     Vectors::closefilterbuttonover_svgSize));
-        std::unique_ptr<juce::Drawable> closeDown(JuceHelperStuff::loadSVGFromMemory(Vectors::closefilterbuttondown_svg,
-                                                                                     Vectors::closefilterbuttondown_svgSize));
-        std::unique_ptr<juce::Drawable> bypassOff(JuceHelperStuff::loadSVGFromMemory(Vectors::bypassbuttonoff_svg,
-                                                                                     Vectors::bypassbuttonoff_svgSize));
-        std::unique_ptr<juce::Drawable> bypassOn(JuceHelperStuff::loadSVGFromMemory(Vectors::bypassbuttonon_svg,
-                                                                                    Vectors::bypassbuttonon_svgSize));
+    if ((pluginName != "Audio Input") && (pluginName != "Midi Input") && (pluginName != "Audio Output") &&
+        (pluginName != "OSC Input")) {
+        std::unique_ptr<juce::Drawable> closeUp(
+            JuceHelperStuff::loadSVGFromMemory(Vectors::closefilterbutton_svg, Vectors::closefilterbutton_svgSize));
+        std::unique_ptr<juce::Drawable> closeOver(JuceHelperStuff::loadSVGFromMemory(
+            Vectors::closefilterbuttonover_svg, Vectors::closefilterbuttonover_svgSize));
+        std::unique_ptr<juce::Drawable> closeDown(JuceHelperStuff::loadSVGFromMemory(
+            Vectors::closefilterbuttondown_svg, Vectors::closefilterbuttondown_svgSize));
+        std::unique_ptr<juce::Drawable> bypassOff(
+            JuceHelperStuff::loadSVGFromMemory(Vectors::bypassbuttonoff_svg, Vectors::bypassbuttonoff_svgSize));
+        std::unique_ptr<juce::Drawable> bypassOn(
+            JuceHelperStuff::loadSVGFromMemory(Vectors::bypassbuttonon_svg, Vectors::bypassbuttonon_svgSize));
 
         // So the audio I/O etc. don't get their titles squeezed by the
         // non-existent close button.
@@ -103,16 +88,15 @@ PluginComponent::PluginComponent(AudioProcessorGraph::Node::Ptr n) :
         mappingsButton->addListener(this);
         addAndMakeVisible(*mappingsButton);
 
-        bypassButton = std::make_unique<juce::DrawableButton>("BypassFilterButton",
-                                                               juce::DrawableButton::ImageOnButtonBackground);
+        bypassButton =
+            std::make_unique<juce::DrawableButton>("BypassFilterButton", juce::DrawableButton::ImageOnButtonBackground);
         bypassButton->setImages(bypassOff.get(), nullptr, nullptr, nullptr, bypassOn.get());
         bypassButton->setClickingTogglesState(true);
         bypassButton->setBounds(getWidth() - 30, getHeight() - 30, 20, 20);
         bypassButton->addListener(this);
         addAndMakeVisible(*bypassButton);
 
-        deleteButton = std::make_unique<juce::DrawableButton>("DeleteFilterButton",
-                                                               juce::DrawableButton::ImageRaw);
+        deleteButton = std::make_unique<juce::DrawableButton>("DeleteFilterButton", juce::DrawableButton::ImageRaw);
         deleteButton->setImages(closeUp.get(), closeOver.get(), closeDown.get());
         deleteButton->setEdgeIndent(0);
         deleteButton->setBounds(getWidth() - 17, 5, 12, 12);
@@ -120,9 +104,8 @@ PluginComponent::PluginComponent(AudioProcessorGraph::Node::Ptr n) :
         addAndMakeVisible(*deleteButton);
     }
 
-    if (proc)
-    {
-        juce::Component *comp = proc->getControls();
+    if (proc) {
+        juce::Component* comp = proc->getControls();
         juce::Point<int> compSize = proc->getSize();
 
         int tempint = (getWidth() / 2) - (compSize.getX() / 2);
@@ -136,48 +119,31 @@ PluginComponent::PluginComponent(AudioProcessorGraph::Node::Ptr n) :
         buttonClicked(editButton.get());
 }
 
-PluginComponent::~PluginComponent()
-{
+PluginComponent::~PluginComponent() {
     deleteAllChildren();
     if (pluginWindow)
         delete pluginWindow;
 }
 
-void PluginComponent::paint(juce::Graphics& g)
-{
+void PluginComponent::paint(juce::Graphics& g) {
     int i;
     std::map<juce::String, juce::Colour>& colours = ColourScheme::getInstance().colours;
 
     // Draw slight black outline.
     g.setColour(juce::Colours::black);
-    g.drawRoundedRectangle(1.0f,
-                           1.0f,
-                           static_cast<float>(getWidth()) - 2.0f,
-                           static_cast<float>(getHeight()) - 2.0f,
-                           5.0f,
-                           1.0f);
+    g.drawRoundedRectangle(1.0f, 1.0f, static_cast<float>(getWidth()) - 2.0f, static_cast<float>(getHeight()) - 2.0f,
+                           5.0f, 1.0f);
 
     // Fill Component background.
     g.setColour(colours["Plugin Background"]);
-    g.fillRoundedRectangle(2.0f,
-                           2.0f,
-                           static_cast<float>(getWidth()) - 4.0f,
-                           static_cast<float>(getHeight()) - 4.0f,
+    g.fillRoundedRectangle(2.0f, 2.0f, static_cast<float>(getWidth()) - 4.0f, static_cast<float>(getHeight()) - 4.0f,
                            5.0f);
 
     // Fill Component outline and text background.
     g.setColour(colours["Plugin Border"]);
-    g.drawRoundedRectangle(3.0f,
-                           3.0f,
-                           static_cast<float>(getWidth()) - 6.0f,
-                           static_cast<float>(getHeight()) - 6.0f,
-                           5.0f,
-                           4.0f);
-    g.fillRoundedRectangle(1.0f,
-                           1.0f,
-                           static_cast<float>(getWidth()) - 2.0f,
-                           16.0f,
-                           5.0f);
+    g.drawRoundedRectangle(3.0f, 3.0f, static_cast<float>(getWidth()) - 6.0f, static_cast<float>(getHeight()) - 6.0f,
+                           5.0f, 4.0f);
+    g.fillRoundedRectangle(1.0f, 1.0f, static_cast<float>(getWidth()) - 2.0f, 16.0f, 5.0f);
     g.fillRect(1.0f, 16.0f, static_cast<float>(getWidth()) - 2.0f, 5.0f);
 
     // Draw the plugin name.
@@ -193,27 +159,22 @@ void PluginComponent::paint(juce::Graphics& g)
         outputText[i]->draw(g);
 }
 
-void PluginComponent::moved()
-{
+void PluginComponent::moved() {
     sendChangeMessage();
 }
 
-void PluginComponent::timerUpdate()
-{
-    BypassableInstance *bypassable = dynamic_cast<BypassableInstance *>(node->getProcessor());
+void PluginComponent::timerUpdate() {
+    BypassableInstance* bypassable = dynamic_cast<BypassableInstance*>(node->getProcessor());
 
     if (bypassable)
         bypassButton->setToggleState(bypassable->getBypass(), juce::dontSendNotification);
 }
 
-void PluginComponent::mouseDown(const juce::MouseEvent& e)
-{
-    if (e.y < 21)
-    {
+void PluginComponent::mouseDown(const juce::MouseEvent& e) {
+    if (e.y < 21) {
         if (e.getNumberOfClicks() == 2)
             titleLabel->showEditor();
-        else
-        {
+        else {
             beginDragAutoRepeat(30);
             beingDragged = true;
             dragX = e.getPosition().getX();
@@ -223,18 +184,16 @@ void PluginComponent::mouseDown(const juce::MouseEvent& e)
     }
 }
 
-void PluginComponent::mouseDrag(const juce::MouseEvent& e)
-{
-    if (beingDragged)
-    {
+void PluginComponent::mouseDrag(const juce::MouseEvent& e) {
+    if (beingDragged) {
         juce::MouseEvent eField = e.getEventRelativeTo(getParentComponent());
 
         // parent = PluginField => parent = Viewport's contentHolder =>
         // parent = Viewport.
-        juce::Viewport *viewport = dynamic_cast<juce::Viewport *>(getParentComponent()->getParentComponent()->getParentComponent());
+        juce::Viewport* viewport =
+            dynamic_cast<juce::Viewport*>(getParentComponent()->getParentComponent()->getParentComponent());
 
-        if (viewport)
-        {
+        if (viewport) {
             juce::MouseEvent tempEv = e.getEventRelativeTo(viewport);
 
             viewport->autoScroll(tempEv.x, tempEv.y, 20, 4);
@@ -251,16 +210,13 @@ void PluginComponent::mouseDrag(const juce::MouseEvent& e)
     }
 }
 
-void PluginComponent::mouseUp(const juce::MouseEvent& /*e*/)
-{
+void PluginComponent::mouseUp(const juce::MouseEvent& /*e*/) {
     beingDragged = false;
 }
 
-void PluginComponent::buttonClicked(juce::Button *button)
-{
-    if ((button == editButton.get()) && !pluginWindow)
-    {
-        juce::AudioProcessorEditor *editor;
+void PluginComponent::buttonClicked(juce::Button* button) {
+    if ((button == editButton.get()) && !pluginWindow) {
+        juce::AudioProcessorEditor* editor;
 
         // JUCE 8: createEditor() is private; use createEditorAndMakeActive()
         // which returns a raw pointer (or nullptr).
@@ -270,27 +226,22 @@ void PluginComponent::buttonClicked(juce::Button *button)
         if (!editor)
             editor = new NiallsGenericEditor(node->getProcessor());
 
-        if (editor)
-        {
+        if (editor) {
             editor->setName(node->getProcessor()->getName());
             pluginWindow = new PluginEditorWindow(editor, this);
         }
 
         if (pluginWindow)
             node->properties.set("windowOpen", true);
-    }
-    else if (button == mappingsButton.get())
+    } else if (button == mappingsButton.get())
         openMappingsWindow();
-    else if (button == bypassButton.get())
-    {
-        BypassableInstance *bypassable = dynamic_cast<BypassableInstance *>(node->getProcessor());
+    else if (button == bypassButton.get()) {
+        BypassableInstance* bypassable = dynamic_cast<BypassableInstance*>(node->getProcessor());
 
         if (bypassable)
             bypassable->setBypass(bypassButton->getToggleState());
-    }
-    else if (button == deleteButton.get())
-    {
-        PluginField *parent = dynamic_cast<PluginField *>(getParentComponent());
+    } else if (button == deleteButton.get()) {
+        PluginField* parent = dynamic_cast<PluginField*>(getParentComponent());
 
         if (pluginWindow)
             pluginWindow->closeButtonPressed();
@@ -302,10 +253,9 @@ void PluginComponent::buttonClicked(juce::Button *button)
     }
 }
 
-void PluginComponent::labelTextChanged(juce::Label *label)
-{
+void PluginComponent::labelTextChanged(juce::Label* label) {
     int i, y;
-    PluginField *parent = dynamic_cast<PluginField *>(getParentComponent());
+    PluginField* parent = dynamic_cast<PluginField*>(getParentComponent());
 
     pluginName = label->getText();
 
@@ -320,8 +270,7 @@ void PluginComponent::labelTextChanged(juce::Label *label)
         bypassButton->setBounds(getWidth() - 30, getHeight() - 30, 20, 20);
 
     y = 25;
-    for (i = 0; i < outputPins.size(); ++i)
-    {
+    for (i = 0; i < outputPins.size(); ++i) {
         juce::Point<int> pinPos;
 
         pinPos.setXY(getWidth() - 5, y);
@@ -330,13 +279,11 @@ void PluginComponent::labelTextChanged(juce::Label *label)
         y += 12;
     }
 
-    for (i = 0; i < paramPins.size(); ++i)
-    {
+    for (i = 0; i < paramPins.size(); ++i) {
         juce::Point<int> pinPos;
 
         pinPos.setXY(getWidth() - 5, y);
-        if (paramPins[i]->getX() > 0)
-        {
+        if (paramPins[i]->getX() > 0) {
             paramPins[i]->setTopLeftPosition(pinPos.getX(), pinPos.getY());
 
             y += 12;
@@ -344,13 +291,11 @@ void PluginComponent::labelTextChanged(juce::Label *label)
     }
 }
 
-void PluginComponent::setUserName(const juce::String& val)
-{
+void PluginComponent::setUserName(const juce::String& val) {
     titleLabel->setText(val, juce::sendNotification);
 }
 
-void PluginComponent::setWindow(PluginEditorWindow *val)
-{
+void PluginComponent::setWindow(PluginEditorWindow* val) {
     pluginWindow = val;
     if (pluginWindow)
         node->properties.set("windowOpen", true);
@@ -358,39 +303,26 @@ void PluginComponent::setWindow(PluginEditorWindow *val)
         node->properties.set("windowOpen", false);
 }
 
-void PluginComponent::saveWindowState()
-{
-    if (pluginWindow)
-    {
+void PluginComponent::saveWindowState() {
+    if (pluginWindow) {
         node->properties.set("uiLastX", pluginWindow->getX());
         node->properties.set("uiLastY", pluginWindow->getY());
         node->properties.set("windowOpen", true);
-    }
-    else
+    } else
         node->properties.set("windowOpen", false);
 }
 
-void PluginComponent::openMappingsWindow()
-{
+void PluginComponent::openMappingsWindow() {
     juce::String tempstr;
-    PluginField *parent = dynamic_cast<PluginField *>(getParentComponent());
-    MappingsDialog dlg(parent->getMidiManager(),
-                       parent->getOscManager(),
-                       node,
-                       parent->getMappingsForPlugin(node->nodeID.uid),
-                       parent);
+    PluginField* parent = dynamic_cast<PluginField*>(getParentComponent());
+    MappingsDialog dlg(parent->getMidiManager(), parent->getOscManager(), node,
+                       parent->getMappingsForPlugin(node->nodeID.uid), parent);
 
     tempstr << node->getProcessor()->getName() << " Mappings";
-    JuceHelperStuff::showModalDialog(tempstr,
-                                     &dlg,
-                                     getParentComponent(),
-                                     juce::Colour(0xFFEEECE1),
-                                     false,
-                                     true);
+    JuceHelperStuff::showModalDialog(tempstr, &dlg, getParentComponent(), juce::Colour(0xFFEEECE1), false, true);
 }
 
-void PluginComponent::cacheCurrentPreset()
-{
+void PluginComponent::cacheCurrentPreset() {
     auto preset = std::make_unique<juce::MemoryBlock>();
 
     node->getProcessor()->getCurrentProgramStateInformation(*preset);
@@ -399,22 +331,19 @@ void PluginComponent::cacheCurrentPreset()
                                         std::shared_ptr<juce::MemoryBlock>(preset.release())));
 }
 
-void PluginComponent::getCachedPreset(int index, juce::MemoryBlock& memBlock)
-{
-    std::map<int, std::shared_ptr<juce::MemoryBlock> >::iterator it;
+void PluginComponent::getCachedPreset(int index, juce::MemoryBlock& memBlock) {
+    std::map<int, std::shared_ptr<juce::MemoryBlock>>::iterator it;
 
     it = cachedPresets.find(index);
 
     // Make sure the cached preset actually exists.
-    if (it != cachedPresets.end())
-    {
+    if (it != cachedPresets.end()) {
         it->second->swapWith(memBlock);
         cachedPresets.erase(it);
     }
 }
 
-void PluginComponent::determineSize(bool onlyUpdateWidth)
-{
+void PluginComponent::determineSize(bool onlyUpdateWidth) {
     int i;
     juce::Rectangle<float> bounds;
     float nameWidth;
@@ -426,14 +355,14 @@ void PluginComponent::determineSize(bool onlyUpdateWidth)
     float y = 15.0f;
     int numInputPins = 0;
     int numOutputPins = 0;
-    PedalboardProcessor *proc = nullptr;
+    PedalboardProcessor* proc = nullptr;
     juce::Font tempFont(juce::FontOptions(14.0f, juce::Font::bold));
-    AudioProcessor *plugin = node->getProcessor();
-    BypassableInstance *bypassable = dynamic_cast<BypassableInstance *>(plugin);
+    AudioProcessor* plugin = node->getProcessor();
+    BypassableInstance* bypassable = dynamic_cast<BypassableInstance*>(plugin);
     bool ignorePinNames = PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("IgnorePinNames", false);
 
     if (bypassable)
-        proc = dynamic_cast<PedalboardProcessor *>(bypassable->getPlugin());
+        proc = dynamic_cast<PedalboardProcessor*>(bypassable->getPlugin());
 
     nameText.clear();
 
@@ -443,29 +372,22 @@ void PluginComponent::determineSize(bool onlyUpdateWidth)
     nameWidth = bounds.getWidth();
 
     // Add on space for the close button if necessary.
-    if ((pluginName != "Audio Input") &&
-        (pluginName != "Midi Input") &&
-        (pluginName != "Audio Output") &&
-        (pluginName != "OSC Input"))
-    {
+    if ((pluginName != "Audio Input") && (pluginName != "Midi Input") && (pluginName != "Audio Output") &&
+        (pluginName != "OSC Input")) {
         nameWidth += 20.0f;
-    }
-    else
+    } else
         nameWidth += 4.0f;
 
     inputText.clear();
     outputText.clear();
 
-    if (!proc)
-    {
+    if (!proc) {
         // Determine plugin input channel name bounds.
         y = 35.0f;
         tempFont.setHeight(12.0f);
         tempFont.setStyleFlags(juce::Font::plain);
-        for (i = 0; i < plugin->getTotalNumInputChannels(); ++i)
-        {
-            if (!ignorePinNames)
-            {
+        for (i = 0; i < plugin->getTotalNumInputChannels(); ++i) {
+            if (!ignorePinNames) {
                 auto g = new juce::GlyphArrangement;
 
                 g->addLineOfText(tempFont, plugin->getInputChannelName(i), 10.0f, y);
@@ -475,9 +397,7 @@ void PluginComponent::determineSize(bool onlyUpdateWidth)
 
                 if (bounds.getWidth() > inputWidth)
                     inputWidth = bounds.getWidth();
-            }
-            else
-            {
+            } else {
                 juce::String tempstr;
                 auto g = new juce::GlyphArrangement;
 
@@ -496,11 +416,9 @@ void PluginComponent::determineSize(bool onlyUpdateWidth)
         }
 
         // Add input parameter/midi name.
-        if ((plugin->acceptsMidi() ||
-             (plugin->getTotalNumInputChannels() > 0) ||
+        if ((plugin->acceptsMidi() || (plugin->getTotalNumInputChannels() > 0) ||
              (plugin->getTotalNumOutputChannels() > 0)) &&
-             ((pluginName != "Audio Input") && (pluginName != "Audio Output")))
-        {
+            ((pluginName != "Audio Input") && (pluginName != "Audio Output"))) {
             {
                 auto g = new juce::GlyphArrangement;
 
@@ -519,33 +437,23 @@ void PluginComponent::determineSize(bool onlyUpdateWidth)
 
         // Determine plugin output channel name bounds.
         y = 35.0f;
-        for (i = 0; i < plugin->getTotalNumOutputChannels(); ++i)
-        {
-            if (!ignorePinNames)
-            {
+        for (i = 0; i < plugin->getTotalNumOutputChannels(); ++i) {
+            if (!ignorePinNames) {
                 auto g = new juce::GlyphArrangement;
 
-                g->addLineOfText(tempFont,
-                                 plugin->getOutputChannelName(i),
-                                 0.0f,
-                                 y);
+                g->addLineOfText(tempFont, plugin->getOutputChannelName(i), 0.0f, y);
                 bounds = g->getBoundingBox(0, -1, true);
 
                 outputText.add(g);
 
                 if (bounds.getWidth() > outputWidth)
                     outputWidth = bounds.getWidth();
-            }
-            else
-            {
+            } else {
                 juce::String tempstr;
                 auto g = new juce::GlyphArrangement;
 
                 tempstr << "Output " << i + 1;
-                g->addLineOfText(tempFont,
-                                 tempstr,
-                                 0.0f,
-                                 y);
+                g->addLineOfText(tempFont, tempstr, 0.0f, y);
                 bounds = g->getBoundingBox(0, -1, true);
 
                 outputText.add(g);
@@ -559,15 +467,11 @@ void PluginComponent::determineSize(bool onlyUpdateWidth)
         }
 
         // Add output parameter/midi name.
-        if (plugin->producesMidi() || (plugin->getName() == "OSC Input"))
-        {
+        if (plugin->producesMidi() || (plugin->getName() == "OSC Input")) {
             {
                 auto g = new juce::GlyphArrangement;
 
-                g->addLineOfText(tempFont,
-                                 "param",
-                                 0.0f,
-                                 y);
+                g->addLineOfText(tempFont, "param", 0.0f, y);
                 bounds = g->getBoundingBox(0, -1, true);
 
                 outputText.add(g);
@@ -596,18 +500,12 @@ void PluginComponent::determineSize(bool onlyUpdateWidth)
         h = juce::jmax(numInputPins, numOutputPins);
         h *= 13;
 
-        if ((pluginName != "Audio Input") &&
-            (pluginName != "Midi Input") &&
-            (pluginName != "Audio Output") &&
-            (pluginName != "OSC Input"))
-        {
+        if ((pluginName != "Audio Input") && (pluginName != "Midi Input") && (pluginName != "Audio Output") &&
+            (pluginName != "OSC Input")) {
             h += 60;
-        }
-        else
+        } else
             h += 34;
-    }
-    else
-    {
+    } else {
         juce::Point<int> compSize = proc->getSize();
 
         if (nameWidth > (compSize.getX() + 24.0f))
@@ -624,17 +522,15 @@ void PluginComponent::determineSize(bool onlyUpdateWidth)
         setSize(w, h);
 }
 
-void PluginComponent::createPins()
-{
+void PluginComponent::createPins() {
     int i;
     int y;
-    PluginPinComponent *pin;
-    AudioProcessor *plugin = node->getProcessor();
+    PluginPinComponent* pin;
+    AudioProcessor* plugin = node->getProcessor();
     const AudioProcessorGraph::NodeID uid = node->nodeID;
 
     y = 25;
-    for (i = 0; i < plugin->getTotalNumInputChannels(); ++i)
-    {
+    for (i = 0; i < plugin->getTotalNumInputChannels(); ++i) {
         juce::Point<int> pinPos;
 
         pin = new PluginPinComponent(false, uid, i, false);
@@ -647,11 +543,9 @@ void PluginComponent::createPins()
         y += 12;
     }
 
-    if ((plugin->acceptsMidi() ||
-         (plugin->getTotalNumInputChannels() > 0) ||
+    if ((plugin->acceptsMidi() || (plugin->getTotalNumInputChannels() > 0) ||
          (plugin->getTotalNumOutputChannels() > 0)) &&
-         ((pluginName != "Audio Input") && (pluginName != "Audio Output")))
-    {
+        ((pluginName != "Audio Input") && (pluginName != "Audio Output"))) {
         juce::Point<int> pinPos;
 
         pin = new PluginPinComponent(false, uid, AudioProcessorGraph::midiChannelIndex, true);
@@ -665,8 +559,7 @@ void PluginComponent::createPins()
     }
 
     y = 25;
-    for (i = 0; i < plugin->getTotalNumOutputChannels(); ++i)
-    {
+    for (i = 0; i < plugin->getTotalNumOutputChannels(); ++i) {
         juce::Point<int> pinPos;
 
         pin = new PluginPinComponent(true, uid, i, false);
@@ -679,8 +572,7 @@ void PluginComponent::createPins()
         y += 12;
     }
 
-    if (plugin->producesMidi() || (plugin->getName() == "OSC Input"))
-    {
+    if (plugin->producesMidi() || (plugin->getName() == "OSC Input")) {
         juce::Point<int> pinPos;
 
         pin = new PluginPinComponent(true, uid, AudioProcessorGraph::midiChannelIndex, true);
@@ -694,22 +586,14 @@ void PluginComponent::createPins()
     }
 }
 
-PluginPinComponent::PluginPinComponent(bool dir, AudioProcessorGraph::NodeID id, int chan, bool param) :
-    juce::Component(),
-    direction(dir),
-    uid(id),
-    channel(chan),
-    parameterPin(param)
-{
+PluginPinComponent::PluginPinComponent(bool dir, AudioProcessorGraph::NodeID id, int chan, bool param)
+    : juce::Component(), direction(dir), uid(id), channel(chan), parameterPin(param) {
     setSize(10, 12);
 }
 
-PluginPinComponent::~PluginPinComponent()
-{
-}
+PluginPinComponent::~PluginPinComponent() {}
 
-void PluginPinComponent::paint(juce::Graphics& g)
-{
+void PluginPinComponent::paint(juce::Graphics& g) {
     const float w = static_cast<float>(getWidth()) - 2;
     const float h = static_cast<float>(getHeight()) - 2;
 
@@ -723,42 +607,35 @@ void PluginPinComponent::paint(juce::Graphics& g)
     g.fillEllipse(1, 1, w, h);
 }
 
-void PluginPinComponent::mouseDown(const juce::MouseEvent& e)
-{
-    if (direction)
-    {
-        PluginField *field = findParentComponentOfClass<PluginField>();
+void PluginPinComponent::mouseDown(const juce::MouseEvent& e) {
+    if (direction) {
+        PluginField* field = findParentComponentOfClass<PluginField>();
 
         field->addConnection(this, (e.mods.isShiftDown() && !parameterPin));
     }
 }
 
-void PluginPinComponent::mouseDrag(const juce::MouseEvent& e)
-{
-    PluginField *field = findParentComponentOfClass<PluginField>();
+void PluginPinComponent::mouseDrag(const juce::MouseEvent& e) {
+    PluginField* field = findParentComponentOfClass<PluginField>();
     juce::MouseEvent e2 = e.getEventRelativeTo(field);
 
     field->dragConnection(e2.x - 5, e2.y);
 }
 
-void PluginPinComponent::mouseUp(const juce::MouseEvent& e)
-{
-    if (e.mods.testFlags(juce::ModifierKeys::leftButtonModifier))
-    {
-        PluginField *field = findParentComponentOfClass<PluginField>();
+void PluginPinComponent::mouseUp(const juce::MouseEvent& e) {
+    if (e.mods.testFlags(juce::ModifierKeys::leftButtonModifier)) {
+        PluginField* field = findParentComponentOfClass<PluginField>();
         juce::MouseEvent e2 = e.getEventRelativeTo(field);
 
         field->releaseConnection(e2.x, e2.y);
     }
 }
 
-PluginEditorWindow::PluginEditorWindow(juce::AudioProcessorEditor *editor,
-                                       PluginComponent *c) :
-    juce::DocumentWindow(c->getUserName(),
-                         ColourScheme::getInstance().colours["Window Background"],
-                         juce::DocumentWindow::minimiseButton | juce::DocumentWindow::maximiseButton | juce::DocumentWindow::closeButton),
-    component(c)
-{
+PluginEditorWindow::PluginEditorWindow(juce::AudioProcessorEditor* editor, PluginComponent* c)
+    : juce::DocumentWindow(c->getUserName(), ColourScheme::getInstance().colours["Window Background"],
+                           juce::DocumentWindow::minimiseButton | juce::DocumentWindow::maximiseButton |
+                               juce::DocumentWindow::closeButton),
+      component(c) {
     int x, y;
 
     centreWithSize(400, 300);
@@ -768,10 +645,10 @@ PluginEditorWindow::PluginEditorWindow(juce::AudioProcessorEditor *editor,
     setContentOwned(new EditorWrapper(editor, c), true);
     setAlwaysOnTop(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("WindowsOnTop", false));
 
-    // Fix for my favourite synth being unable to handle being resizable.
+    // VAZPlusVSTi cannot handle being resized, so exclude it from resizable
+    // windows unless the user opted into fixed-size windows.
     if ((c->getNode()->getProcessor()->getName() != "VAZPlusVSTi") &&
-        !PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("fixedSizeWindows", true))
-    {
+        !PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("fixedSizeWindows", true)) {
         setResizable(true, false);
     }
 
@@ -784,27 +661,21 @@ PluginEditorWindow::PluginEditorWindow(juce::AudioProcessorEditor *editor,
     setTopLeftPosition(x, y);
 
     setVisible(true);
-    getPeer()->setIcon(juce::ImageCache::getFromMemory(Images::icon512_png,
-                                                       Images::icon512_pngSize));
+    getPeer()->setIcon(juce::ImageCache::getFromMemory(Images::icon512_png, Images::icon512_pngSize));
 }
 
-PluginEditorWindow::~PluginEditorWindow()
-{
+PluginEditorWindow::~PluginEditorWindow() {
     component->getNode()->properties.set("uiLastX", getX());
     component->getNode()->properties.set("uiLastY", getY());
 }
 
-void PluginEditorWindow::closeButtonPressed()
-{
+void PluginEditorWindow::closeButtonPressed() {
     component->setWindow(nullptr);
     delete this;
 }
 
-PluginEditorWindow::EditorWrapper::EditorWrapper(juce::AudioProcessorEditor *ed,
-                                                 PluginComponent *comp) :
-    editor(ed),
-    component(comp)
-{
+PluginEditorWindow::EditorWrapper::EditorWrapper(juce::AudioProcessorEditor* ed, PluginComponent* comp)
+    : editor(ed), component(comp) {
     presetBar = new PresetBar(component);
 
     presetBar->setBounds(0, 0, 396, 32);
@@ -819,21 +690,17 @@ PluginEditorWindow::EditorWrapper::EditorWrapper(juce::AudioProcessorEditor *ed,
         setSize(editor->getWidth(), 32 + editor->getHeight());
 }
 
-PluginEditorWindow::EditorWrapper::~EditorWrapper()
-{
+PluginEditorWindow::EditorWrapper::~EditorWrapper() {
     deleteAllChildren();
 }
 
-void PluginEditorWindow::EditorWrapper::resized()
-{
+void PluginEditorWindow::EditorWrapper::resized() {
     presetBar->setSize(getWidth(), 32);
     editor->setSize(getWidth(), getHeight() - 32);
 }
 
-void PluginEditorWindow::EditorWrapper::childBoundsChanged(juce::Component *child)
-{
-    if (child == editor)
-    {
+void PluginEditorWindow::EditorWrapper::childBoundsChanged(juce::Component* child) {
+    if (child == editor) {
         if (editor->getWidth() < 396)
             setSize(396, 32 + editor->getHeight());
         else
@@ -841,23 +708,16 @@ void PluginEditorWindow::EditorWrapper::childBoundsChanged(juce::Component *chil
     }
 }
 
-PluginConnection::PluginConnection(PluginPinComponent *s,
-                                   PluginPinComponent *d,
-                                   bool allOutputs) :
-    juce::Component(),
-    source(s),
-    selected(false),
-    representsAllOutputs(allOutputs)
-{
-    if (source)
-    {
+PluginConnection::PluginConnection(PluginPinComponent* s, PluginPinComponent* d, bool allOutputs)
+    : juce::Component(), source(s), selected(false), representsAllOutputs(allOutputs) {
+    if (source) {
         juce::Point<int> tempPoint(source->getX() + 5, source->getY() + 6);
-        PluginField *field = source->findParentComponentOfClass<PluginField>();
+        PluginField* field = source->findParentComponentOfClass<PluginField>();
 
         tempPoint = field->getLocalPoint(source->getParentComponent(), tempPoint);
         setTopLeftPosition(tempPoint.getX(), tempPoint.getY());
 
-        dynamic_cast<PluginComponent *>(source->getParentComponent())->addChangeListener(this);
+        dynamic_cast<PluginComponent*>(source->getParentComponent())->addChangeListener(this);
 
         paramCon = source->getParameterPin();
     }
@@ -868,33 +728,26 @@ PluginConnection::PluginConnection(PluginPinComponent *s,
         destination = nullptr;
 }
 
-PluginConnection::~PluginConnection()
-{
-    if (source)
-    {
-        PluginComponent *sourceComp = dynamic_cast<PluginComponent *>(source->getParentComponent());
+PluginConnection::~PluginConnection() {
+    if (source) {
+        PluginComponent* sourceComp = dynamic_cast<PluginComponent*>(source->getParentComponent());
         if (sourceComp)
             sourceComp->removeChangeListener(this);
     }
-    if (destination)
-    {
-        PluginComponent *destComp = dynamic_cast<PluginComponent *>(destination->getParentComponent());
+    if (destination) {
+        PluginComponent* destComp = dynamic_cast<PluginComponent*>(destination->getParentComponent());
         if (destComp)
             destComp->removeChangeListener(this);
     }
 }
 
-void PluginConnection::paint(juce::Graphics& g)
-{
+void PluginConnection::paint(juce::Graphics& g) {
     juce::Colour tempCol;
 
-    if (representsAllOutputs)
-    {
+    if (representsAllOutputs) {
         g.setColour(juce::Colours::red);
         g.strokePath(drawnCurve, juce::PathStrokeType(4.0f));
-    }
-    else
-    {
+    } else {
         g.setColour(juce::Colours::black);
         g.strokePath(drawnCurve, juce::PathStrokeType(1.0f));
     }
@@ -911,18 +764,15 @@ void PluginConnection::paint(juce::Graphics& g)
     g.fillPath(drawnCurve);
 }
 
-void PluginConnection::mouseDown(const juce::MouseEvent& /*e*/)
-{
+void PluginConnection::mouseDown(const juce::MouseEvent& /*e*/) {
     selected = !selected;
     repaint();
 }
 
-bool PluginConnection::hitTest(int x, int y)
-{
+bool PluginConnection::hitTest(int x, int y) {
     bool retval = false;
 
-    if (drawnCurve.contains(static_cast<float>(x), static_cast<float>(y)))
-    {
+    if (drawnCurve.contains(static_cast<float>(x), static_cast<float>(y))) {
         // Make sure clicking the source pin doesn't select this connection.
         if (x > 10)
             retval = true;
@@ -931,30 +781,23 @@ bool PluginConnection::hitTest(int x, int y)
     return retval;
 }
 
-void PluginConnection::changeListenerCallback(juce::ChangeBroadcaster * /*changedObject*/)
-{
-    juce::Component *field = getParentComponent();
+void PluginConnection::changeListenerCallback(juce::ChangeBroadcaster* /*changedObject*/) {
+    juce::Component* field = getParentComponent();
 
-    if (source && destination)
-    {
+    if (source && destination) {
         juce::Point<int> sourcePoint(source->getX() + 5, source->getY() + 6);
         juce::Point<int> destPoint(destination->getX() + 5, destination->getY() + 6);
         sourcePoint = field->getLocalPoint(source->getParentComponent(), sourcePoint);
         destPoint = field->getLocalPoint(destination->getParentComponent(), destPoint);
 
-        updateBounds(sourcePoint.getX(),
-                     sourcePoint.getY(),
-                     destPoint.getX(),
-                     destPoint.getY());
+        updateBounds(sourcePoint.getX(), sourcePoint.getY(), destPoint.getX(), destPoint.getY());
     }
 }
 
-void PluginConnection::drag(int x, int y)
-{
-    juce::Component *field = getParentComponent();
+void PluginConnection::drag(int x, int y) {
+    juce::Component* field = getParentComponent();
 
-    if (source)
-    {
+    if (source) {
         juce::Point<int> sourcePoint(source->getX() + 5, source->getY() + 6);
         sourcePoint = field->getLocalPoint(source->getParentComponent(), sourcePoint);
 
@@ -962,16 +805,14 @@ void PluginConnection::drag(int x, int y)
     }
 }
 
-void PluginConnection::setDestination(PluginPinComponent *d)
-{
-    PluginField *field = source->findParentComponentOfClass<PluginField>();
+void PluginConnection::setDestination(PluginPinComponent* d) {
+    PluginField* field = source->findParentComponentOfClass<PluginField>();
 
     destination = d;
     if (destination)
-        dynamic_cast<PluginComponent *>(destination->getParentComponent())->addChangeListener(this);
+        dynamic_cast<PluginComponent*>(destination->getParentComponent())->addChangeListener(this);
 
-    if (source && destination)
-    {
+    if (source && destination) {
         juce::Point<int> sourcePoint(source->getX() + 5, source->getY() + 6);
         juce::Point<int> destPoint(destination->getX() + 5, destination->getY() + 6);
         sourcePoint = field->getLocalPoint(source->getParentComponent(), sourcePoint);
@@ -984,19 +825,15 @@ void PluginConnection::setDestination(PluginPinComponent *d)
     }
 }
 
-void PluginConnection::setRepresentsAllOutputs(bool val)
-{
+void PluginConnection::setRepresentsAllOutputs(bool val) {
     representsAllOutputs = val;
 }
 
-void PluginConnection::getPoints(int& sX, int& sY, int& dX, int& dY)
-{
+void PluginConnection::getPoints(int& sX, int& sY, int& dX, int& dY) {
     int tX, tY;
 
-    if (dY < sY)
-    {
-        if (sX < dX)
-        {
+    if (dY < sY) {
+        if (sX < dX) {
             dX -= sX;
             sX = 5;
             dX += 5;
@@ -1004,9 +841,7 @@ void PluginConnection::getPoints(int& sX, int& sY, int& dX, int& dY)
             tX = dX;
             dX = sX;
             sX = tX;
-        }
-        else
-        {
+        } else {
             sX -= dX;
             dX = 5;
             sX += 5;
@@ -1023,9 +858,7 @@ void PluginConnection::getPoints(int& sX, int& sY, int& dX, int& dY)
         tY = dY;
         dY = sY;
         sY = tY;
-    }
-    else if (sX < dX)
-    {
+    } else if (sX < dX) {
         dX -= sX;
         sX = 5;
         dX += 5;
@@ -1033,9 +866,7 @@ void PluginConnection::getPoints(int& sX, int& sY, int& dX, int& dY)
         dY -= sY;
         sY = 5;
         dY += 5;
-    }
-    else
-    {
+    } else {
         sX -= dX;
         dX = 5;
         sX += 5;
@@ -1054,30 +885,23 @@ void PluginConnection::getPoints(int& sX, int& sY, int& dX, int& dY)
     }
 }
 
-void PluginConnection::updateBounds(int sX, int sY, int dX, int dY)
-{
+void PluginConnection::updateBounds(int sX, int sY, int dX, int dY) {
     int left, top, width, height;
 
     juce::Path tempPath;
     juce::PathStrokeType drawnType(9.0f, juce::PathStrokeType::mitered, juce::PathStrokeType::rounded);
 
-    if (sX < dX)
-    {
+    if (sX < dX) {
         left = sX;
         width = dX - sX;
-    }
-    else
-    {
+    } else {
         left = dX;
         width = sX - dX;
     }
-    if (sY < dY)
-    {
+    if (sY < dY) {
         top = sY;
         height = dY - sY;
-    }
-    else
-    {
+    } else {
         top = dY;
         height = sY - dY;
     }
@@ -1085,12 +909,9 @@ void PluginConnection::updateBounds(int sX, int sY, int dX, int dY)
     getPoints(sX, sY, dX, dY);
 
     tempPath.startNewSubPath(static_cast<float>(sX), static_cast<float>(sY));
-    tempPath.cubicTo((static_cast<float>(width) * 0.5f) + juce::jmin(sX, dX),
-                     static_cast<float>(sY),
-                     (static_cast<float>(width) * 0.5f) + juce::jmin(sX, dX),
-                     static_cast<float>(dY),
-                     static_cast<float>(dX),
-                     static_cast<float>(dY));
+    tempPath.cubicTo((static_cast<float>(width) * 0.5f) + juce::jmin(sX, dX), static_cast<float>(sY),
+                     (static_cast<float>(width) * 0.5f) + juce::jmin(sX, dX), static_cast<float>(dY),
+                     static_cast<float>(dX), static_cast<float>(dY));
     drawnType.createStrokedPath(drawnCurve, tempPath);
 
     setBounds(left - 5, top - 5, width + 10, height + 10);

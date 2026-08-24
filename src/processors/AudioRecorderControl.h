@@ -31,22 +31,36 @@ class WaveformDisplayLite;
 class AudioRecorderControl : public Component,
                              public FilenameComponentListener,
                              public ChangeListener,
-                             public juce::Button::Listener
-{
+                             public juce::Button::Listener {
   public:
+    /// Creates the control panel for the given recorder processor.
+    ///
+    /// @param proc The recorder processor to associate with this control.
+    /// @param thumbnail The audio thumbnail to display in the waveform view.
     AudioRecorderControl(RecorderProcessor* proc, AudioThumbnail& thumbnail);
     ~AudioRecorderControl() override;
 
     /// Called when the user selects a sound file.
+    ///
+    /// @param filenameComp The filename component whose selected file changed.
     void filenameComponentChanged(FilenameComponent* filenameComp) override;
     /// Called when the processor broadcasts a change.
+    ///
+    /// @param source The change broadcaster that triggered the callback.
     void changeListenerCallback(ChangeBroadcaster* source) override;
 
     /// Changes the waveform display background colour.
+    ///
+    /// @param col The new background colour for the waveform display.
     void setWaveformBackground(const Colour& col);
 
+    /// Empty paint override; the component has no custom painting.
     void paint(Graphics& g) override;
+    /// Lays out the waveform display, filename selector, and buttons.
     void resized() override;
+    /// Handles sync toggle and record button clicks.
+    ///
+    /// @param buttonThatWasClicked The button that was clicked by the user.
     void buttonClicked(Button* buttonThatWasClicked) override;
 
   private:

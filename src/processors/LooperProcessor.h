@@ -47,21 +47,27 @@ class LooperProcessor : public PedalboardProcessor,
                         public ChangeListener,
                         public ChangeBroadcaster,
                         public TimeSliceClient,
-                        public AsyncUpdater
-{
+                        public AsyncUpdater {
   public:
     LooperProcessor();
     ~LooperProcessor() override;
 
     /// Sets the sound file to play.
+    ///
+    /// @param phil The sound file to load; stops any active recording first.
     void setFile(const File& phil);
     /// Returns the sound file.
-    const File& getFile() { newFileLoaded = false; return soundFile; }
+    const File& getFile() {
+        newFileLoaded = false;
+        return soundFile;
+    }
     /// Returns whether or not we're currently playing.
     bool isPlaying() const { return (playing && !stopPlaying); }
     /// Returns whether or not we're currently recording.
     bool isRecording() const { return (recording && !stopRecording); }
     /// Returns the current read position within the file (0->1).
+    ///
+    /// @return The playback position as a normalized value from 0.0 to 1.0.
     double getReadPosition() const;
 
     /// Returns true if we've just loaded a new sound file.
@@ -79,31 +85,46 @@ class LooperProcessor : public PedalboardProcessor,
     /// from the main thread. Hence the use of an AsyncUpdater.
     void handleAsyncUpdate() override;
     /// Used to allocate new loop buffers if necessary.
+    ///
+    /// @return The time in milliseconds to wait before the next call.
     int useTimeSlice() override;
 
     /// Returns the component which is added to the instance's PluginComponent.
+    ///
+    /// @return A new LooperControl component; deleted by the caller.
     Component* getControls();
     /// Returns the size of the controls component.
     Point<int> getSize() override { return Point<int>(300, 100); }
 
     /// Updates the bounds of our editor window.
+    ///
+    /// @param bounds The new editor window bounds to store.
     void updateEditorBounds(const Rectangle<int>& bounds);
 
     /// So we can listen to the main transport.
+    ///
+    /// @param source The change broadcaster that triggered the callback.
     void changeListenerCallback(ChangeBroadcaster* source) override;
 
     /// Provides a description of the processor to the filter graph.
+    ///
+    /// @param description The plugin description to fill in.
     void fillInPluginDescription(PluginDescription& description) const override;
 
     /// Alters the input audio's level accordingly.
+    ///
+    /// @param buffer The audio buffer to process (record, play, and mix).
+    /// @param midiMessages The MIDI buffer (unused).
     void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) override;
 
     /// Ignored.
+    ///
+    /// @param sampleRate The current sample rate in Hz.
+    /// @param estimatedSamplesPerBlock The maximum number of samples per block.
     void prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) override;
 
     /// Parameter constants.
-    enum
-    {
+    enum {
         Play = 0,
         ReturnToZero,
         Record,
@@ -125,24 +146,36 @@ class LooperProcessor : public PedalboardProcessor,
     void releaseResources() override {}
     /// Returns the length of the plugin's tail.
     double getTailLengthSeconds() const override { return 0.0; }
-    /// We definitely want Midi input.
+    /// Does not accept MIDI input.
     bool acceptsMidi() const override { return false; }
-    /// But we don't need to output it.
+    /// Does not produce MIDI output.
     bool producesMidi() const override { return false; }
-    /// We have no editor.
+    /// Creates the full editor window.
     AudioProcessorEditor* createEditor() override;
-    /// We have no editor.
+    /// Returns true; a full editor is available.
     bool hasEditor() const override { return true; }
 
-    // JUCE 8: deprecated parameter methods kept as regular methods for
-    // internal use by control components.
+    /// JUCE 8: deprecated parameter methods kept as regular methods for
+    /// internal use by control components.
     /// Returns the parameter name.
+    ///
+    /// @param parameterIndex The index of the parameter (see the enum above).
+    /// @return The human-readable name of the parameter.
     const String getParameterName(int parameterIndex);
     /// Returns the parameter value (0-1 normalized).
+    ///
+    /// @param parameterIndex The index of the parameter (see the enum above).
+    /// @return The current value of the parameter, normalized to 0-1.
     float getParameter(int parameterIndex);
     /// Returns the parameter's value as a string.
+    ///
+    /// @param parameterIndex The index of the parameter (see the enum above).
+    /// @return A textual representation of the parameter's current value.
     const String getParameterText(int parameterIndex);
     /// Sets the parameter value (0-1 normalized).
+    ///
+    /// @param parameterIndex The index of the parameter (see the enum above).
+    /// @param newValue The new value for the parameter, normalized to 0-1.
     void setParameter(int parameterIndex, float newValue);
 
     /// We have no programs.
@@ -156,8 +189,13 @@ class LooperProcessor : public PedalboardProcessor,
     /// We have no programs.
     void changeProgramName(int index, const String& newName) override {}
     /// Loads the position of the slider and the size and position of the editor.
+    ///
+    /// @param destData The memory block to serialize state into.
     void getStateInformation(juce::MemoryBlock& destData) override;
     /// Saves the position of the slider and the size and position of the editor.
+    ///
+    /// @param data Pointer to the serialized state data.
+    /// @param sizeInBytes Size of the serialized state data in bytes.
     void setStateInformation(const void* data, int sizeInBytes) override;
 
   private:
@@ -167,11 +205,7 @@ class LooperProcessor : public PedalboardProcessor,
     void fillFadeOutBuffer();
 
     /// The size of each memory buffer we use.
-    enum
-    {
-        LoopBufferSize = (44100 * 8),
-        FadeBufferSize = 128
-    };
+    enum { LoopBufferSize = (44100 * 8), FadeBufferSize = 128 };
 
     /// The file we're playing.
     File soundFile;

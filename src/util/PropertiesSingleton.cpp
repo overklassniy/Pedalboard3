@@ -20,12 +20,9 @@
 
 #include "PropertiesSingleton.h"
 
-
 PropertiesSingleton PropertiesSingleton::singletonInstance;
 
-
-PropertiesSingleton::PropertiesSingleton()
-{
+PropertiesSingleton::PropertiesSingleton() {
     instance = std::make_unique<ApplicationProperties>();
 
     PropertiesFile::Options options;
@@ -37,21 +34,15 @@ PropertiesSingleton::PropertiesSingleton()
     instance->setStorageParameters(options);
 }
 
-
-PropertiesSingleton::~PropertiesSingleton()
-{
+PropertiesSingleton::~PropertiesSingleton() {
     if (instance)
         instance->closeFiles();
 }
 
-
-ApplicationProperties& PropertiesSingleton::getInstance()
-{
+ApplicationProperties& PropertiesSingleton::getInstance() {
     return *singletonInstance.instance;
 }
 
-
-void PropertiesSingleton::killInstance()
-{
+void PropertiesSingleton::killInstance() {
     singletonInstance.instance.reset();
 }

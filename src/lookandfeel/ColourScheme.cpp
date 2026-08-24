@@ -19,17 +19,16 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "ColourScheme.h"
+
 #include "JuceHelperStuff.h"
 
-ColourScheme& ColourScheme::getInstance()
-{
+ColourScheme& ColourScheme::getInstance() {
     static ColourScheme retval;
 
     return retval;
 }
 
-const StringArray ColourScheme::getPresets() const
-{
+const StringArray ColourScheme::getPresets() const {
     Array<File> files;
     StringArray retval;
     File settingsDir = JuceHelperStuff::getAppDataFolder();
@@ -41,8 +40,7 @@ const StringArray ColourScheme::getPresets() const
     return retval;
 }
 
-void ColourScheme::loadPreset(const String& name)
-{
+void ColourScheme::loadPreset(const String& name) {
     String filename;
     File settingsDir = JuceHelperStuff::getAppDataFolder();
 
@@ -50,18 +48,13 @@ void ColourScheme::loadPreset(const String& name)
 
     File presetFile = settingsDir.getChildFile(filename);
 
-    if (presetFile.existsAsFile())
-    {
+    if (presetFile.existsAsFile()) {
         std::unique_ptr<XmlElement> rootXml(XmlDocument::parse(presetFile));
 
-        if (rootXml)
-        {
-            if (rootXml->hasTagName("Pedalboard3ColourScheme"))
-            {
-                forEachXmlChildElement(*rootXml, colour)
-                {
-                    if (colour->hasTagName("Colour"))
-                    {
+        if (rootXml) {
+            if (rootXml->hasTagName("Pedalboard3ColourScheme")) {
+                forEachXmlChildElement(*rootXml, colour) {
+                    if (colour->hasTagName("Colour")) {
                         String colName;
                         String tempstr;
 
@@ -77,8 +70,7 @@ void ColourScheme::loadPreset(const String& name)
     }
 }
 
-void ColourScheme::savePreset(const String& name)
-{
+void ColourScheme::savePreset(const String& name) {
     String filename;
     std::map<String, Colour>::iterator it;
     XmlElement rootXml("Pedalboard3ColourScheme");
@@ -88,8 +80,7 @@ void ColourScheme::savePreset(const String& name)
 
     File presetFile = settingsDir.getChildFile(filename);
 
-    for (it = colours.begin(); it != colours.end(); ++it)
-    {
+    for (it = colours.begin(); it != colours.end(); ++it) {
         auto* colour = new XmlElement("Colour");
 
         colour->setAttribute("name", it->first);
@@ -102,8 +93,7 @@ void ColourScheme::savePreset(const String& name)
     rootXml.writeToFile(presetFile, "");
 }
 
-bool ColourScheme::doesColoursMatchPreset(const String& name)
-{
+bool ColourScheme::doesColoursMatchPreset(const String& name) {
     String tempstr;
     File presetFile;
     bool retval = true;
@@ -112,26 +102,20 @@ bool ColourScheme::doesColoursMatchPreset(const String& name)
     tempstr << name << ".colourscheme";
     presetFile = settingsDir.getChildFile(tempstr);
 
-    if (presetFile.existsAsFile())
-    {
+    if (presetFile.existsAsFile()) {
         std::unique_ptr<XmlElement> rootXml(XmlDocument::parse(presetFile));
 
-        if (rootXml)
-        {
-            if (rootXml->hasTagName("Pedalboard3ColourScheme"))
-            {
-                forEachXmlChildElement(*rootXml, colour)
-                {
-                    if (colour->hasTagName("Colour"))
-                    {
+        if (rootXml) {
+            if (rootXml->hasTagName("Pedalboard3ColourScheme")) {
+                forEachXmlChildElement(*rootXml, colour) {
+                    if (colour->hasTagName("Colour")) {
                         String colName;
                         String value;
 
                         colName = colour->getStringAttribute("name", "NoName");
                         value = colour->getStringAttribute("value", "FFFFFFFF");
 
-                        if (colours[colName] != Colour(value.getHexValue32()))
-                        {
+                        if (colours[colName] != Colour(value.getHexValue32())) {
                             retval = false;
                             break;
                         }
@@ -140,21 +124,18 @@ bool ColourScheme::doesColoursMatchPreset(const String& name)
                 presetName = name;
             }
         }
-    }
-    else
+    } else
         retval = false;
 
     return retval;
 }
 
-ColourScheme::ColourScheme()
-{
+ColourScheme::ColourScheme() {
     File defaultFile = JuceHelperStuff::getAppDataFolder().getChildFile("default.colourscheme");
 
     if (defaultFile.existsAsFile())
         loadPreset("default");
-    else
-    {
+    else {
         presetName = "default";
 
         colours["Window Background"] = Colour(0xFFEEECE1);
@@ -184,6 +165,4 @@ ColourScheme::ColourScheme()
     }
 }
 
-ColourScheme::~ColourScheme()
-{
-}
+ColourScheme::~ColourScheme() {}

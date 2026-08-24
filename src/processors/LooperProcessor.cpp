@@ -19,55 +19,28 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "LooperProcessor.h"
-#include "LooperEditor.h"
-#include "LooperControl.h"
+
 #include "AudioSingletons.h"
+#include "LooperControl.h"
+#include "LooperEditor.h"
 #include "MainTransport.h"
 
 #include <cmath>
 
-LooperProcessor::LooperProcessor():
-playing(false),
-stopPlaying(false),
-recording(false),
-stopRecording(false),
-syncToMainTransport(false),
-stopAfterBar(false),
-autoPlay(true),
-inputLevel(1.0f),
-loopLevel(1.0f),
-threadWriter(0),
-thumbnail(512,
-          AudioFormatManagerSingleton::getInstance(),
-          AudioThumbnailCacheSingleton::getInstance()),
-numerator(4),
-denominator(4),
-clickCount(0.0f),
-clickDec(0.0f),
-measureCount(0),
-currentRate(44100.0),
-justPaused(false),
-loopLength(0),
-loopPos(0),
-loopIndex(0),
-deleteLastBuffer(false),
-tempBufferWrite(0),
-fadeOutCount(-1),
-fadeInCount(0),
-autoPlayFade(1.0f),
-fileReader(0),
-fileReaderPos(0),
-fileReaderBufIndex(0),
-newFileLoaded(false),
-inputAudio(2, 2560)
-{
+LooperProcessor::LooperProcessor()
+    : playing(false), stopPlaying(false), recording(false), stopRecording(false), syncToMainTransport(false),
+      stopAfterBar(false), autoPlay(true), inputLevel(1.0f), loopLevel(1.0f), threadWriter(0),
+      thumbnail(512, AudioFormatManagerSingleton::getInstance(), AudioThumbnailCacheSingleton::getInstance()),
+      numerator(4), denominator(4), clickCount(0.0f), clickDec(0.0f), measureCount(0), currentRate(44100.0),
+      justPaused(false), loopLength(0), loopPos(0), loopIndex(0), deleteLastBuffer(false), tempBufferWrite(0),
+      fadeOutCount(-1), fadeInCount(0), autoPlayFade(1.0f), fileReader(0), fileReaderPos(0), fileReaderBufIndex(0),
+      newFileLoaded(false), inputAudio(2, 2560) {
     int i;
 
     loopBuffer.add(new juce::AudioBuffer<float>(2, (44100 * 8)));
     loopBuffer[0]->clear();
 
-    for(i=0;i<FadeBufferSize;++i)
-    {
+    for (i = 0; i < FadeBufferSize; ++i) {
         tempBuffer[0][i] = 0.0f;
         tempBuffer[1][i] = 0.0f;
 
@@ -85,9 +58,8 @@ inputAudio(2, 2560)
     MainTransport::getInstance()->registerTransport(this);
 }
 
-LooperProcessor::~LooperProcessor()
-{
-    //Saves the file.
+LooperProcessor::~LooperProcessor() {
+    // Clean up the current file and recording state.
     setFile(File());
 
     AudioThumbnailCacheSingleton::getInstance().getTimeSliceThread().removeTimeSliceClient(this);
@@ -95,43 +67,39 @@ LooperProcessor::~LooperProcessor()
     removeAllChangeListeners();
     MainTransport::getInstance()->unregisterTransport(this);
 
-    if(threadWriter)
+    if (threadWriter)
         delete threadWriter;
 
-    if(fileReader)
+    if (fileReader)
         delete fileReader;
 }
 
-void LooperProcessor::setFile(const File& phil)
-{
+void LooperProcessor::setFile(const File& phil) {
     int i;
-    //WavAudioFormat wavFormat;
-    //StringPairArray metadata;
-    //AudioFormatWriter *writer;
-    //FileOutputStream *philStream;
 
-    if(recording)
-    {
+    if (recording) {
         stopRecording = true;
 
-        //Wait till the end of the current audio buffer.
-        while(recording) {Thread::sleep(10);}
+        // Wait till the end of the current audio buffer.
+        while (recording) {
+            Thread::sleep(10);
+        }
     }
 
-    if(threadWriter)
-    {
+    if (threadWriter) {
         delete threadWriter;
         threadWriter = 0;
     }
 
-    //So we don't delete a buffer while we're playing to it.
-    while(playing) {Thread::sleep(10);};
+    // So we don't delete a buffer while we're playing to it.
+    while (playing) {
+        Thread::sleep(10);
+    };
 
     soundFile = phil;
 
-    if(soundFile != File())
-    {
-        if(fileReader)
+    if (soundFile != File()) {
+        if (fileReader)
             delete fileReader;
         fileReader = AudioFormatManagerSingleton::getInstance().createReaderFor(soundFile);
         fileReaderPos = 0;
@@ -142,221 +110,148 @@ void LooperProcessor::setFile(const File& phil)
     loopIndex = 0;
     loopPos = 0;
 
-    //Remove all loop buffers except the 1st one.
-    for(i=(loopBuffer.size()-1);i>0;--i)
+    // Remove all loop buffers except the 1st one.
+    for (i = (loopBuffer.size() - 1); i > 0; --i)
         loopBuffer.remove(i);
-
-    //So we overwrite any previous file.
-    //if(soundFile.existsAsFile())
-    //{
-    //    if(!soundFile.deleteFile())
-    //    {
-    //        AlertWindow::showMessageBox(AlertWindow::WarningIcon,
-    //                                    "Could not delete existing file",
-    //                                    "Have you got the file open elsewhere? (e.g. in another File Player)");
-    //        soundFile = File();
-    //    }
-    //}
-    //if(soundFile != File())
-    //{
-    //    philStream = new FileOutputStream(soundFile);
-    //    writer = wavFormat.createWriterFor(philStream,
-    //                                       currentRate,
-    //                                       2,
-    //                                       16,
-    //                                       metadata,
-    //                                       0);
-    //    if(!writer)
-    //    {
-    //        delete philStream;
-    //        soundFile = File();
-    //        threadWriter = 0;
-    //    }
-    //    else
-    //    {
-    //        threadWriter = new AudioFormatWriter::ThreadedWriter(writer,
-    //                                                             AudioThumbnailCacheSingleton::getInstance(),
-    //                                                             16384);
-    //        //threadWriter->setDataReceiver(&thumbnail);
-    //    }
-    //}
 }
 
-double LooperProcessor::getReadPosition() const
-{
-    if(loopLength > 0)
-        return (double)(((double)loopIndex * (double)LoopBufferSize) + (double)loopPos)/(double)loopLength;
+double LooperProcessor::getReadPosition() const {
+    if (loopLength > 0)
+        return (double)(((double)loopIndex * (double)LoopBufferSize) + (double)loopPos) / (double)loopLength;
     else
         return 0.0;
 }
 
-void LooperProcessor::handleAsyncUpdate()
-{
-    int abortCounter = 2000; //== 2 seconds, assuming a perfect 1 millisecond wait from Thread::sleep().
+void LooperProcessor::handleAsyncUpdate() {
+    int abortCounter = 2000; // Approximately 2 seconds, assuming a 1ms Thread::sleep() wait.
     WavAudioFormat wavFormat;
     StringPairArray metadata;
-    AudioFormatWriter *writer;
-    FileOutputStream *philStream;
+    AudioFormatWriter* writer;
+    FileOutputStream* philStream;
 
-    //Just in case.
-    if(playing)
+    // Stop playback before recording starts.
+    if (playing)
         stopPlaying = true;
-    while(playing)
-    {
+    while (playing) {
         Thread::sleep(1);
         --abortCounter;
-        if(!abortCounter)
-        {
-            AlertWindow::showMessageBox(AlertWindow::WarningIcon,
-                                        "Looper Error",
+        if (!abortCounter) {
+            AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Looper Error",
                                         "Unable to start recording; Looper still playing. Aborting.");
 
             return;
         }
     };
 
-    //if(control)
-    //    control->clearDisplay();
     thumbnail.reset(2, getSampleRate());
 
     setFile(soundFile);
 
-    if(fileReader)
-    {
+    if (fileReader) {
         delete fileReader;
         fileReader = 0;
     }
 
-    if(soundFile.existsAsFile())
-    {
-        if(!soundFile.deleteFile())
-        {
-            AlertWindow::showMessageBox(AlertWindow::WarningIcon,
-                                        "Could not delete existing file",
+    if (soundFile.existsAsFile()) {
+        if (!soundFile.deleteFile()) {
+            AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Could not delete existing file",
                                         "Have you got the file open elsewhere? (e.g. in another File Player)");
 
             soundFile = File();
         }
     }
 
-    if(soundFile != File())
-    {
+    if (soundFile != File()) {
         philStream = new FileOutputStream(soundFile);
 
-        writer = wavFormat.createWriterFor(philStream,
-                                            currentRate,
-                                            2,
-                                            16,
-                                            metadata,
-                                            0);
-        if(!writer)
-        {
+        writer = wavFormat.createWriterFor(philStream, currentRate, 2, 16, metadata, 0);
+        if (!writer) {
             delete philStream;
             soundFile = File();
             threadWriter = 0;
-        }
-        else
-        {
-            threadWriter = new AudioFormatWriter::ThreadedWriter(writer,
-                                                                 AudioThumbnailCacheSingleton::getInstance().getTimeSliceThread(),
-                                                                 16384);
+        } else {
+            threadWriter = new AudioFormatWriter::ThreadedWriter(
+                writer, AudioThumbnailCacheSingleton::getInstance().getTimeSliceThread(), 16384);
             threadWriter->setDataReceiver(&thumbnail);
         }
     }
 
-    if(threadWriter)
-    {
-        if(playing)
+    if (threadWriter) {
+        if (playing)
             stopPlaying = true;
-        while(playing) {Thread::sleep(10);}
+        while (playing) {
+            Thread::sleep(10);
+        }
 
         clickCount = 0.0f;
         clickDec = 0.0f;
         measureCount = 0;
         fadeOutCount = -1;
-        if(autoPlay)
+        if (autoPlay)
             autoPlayFade = 0.0f;
 
         recording = true;
     }
 }
 
-int LooperProcessor::useTimeSlice()
-{
-    int retval = 250; //Wait 1/4 second before checking again.
+int LooperProcessor::useTimeSlice() {
+    int retval = 250; // Wait 1/4 second before checking again.
 
-    if(recording)
-    {
-        if(loopIndex == (loopBuffer.size()-1))
-        {
-            //16538 = ~3/8 of a second. Should be enough considering the wait
-            //time we return from this method?
-            if(loopPos > (LoopBufferSize-16538))
-            {
+    if (recording) {
+        if (loopIndex == (loopBuffer.size() - 1)) {
+            // 16538 samples is roughly 3/8 of a second at 44.1k. This leaves
+            // enough headroom given the 250ms wait returned below.
+            if (loopPos > (LoopBufferSize - 16538)) {
                 loopBuffer.add(new juce::AudioBuffer<float>(2, LoopBufferSize));
-                loopBuffer[loopBuffer.size()-1]->clear();
+                loopBuffer[loopBuffer.size() - 1]->clear();
             }
         }
-    }
-    else if(deleteLastBuffer)
-    {
-        loopBuffer.remove(loopBuffer.size()-1);
+    } else if (deleteLastBuffer) {
+        loopBuffer.remove(loopBuffer.size() - 1);
         deleteLastBuffer = false;
-    }
-    else if(fileReader)
-    {
-        if(fileReaderBufIndex >= loopBuffer.size())
-        {
+    } else if (fileReader) {
+        if (fileReaderBufIndex >= loopBuffer.size()) {
             loopBuffer.add(new juce::AudioBuffer<float>(2, LoopBufferSize));
-            loopBuffer[loopBuffer.size()-1]->clear();
+            loopBuffer[loopBuffer.size() - 1]->clear();
 
             jassert(fileReaderBufIndex < loopBuffer.size());
         }
-        fileReader->read(loopBuffer[fileReaderBufIndex],
-                         0,
-                         LoopBufferSize,
-                         fileReaderPos, true, true);
+        fileReader->read(loopBuffer[fileReaderBufIndex], 0, LoopBufferSize, fileReaderPos, true, true);
         ++fileReaderBufIndex;
         fileReaderPos += LoopBufferSize;
 
-        if(fileReaderPos >= fileReader->lengthInSamples)
-        {
+        if (fileReaderPos >= fileReader->lengthInSamples) {
             loopLength = fileReader->lengthInSamples;
             delete fileReader;
             fileReader = 0;
         }
 
-        //While we're reading the file, have a shorter delay between calls
-        //so it gets done faster.
+        // While we're reading the file, have a shorter delay between calls
+        // so it gets done faster.
         retval = 20;
     }
 
     return retval;
 }
 
-Component *LooperProcessor::getControls()
-{
+Component* LooperProcessor::getControls() {
     return new LooperControl(this, &thumbnail);
 }
 
-void LooperProcessor::updateEditorBounds(const Rectangle<int>& bounds)
-{
+void LooperProcessor::updateEditorBounds(const Rectangle<int>& bounds) {
     editorBounds = bounds;
 }
 
-void LooperProcessor::changeListenerCallback(ChangeBroadcaster *source)
-{
-    if(source == MainTransport::getInstance())
-    {
-        if(syncToMainTransport)
-        {
-            //Play/pause the transport source.
-            if(MainTransport::getInstance()->getState() && !playing)
+void LooperProcessor::changeListenerCallback(ChangeBroadcaster* source) {
+    if (source == MainTransport::getInstance()) {
+        if (syncToMainTransport) {
+            // Play/pause the transport source.
+            if (MainTransport::getInstance()->getState() && !playing)
                 setParameter(Play, 1.0f);
-            else if(playing && !stopPlaying)
+            else if (playing && !stopPlaying)
                 setParameter(Play, 1.0f);
 
-            if(MainTransport::getInstance()->getReturnToZero())
+            if (MainTransport::getInstance()->getReturnToZero())
                 setParameter(ReturnToZero, 1.0f);
 
             sendChangeMessage();
@@ -364,8 +259,7 @@ void LooperProcessor::changeListenerCallback(ChangeBroadcaster *source)
     }
 }
 
-void LooperProcessor::fillInPluginDescription(PluginDescription &description) const
-{
+void LooperProcessor::fillInPluginDescription(PluginDescription& description) const {
     description.name = "Looper";
     description.descriptiveName = "Simple looper processor.";
     description.pluginFormatName = "Internal";
@@ -378,14 +272,12 @@ void LooperProcessor::fillInPluginDescription(PluginDescription &description) co
     description.numOutputChannels = 2;
 }
 
-void LooperProcessor::processBlock(juce::AudioBuffer<float> &buffer,
-                                   juce::MidiBuffer &midiMessages)
-{
+void LooperProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     int i, j;
     float tempf;
-    float *data[2];
+    float* data[2];
     uint64_t end, end2;
-    float *inputData[2];
+    float* inputData[2];
     int fadeOutStart = 0;
     int samplesToRecord = buffer.getNumSamples();
     const int numSamples = buffer.getNumSamples();
@@ -400,238 +292,201 @@ void LooperProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     inputData[0] = inputAudio.getWritePointer(0);
     inputData[1] = inputAudio.getWritePointer(1);
 
-    if(recording && threadWriter)
-    {
-        //If we're stopping after a bar, need to keep track of where we are in
-        //the bar.
-        if(stopAfterBar)
-        {
-            for(i=0;i<samplesToRecord;++i)
-            {
+    if (recording && threadWriter) {
+        // If we're stopping after a bar, need to keep track of where we are in
+        // the bar.
+        if (stopAfterBar) {
+            for (i = 0; i < samplesToRecord; ++i) {
                 clickCount -= clickDec;
-                if(clickCount <= 0.0f)
-                {
-                    AudioPlayHead *playHead = getPlayHead();
+                if (clickCount <= 0.0f) {
+                    AudioPlayHead* playHead = getPlayHead();
                     AudioPlayHead::CurrentPositionInfo posInfo;
 
                     ++measureCount;
-                    if(measureCount == (numerator+1))
-                    {
+                    if (measureCount == (numerator + 1)) {
                         samplesToRecord = i;
                         stopRecording = true;
-                        fadeInCount = (loopLength-1) + samplesToRecord;
+                        fadeInCount = (loopLength - 1) + samplesToRecord;
 
                         break;
                     }
 
-                    if(playHead)
+                    if (playHead)
                         getPlayHead()->getCurrentPosition(posInfo);
                     else
                         posInfo.bpm = 120.0f;
 
-                    clickDec = static_cast<float>(1.0f/getSampleRate());
-                    clickCount += static_cast<float>(60.0/posInfo.bpm) * (4.0f/denominator);
+                    clickDec = static_cast<float>(1.0f / getSampleRate());
+                    clickCount += static_cast<float>(60.0 / posInfo.bpm) * (4.0f / denominator);
                 }
             }
         }
 
-        ///Write the audio data to the file.
-        threadWriter->write((const float **)data, samplesToRecord);
+        // Write the audio data to the file.
+        threadWriter->write((const float**)data, samplesToRecord);
 
-        //Copy fade in buffer if necessary.
-        if((loopPos == 0) && (loopIndex == 0))
+        // Copy fade in buffer if necessary.
+        if ((loopPos == 0) && (loopIndex == 0))
             fillFadeInBuffer();
 
-        if(loopIndex < loopBuffer.size())
-        {
-            if((loopPos+samplesToRecord) < LoopBufferSize)
+        if (loopIndex < loopBuffer.size()) {
+            if ((loopPos + samplesToRecord) < LoopBufferSize)
                 i = samplesToRecord;
             else
-                i = LoopBufferSize-loopPos;
+                i = LoopBufferSize - loopPos;
 
-            //Write the audio data to the current loop buffer.
+            // Write the audio data to the current loop buffer.
             loopBuffer[loopIndex]->copyFrom(0, loopPos, buffer, 0, 0, i);
             loopBuffer[loopIndex]->copyFrom(1, loopPos, buffer, 1, 0, i);
 
             tempf = (loopBuffer[loopIndex]->getWritePointer(0) + 0)[0];
             tempf = fadeInBuffer[0][127];
-            if(i < samplesToRecord)
-            {
+            if (i < samplesToRecord) {
                 ++loopIndex;
                 loopPos = 0;
-                if(loopIndex >= loopBuffer.size())
-                {
-                    AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon,
-                                                     "Looper Error",
+                if (loopIndex >= loopBuffer.size()) {
+                    AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Looper Error",
                                                      "Not enough memory to continue. Recording stopped.");
                     stopRecording = true;
                     loopLength += i;
                     fadeOutStart = i;
-                }
-                else
-                {
-                    loopBuffer[loopIndex]->copyFrom(0, 0, buffer, 0, i, (samplesToRecord-i));
-                    loopBuffer[loopIndex]->copyFrom(1, 0, buffer, 1, i, (samplesToRecord-i));
+                } else {
+                    loopBuffer[loopIndex]->copyFrom(0, 0, buffer, 0, i, (samplesToRecord - i));
+                    loopBuffer[loopIndex]->copyFrom(1, 0, buffer, 1, i, (samplesToRecord - i));
 
-                    loopPos = samplesToRecord-i;
+                    loopPos = samplesToRecord - i;
                     loopLength += samplesToRecord;
                 }
-            }
-            else
-            {
+            } else {
                 loopPos += samplesToRecord;
                 loopLength += samplesToRecord;
             }
-        }
-        else
-        {
-            AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon,
-                                             "Looper Error",
+        } else {
+            AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Looper Error",
                                              "Not enough memory to continue. Recording stopped.");
             stopRecording = true;
         }
 
-        if(stopRecording)
-        {
+        if (stopRecording) {
             recording = false;
             stopRecording = false;
-            if(autoPlay)
+            if (autoPlay)
                 playing = true;
             sendChangeMessage();
 
-            if(loopIndex < (loopBuffer.size()-1))
+            if (loopIndex < (loopBuffer.size() - 1))
                 deleteLastBuffer = true;
 
             loopPos = 0;
             loopIndex = 0;
-            fadeInCount = (loopLength-1);
+            fadeInCount = (loopLength - 1);
 
-            //Starts the count of [NumBufferSize] samples so we can store the
-            //fade out buffer.
+            // Starts the count of [NumBufferSize] samples so we can store the
+            // fade out buffer.
             fadeOutStart = samplesToRecord;
             fadeOutCount = 0;
         }
-    }
-    else if(recording)
-    {
+    } else if (recording) {
         recording = false;
         stopRecording = false;
-        if(autoPlay)
+        if (autoPlay)
             playing = true;
         sendChangeMessage();
 
         loopPos = 0;
         loopIndex = 0;
-        //fadeInCount = loopLength;
     }
 
-    //Apply input level gain change.
+    // Apply input level gain change.
     buffer.applyGain(0, numSamples, inputLevel);
 
-    if(playing && (loopLength > 0))
-    {
-        if(loopBuffer.size() == 1)
+    if (playing && (loopLength > 0)) {
+        if (loopBuffer.size() == 1)
             end = (uint64_t)loopLength;
-        else if(loopIndex < (loopBuffer.size()-1))
+        else if (loopIndex < (loopBuffer.size() - 1))
             end = (uint64_t)LoopBufferSize;
         else
-            end = loopLength - (uint64_t)(LoopBufferSize * (loopBuffer.size()-1));
+            end = loopLength - (uint64_t)(LoopBufferSize * (loopBuffer.size() - 1));
 
-        if((loopPos+numSamples) < end)
+        if ((loopPos + numSamples) < end)
             i = numSamples;
         else
-            i = (int)(end-(uint64_t)loopPos);
+            i = (int)(end - (uint64_t)loopPos);
 
-        //Output the fade out buffer.
-        if((loopPos < FadeBufferSize) && (fadeOutCount == -1))
-        {
+        // Output the fade out buffer.
+        if ((loopPos < FadeBufferSize) && (fadeOutCount == -1)) {
             end2 = FadeBufferSize - loopPos;
-            if(end2 > numSamples)
+            if (end2 > numSamples)
                 end2 = numSamples;
 
-            for(j=0;j<end2;++j)
-            {
-                tempf = 1.0f - (static_cast<float>(loopPos+j)/(float)FadeBufferSize);
-                data[0][j] += fadeOutBuffer[0][loopPos+j] * tempf * loopLevel;
-                data[1][j] += fadeOutBuffer[1][loopPos+j] * tempf * loopLevel;
+            for (j = 0; j < end2; ++j) {
+                tempf = 1.0f - (static_cast<float>(loopPos + j) / (float)FadeBufferSize);
+                data[0][j] += fadeOutBuffer[0][loopPos + j] * tempf * loopLevel;
+                data[1][j] += fadeOutBuffer[1][loopPos + j] * tempf * loopLevel;
             }
         }
 
-        //Output the fade in buffer.
-        for(j=0;j<numSamples;++j,--fadeInCount)
-        {
-            if(fadeInCount <= (FadeBufferSize-1))
-            {
-                tempf = 1.0f - ((float)fadeInCount/static_cast<float>(FadeBufferSize-1));
-                data[0][j] += fadeInBuffer[0][FadeBufferSize-1-fadeInCount] * tempf * loopLevel;
-                data[1][j] += fadeInBuffer[1][FadeBufferSize-1-fadeInCount] * tempf * loopLevel;
+        // Output the fade in buffer.
+        for (j = 0; j < numSamples; ++j, --fadeInCount) {
+            if (fadeInCount <= (FadeBufferSize - 1)) {
+                tempf = 1.0f - ((float)fadeInCount / static_cast<float>(FadeBufferSize - 1));
+                data[0][j] += fadeInBuffer[0][FadeBufferSize - 1 - fadeInCount] * tempf * loopLevel;
+                data[1][j] += fadeInBuffer[1][FadeBufferSize - 1 - fadeInCount] * tempf * loopLevel;
 
-                if((FadeBufferSize-1-fadeInCount) == 127)
+                if ((FadeBufferSize - 1 - fadeInCount) == 127)
                     tempf = fadeInBuffer[0][127];
             }
 
-            if(fadeInCount == 0)
+            if (fadeInCount == 0)
                 fadeInCount = loopLength;
         }
 
         tempf = (loopBuffer[loopIndex]->getWritePointer(0) + 0)[0];
-        if(autoPlayFade < 1.0f)
-        {
+        if (autoPlayFade < 1.0f) {
             buffer.addFromWithRamp(0, 0, (loopBuffer[loopIndex]->getWritePointer(0) + loopPos), i, 0.0f, loopLevel);
             buffer.addFromWithRamp(1, 0, (loopBuffer[loopIndex]->getWritePointer(1) + loopPos), i, 0.0f, loopLevel);
             autoPlayFade = 1.0f;
-        }
-        else
-        {
+        } else {
             buffer.addFrom(0, 0, *(loopBuffer[loopIndex]), 0, loopPos, i, loopLevel);
             buffer.addFrom(1, 0, *(loopBuffer[loopIndex]), 1, loopPos, i, loopLevel);
         }
-        if(i < numSamples)
-        {
+        if (i < numSamples) {
             ++loopIndex;
-            if(loopIndex >= loopBuffer.size())
+            if (loopIndex >= loopBuffer.size())
                 loopIndex = 0;
             loopPos = 0;
 
-            if(fadeOutCount == -1)
-            {
+            if (fadeOutCount == -1) {
                 end = FadeBufferSize - loopPos;
-                if(end > (numSamples-i))
-                    end = (numSamples-i);
+                if (end > (numSamples - i))
+                    end = (numSamples - i);
 
-                for(j=0;j<end;++j)
-                {
-                    tempf = 1.0f - (static_cast<float>(loopPos+j)/(float)FadeBufferSize);
-                    data[0][i+j] += fadeOutBuffer[0][loopPos+j] * tempf * loopLevel;
-                    data[1][i+j] += fadeOutBuffer[1][loopPos+j] * tempf * loopLevel;
+                for (j = 0; j < end; ++j) {
+                    tempf = 1.0f - (static_cast<float>(loopPos + j) / (float)FadeBufferSize);
+                    data[0][i + j] += fadeOutBuffer[0][loopPos + j] * tempf * loopLevel;
+                    data[1][i + j] += fadeOutBuffer[1][loopPos + j] * tempf * loopLevel;
                 }
             }
 
-            buffer.addFrom(0, i, *(loopBuffer[loopIndex]), 0, loopPos, (numSamples-i), loopLevel);
-            buffer.addFrom(1, i, *(loopBuffer[loopIndex]), 1, loopPos, (numSamples-i), loopLevel);
+            buffer.addFrom(0, i, *(loopBuffer[loopIndex]), 0, loopPos, (numSamples - i), loopLevel);
+            buffer.addFrom(1, i, *(loopBuffer[loopIndex]), 1, loopPos, (numSamples - i), loopLevel);
             tempf = (buffer.getWritePointer(0) + 0)[0];
 
-            loopPos = numSamples-i;
-        }
-        else
+            loopPos = numSamples - i;
+        } else
             loopPos += i;
 
-        if(stopPlaying)
-        {
+        if (stopPlaying) {
             playing = false;
             stopPlaying = false;
         }
-    }
-    else if(stopPlaying)
-    {
+    } else if (stopPlaying) {
         playing = false;
         stopPlaying = false;
     }
 
-    for(i=0;i<numSamples;++i)
-    {
-        if(fadeOutCount >= FadeBufferSize)
-        {
+    for (i = 0; i < numSamples; ++i) {
+        if (fadeOutCount >= FadeBufferSize) {
             fadeOutCount = -1;
             fillFadeOutBuffer();
         }
@@ -642,200 +497,175 @@ void LooperProcessor::processBlock(juce::AudioBuffer<float> &buffer,
         ++tempBufferWrite;
         tempBufferWrite %= FadeBufferSize;
 
-        if((i >= fadeOutStart) && (fadeOutCount > -1))
+        if ((i >= fadeOutStart) && (fadeOutCount > -1))
             ++fadeOutCount;
     }
 }
 
-void LooperProcessor::prepareToPlay(double sampleRate,
-                                    int estimatedSamplesPerBlock)
-{
+void LooperProcessor::prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) {
     currentRate = sampleRate;
 
     inputAudio.setSize(2, estimatedSamplesPerBlock);
 }
 
-AudioProcessorEditor *LooperProcessor::createEditor()
-{
+AudioProcessorEditor* LooperProcessor::createEditor() {
     return new LooperEditor(this, &thumbnail);
 }
 
-const String LooperProcessor::getParameterName(int parameterIndex)
-{
+const String LooperProcessor::getParameterName(int parameterIndex) {
     String retval;
 
-    switch(parameterIndex)
-    {
-        case Play:
-            retval = "Play/Pause";
-            break;
-        case ReturnToZero:
-            retval = "Return to Zero";
-            break;
-        case Record:
-            retval = "Record";
-            break;
-        case ReadPosition:
-            retval = "Read Position";
-            break;
-        case SyncToMainTransport:
-            retval = "Sync to Main Transport";
-            break;
-        case StopAfterBar:
-            retval = "Stop After Bar";
-            break;
-        case AutoPlay:
-            retval = "Auto-play";
-            break;
-        case BarNumerator:
-            retval = "Bar Numerator";
-            break;
-        case BarDenominator:
-            retval = "Bar Denominator";
-            break;
-        case InputLevel:
-            retval = "Input Level";
-            break;
-        case LoopLevel:
-            retval = "Loop Level";
-            break;
+    switch (parameterIndex) {
+    case Play:
+        retval = "Play/Pause";
+        break;
+    case ReturnToZero:
+        retval = "Return to Zero";
+        break;
+    case Record:
+        retval = "Record";
+        break;
+    case ReadPosition:
+        retval = "Read Position";
+        break;
+    case SyncToMainTransport:
+        retval = "Sync to Main Transport";
+        break;
+    case StopAfterBar:
+        retval = "Stop After Bar";
+        break;
+    case AutoPlay:
+        retval = "Auto-play";
+        break;
+    case BarNumerator:
+        retval = "Bar Numerator";
+        break;
+    case BarDenominator:
+        retval = "Bar Denominator";
+        break;
+    case InputLevel:
+        retval = "Input Level";
+        break;
+    case LoopLevel:
+        retval = "Loop Level";
+        break;
     }
 
     return retval;
 }
 
-float LooperProcessor::getParameter(int parameterIndex)
-{
+float LooperProcessor::getParameter(int parameterIndex) {
     float retval = 0.0f;
 
-    switch(parameterIndex)
-    {
-        case SyncToMainTransport:
-            retval = syncToMainTransport ? 1.0f : 0.0f;
-            break;
-        case StopAfterBar:
-            retval = stopAfterBar ? 1.0f : 0.0f;
-            break;
-        case AutoPlay:
-            retval = autoPlay ? 1.0f : 0.0f;
-            break;
-        case BarNumerator:
-            retval = (float)numerator;
-            break;
-        case BarDenominator:
-            retval = (float)denominator;
-            break;
-        case InputLevel:
-            retval = inputLevel * 0.5f;
-            break;
-        case LoopLevel:
-            retval = loopLevel * 0.5f;
-            break;
+    switch (parameterIndex) {
+    case SyncToMainTransport:
+        retval = syncToMainTransport ? 1.0f : 0.0f;
+        break;
+    case StopAfterBar:
+        retval = stopAfterBar ? 1.0f : 0.0f;
+        break;
+    case AutoPlay:
+        retval = autoPlay ? 1.0f : 0.0f;
+        break;
+    case BarNumerator:
+        retval = (float)numerator;
+        break;
+    case BarDenominator:
+        retval = (float)denominator;
+        break;
+    case InputLevel:
+        retval = inputLevel * 0.5f;
+        break;
+    case LoopLevel:
+        retval = loopLevel * 0.5f;
+        break;
     }
 
     return retval;
 }
 
-const String LooperProcessor::getParameterText(int parameterIndex)
-{
+const String LooperProcessor::getParameterText(int parameterIndex) {
     String retval;
 
     return retval;
 }
 
-void LooperProcessor::setParameter(int parameterIndex, float newValue)
-{
-    switch(parameterIndex)
-    {
-        case Play:
-            if(newValue > 0.5f)
-            {
-                if(!playing)
-                    playing = true;
-                else
-                    stopPlaying = true;
+void LooperProcessor::setParameter(int parameterIndex, float newValue) {
+    switch (parameterIndex) {
+    case Play:
+        if (newValue > 0.5f) {
+            if (!playing)
+                playing = true;
+            else
+                stopPlaying = true;
+        }
+        sendChangeMessage();
+        break;
+    case ReturnToZero:
+        loopIndex = 0;
+        loopPos = 0;
+        fadeInCount = loopLength - 1;
+        break;
+    case Record:
+        if (newValue > 0.5f) {
+            if (playing)
+                stopPlaying = true;
+
+            if (!recording && !stopRecording) {
+                triggerAsyncUpdate();
+            } else if (recording) {
+                stopRecording = true;
+
+                if (syncToMainTransport)
+                    MainTransport::getInstance()->transportFinished();
             }
             sendChangeMessage();
-            break;
-        case ReturnToZero:
-            loopIndex = 0;
-            loopPos = 0;
-            fadeInCount = loopLength-1;
-            break;
-        case Record:
-            if(newValue > 0.5f)
-            {
-                if(playing)
-                    stopPlaying = true;
+        }
+        break;
+    case ReadPosition: {
+        int tempindex = 0;
+        uint64_t tempint = 0;
+        uint64_t pos = (uint64_t)(newValue * (float)loopLength);
 
-                if(!recording && !stopRecording)// && threadWriter)
-                {
-                    triggerAsyncUpdate();
-                }
-                else if(recording)
-                {
-                    stopRecording = true;
+        fadeInCount = loopLength - 1 - pos;
 
-                    //Saves the file to disk.
-                    //setFile(File());
+        // Convert the absolute sample position into a (buffer index,
+        // offset) pair by stepping through LoopBufferSize chunks.
+        while (tempint < pos) {
+            ++tempindex;
+            tempint += LoopBufferSize;
+        }
+        loopIndex = tempindex - 1;
+        loopPos = pos % LoopBufferSize;
 
-                    //Wait till the end of the current audio buffer.
-                    //while(recording) {Thread::sleep(10);}
-
-                    if(syncToMainTransport)
-                        MainTransport::getInstance()->transportFinished();
-                }
-                sendChangeMessage();
-            }
-            break;
-        case ReadPosition:
-            {
-                int tempindex = 0;
-                uint64_t tempint = 0;
-                uint64_t pos = (uint64_t)(newValue * (float)loopLength);
-
-                fadeInCount = loopLength-1-pos;
-
-                //This is a stupid way of doing this, but my brain's not working
-                //right now...
-                while(tempint < pos)
-                {
-                    ++tempindex;
-                    tempint += LoopBufferSize;
-                }
-                loopIndex = tempindex-1;
-                loopPos = pos % LoopBufferSize;
-
-                sendChangeMessage();
-            }
-            break;
-        case SyncToMainTransport:
-            syncToMainTransport = (newValue > 0.5f) ? true : false;
-            sendChangeMessage();
-            break;
-        case StopAfterBar:
-            stopAfterBar = (newValue > 0.5f) ? true : false;
-            break;
-        case AutoPlay:
-            autoPlay = (newValue > 0.5f) ? true : false;
-            break;
-        case BarNumerator:
-            numerator = (int)newValue;
-            break;
-        case BarDenominator:
-            denominator = (int)newValue;
-            break;
-        case InputLevel:
-            inputLevel = newValue * 2.0f;
-            break;
-        case LoopLevel:
-            loopLevel = newValue * 2.0f;
-            break;
+        sendChangeMessage();
+    } break;
+    case SyncToMainTransport:
+        syncToMainTransport = (newValue > 0.5f) ? true : false;
+        sendChangeMessage();
+        break;
+    case StopAfterBar:
+        stopAfterBar = (newValue > 0.5f) ? true : false;
+        break;
+    case AutoPlay:
+        autoPlay = (newValue > 0.5f) ? true : false;
+        break;
+    case BarNumerator:
+        numerator = (int)newValue;
+        break;
+    case BarDenominator:
+        denominator = (int)newValue;
+        break;
+    case InputLevel:
+        inputLevel = newValue * 2.0f;
+        break;
+    case LoopLevel:
+        loopLevel = newValue * 2.0f;
+        break;
     }
 }
 
-void LooperProcessor::getStateInformation(juce::MemoryBlock &destData)
-{
+void LooperProcessor::getStateInformation(juce::MemoryBlock& destData) {
     XmlElement xml("Pedalboard2LooperSettings");
 
     xml.setAttribute("soundFile", soundFile.getFullPathName());
@@ -855,21 +685,18 @@ void LooperProcessor::getStateInformation(juce::MemoryBlock &destData)
     copyXmlToBinary(xml, destData);
 }
 
-void LooperProcessor::setStateInformation(const void *data, int sizeInBytes)
-{
+void LooperProcessor::setStateInformation(const void* data, int sizeInBytes) {
     std::unique_ptr<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
 
-    if (xmlState != nullptr)
-    {
-        if (xmlState->hasTagName("Pedalboard2LooperSettings"))
-        {
+    if (xmlState != nullptr) {
+        if (xmlState->hasTagName("Pedalboard2LooperSettings")) {
             editorBounds.setX(xmlState->getIntAttribute("editorX"));
             editorBounds.setY(xmlState->getIntAttribute("editorY"));
             editorBounds.setWidth(xmlState->getIntAttribute("editorW"));
             editorBounds.setHeight(xmlState->getIntAttribute("editorH"));
 
-            //Load the file, indicate to change listeners a new file's been
-            //loaded.
+            // Load the file, indicate to change listeners a new file's been
+            // loaded.
             setFile(File(xmlState->getStringAttribute("soundFile")));
             newFileLoaded = true;
             sendChangeMessage();
@@ -885,12 +712,10 @@ void LooperProcessor::setStateInformation(const void *data, int sizeInBytes)
     }
 }
 
-void LooperProcessor::fillFadeInBuffer()
-{
+void LooperProcessor::fillFadeInBuffer() {
     int i, j;
 
-    for(i=0,j=tempBufferWrite;i<FadeBufferSize;++i,++j)
-    {
+    for (i = 0, j = tempBufferWrite; i < FadeBufferSize; ++i, ++j) {
         j %= FadeBufferSize;
 
         fadeInBuffer[0][i] = tempBuffer[0][j];
@@ -898,12 +723,10 @@ void LooperProcessor::fillFadeInBuffer()
     }
 }
 
-void LooperProcessor::fillFadeOutBuffer()
-{
+void LooperProcessor::fillFadeOutBuffer() {
     int i, j;
 
-    for(i=0,j=tempBufferWrite;i<FadeBufferSize;++i,++j)
-    {
+    for (i = 0, j = tempBufferWrite; i < FadeBufferSize; ++i, ++j) {
         j %= FadeBufferSize;
 
         fadeOutBuffer[0][i] = tempBuffer[0][j];

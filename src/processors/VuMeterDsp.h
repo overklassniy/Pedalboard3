@@ -23,20 +23,19 @@
 #include <atomic>
 #include <cmath>
 
-
 /// True VU meter DSP with 300ms integration time (IEC 60268-17).
 ///
 /// Implements a critically damped 2-pole lowpass filter at ~3.5 Hz to
 /// achieve the VU standard ballistics. The process() method is called
 /// from the audio thread, and read() is called from the UI thread.
-class VuMeterDsp
-{
+class VuMeterDsp {
   public:
     VuMeterDsp() = default;
 
     /// Initialize filter coefficients for the given sample rate.
-    void init(float sampleRate)
-    {
+    ///
+    /// @param sampleRate The current sample rate in Hz.
+    void init(float sampleRate) {
         // The VU standard specifies 300ms to reach 99% of a 0 VU sine wave.
         // A critically damped 2-pole lowpass at ~3.5 Hz achieves this.
         // w = 2 * pi * f / sampleRate, using bilinear approximation.
@@ -52,16 +51,17 @@ class VuMeterDsp
     }
 
     /// Process a block of samples. Call from the audio thread.
-    void process(const float* samples, int numSamples)
-    {
+    ///
+    /// @param samples Array of audio samples to process.
+    /// @param numSamples Number of samples in the array.
+    void process(const float* samples, int numSamples) {
         float z1 = z1_;
         float z2 = z2_;
         float m = peak_;
         const float w = w_;
         const float g = g_;
 
-        for (int i = 0; i < numSamples; ++i)
-        {
+        for (int i = 0; i < numSamples; ++i) {
             // Rectify (absolute value)
             float x = std::abs(samples[i]) * g;
             // 2-pole lowpass (cascaded 1-pole filters)
@@ -80,16 +80,16 @@ class VuMeterDsp
     /// Read the current VU level and reset peak hold.
     /// Returns a linear value (0.0 to ~1.0+ for 0 VU).
     /// Call from the UI thread.
-    float read()
-    {
+    ///
+    /// @return The peak VU level since the last read, as a linear value.
+    float read() {
         float m = peak_;
         peak_ = z2_; // reset peak to current filtered value
         return m;
     }
 
     /// Reset all state to zero.
-    void reset()
-    {
+    void reset() {
         z1_ = 0.0f;
         z2_ = 0.0f;
         peak_ = 0.0f;

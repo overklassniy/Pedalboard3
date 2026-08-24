@@ -24,10 +24,7 @@
 #include "PedalboardProcessor.h"
 
 /// Simple metronome processor.
-class MetronomeProcessor : public PedalboardProcessor,
-                           public ChangeListener,
-                           public ChangeBroadcaster
-{
+class MetronomeProcessor : public PedalboardProcessor, public ChangeListener, public ChangeBroadcaster {
   public:
     MetronomeProcessor();
     ~MetronomeProcessor() override;
@@ -35,34 +32,48 @@ class MetronomeProcessor : public PedalboardProcessor,
     /// Returns true if the metronome is currently playing.
     bool isPlaying() const { return playing; }
     /// Sets the accent sound file to play.
+    ///
+    /// @param phil The accent sound file to load.
     void setAccentFile(const File& phil);
     /// Returns the accent sound file.
     const File& getAccentFile() const { return files[0]; }
     /// Sets the click sound file to play.
+    ///
+    /// @param phil The click sound file to load.
     void setClickFile(const File& phil);
     /// Returns the click sound file.
     const File& getClickFile() const { return files[1]; }
 
     /// Returns the component which is added to the instance's PluginComponent.
+    ///
+    /// @return A new MetronomeControl component; deleted by the caller.
     Component* getControls();
     /// Returns the size of the controls component.
     Point<int> getSize() override { return Point<int>(170, 100); }
 
     /// Updates the bounds of our editor window.
+    ///
+    /// @param bounds The new editor window bounds to store.
     void updateEditorBounds(const Rectangle<int>& bounds);
 
     /// So we can listen to the main transport.
+    ///
+    /// @param source The change broadcaster that triggered the callback.
     void changeListenerCallback(ChangeBroadcaster* source) override;
 
     /// Provides a description of the processor to the filter graph.
+    ///
+    /// @param description The plugin description to fill in.
     void fillInPluginDescription(PluginDescription& description) const override;
 
     /// Alters the input audio's level accordingly.
+    ///
+    /// @param buffer The audio buffer to write metronome clicks into.
+    /// @param midiMessages The MIDI buffer (unused).
     void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) override;
 
     /// Parameter constants.
-    enum
-    {
+    enum {
         Play = 0,
         Numerator,
         Denominator,
@@ -79,24 +90,36 @@ class MetronomeProcessor : public PedalboardProcessor,
     void releaseResources() override {}
     /// Returns the length of the plugin's tail.
     double getTailLengthSeconds() const override { return 0.0; }
-    /// We definitely want Midi input.
+    /// Does not accept MIDI input.
     bool acceptsMidi() const override { return false; }
-    /// But we don't need to output it.
+    /// Does not produce MIDI output.
     bool producesMidi() const override { return false; }
-    /// We have no editor.
+    /// Creates the full editor window.
     AudioProcessorEditor* createEditor() override;
-    /// We have no editor.
+    /// Returns true; a full editor is available.
     bool hasEditor() const override { return true; }
 
-    // JUCE 8: deprecated parameter methods kept as regular methods for
-    // internal use by control components.
+    /// JUCE 8: deprecated parameter methods kept as regular methods for
+    /// internal use by control components.
     /// Returns the parameter name.
+    ///
+    /// @param parameterIndex The index of the parameter (see the enum above).
+    /// @return The human-readable name of the parameter.
     const String getParameterName(int parameterIndex);
     /// Returns the parameter value (0-1 normalized).
+    ///
+    /// @param parameterIndex The index of the parameter (see the enum above).
+    /// @return The current value of the parameter, normalized to 0-1.
     float getParameter(int parameterIndex);
     /// Returns the parameter's value as a string.
+    ///
+    /// @param parameterIndex The index of the parameter (see the enum above).
+    /// @return A textual representation of the parameter's current value.
     const String getParameterText(int parameterIndex);
     /// Sets the parameter value (0-1 normalized).
+    ///
+    /// @param parameterIndex The index of the parameter (see the enum above).
+    /// @param newValue The new value for the parameter, normalized to 0-1.
     void setParameter(int parameterIndex, float newValue);
 
     /// We have no programs.
@@ -110,8 +133,13 @@ class MetronomeProcessor : public PedalboardProcessor,
     /// We have no programs.
     void changeProgramName(int index, const String& newName) override {}
     /// Loads the position of the slider and the size and position of the editor.
+    ///
+    /// @param destData The memory block to serialize state into.
     void getStateInformation(juce::MemoryBlock& destData) override;
     /// Saves the position of the slider and the size and position of the editor.
+    ///
+    /// @param data Pointer to the serialized state data.
+    /// @param sizeInBytes Size of the serialized state data in bytes.
     void setStateInformation(const void* data, int sizeInBytes) override;
 
   private:

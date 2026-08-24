@@ -19,28 +19,20 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "FilePlayerControl.h"
-#include "PedalboardProcessors.h"
-#include "JuceHelperStuff.h"
+
 #include "ColourScheme.h"
+#include "JuceHelperStuff.h"
+#include "PedalboardProcessors.h"
 #include "Vectors.h"
 
 File FilePlayerControl::lastDir(File::getSpecialLocation(File::userHomeDirectory));
 
-FilePlayerControl::FilePlayerControl(FilePlayerProcessor* proc)
-    : processor(proc),
-      playing(false)
-{
+FilePlayerControl::FilePlayerControl(FilePlayerProcessor* proc) : processor(proc), playing(false) {
     fileDisplay = std::make_unique<WaveformDisplay>();
     addAndMakeVisible(*fileDisplay);
     fileDisplay->setName("fileDisplay");
 
-    filename = std::make_unique<FilenameComponent>("filename",
-                                                   File(),
-                                                   true,
-                                                   false,
-                                                   false,
-                                                   "*.wav;*.aif",
-                                                   "",
+    filename = std::make_unique<FilenameComponent>("filename", File(), true, false, false, "*.wav;*.aif", "",
                                                    "<no file loaded>");
     addAndMakeVisible(*filename);
     filename->setName("filename");
@@ -65,13 +57,11 @@ FilePlayerControl::FilePlayerControl(FilePlayerProcessor* proc)
     addAndMakeVisible(*rtzButton);
     rtzButton->setName("rtzButton");
 
-    std::unique_ptr<Drawable> rtzImage(JuceHelperStuff::loadSVGFromMemory(Vectors::rtzbutton_svg,
-                                                                          Vectors::rtzbutton_svgSize));
+    std::unique_ptr<Drawable> rtzImage(
+        JuceHelperStuff::loadSVGFromMemory(Vectors::rtzbutton_svg, Vectors::rtzbutton_svgSize));
 
-    playImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::playbutton_svg,
-                                                        Vectors::playbutton_svgSize));
-    pauseImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::pausebutton_svg,
-                                                         Vectors::pausebutton_svgSize));
+    playImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::playbutton_svg, Vectors::playbutton_svgSize));
+    pauseImage.reset(JuceHelperStuff::loadSVGFromMemory(Vectors::pausebutton_svg, Vectors::pausebutton_svgSize));
     playPauseButton->setImages(playImage.get());
     playPauseButton->setColour(DrawableButton::backgroundColourId,
                                ColourScheme::getInstance().colours["Button Colour"]);
@@ -83,29 +73,22 @@ FilePlayerControl::FilePlayerControl(FilePlayerProcessor* proc)
     changeListenerCallback(processor);
 
     rtzButton->setImages(rtzImage.get());
-    rtzButton->setColour(DrawableButton::backgroundColourId,
-                         ColourScheme::getInstance().colours["Button Colour"]);
-    rtzButton->setColour(DrawableButton::backgroundOnColourId,
-                         ColourScheme::getInstance().colours["Button Colour"]);
+    rtzButton->setColour(DrawableButton::backgroundColourId, ColourScheme::getInstance().colours["Button Colour"]);
+    rtzButton->setColour(DrawableButton::backgroundOnColourId, ColourScheme::getInstance().colours["Button Colour"]);
     rtzButton->addListener(this);
     rtzButton->setTooltip("Return to the start of the audio file");
 
     const File& soundFile = processor->getFile();
-    if (soundFile != File())
-    {
+    if (soundFile != File()) {
         filename->setCurrentFile(soundFile, true, dontSendNotification);
         fileDisplay->setFile(soundFile);
         fileDisplay->setReadPointer(static_cast<float>(processor->getReadPosition()));
-    }
-    else
-    {
+    } else {
         filename->setDefaultBrowseTarget(lastDir);
     }
 
-    loopButton->setToggleState(processor->getParameter(FilePlayerProcessor::Looping) > 0.5f,
-                               false);
-    syncButton->setToggleState(processor->getParameter(FilePlayerProcessor::SyncToMainTransport) > 0.5f,
-                               false);
+    loopButton->setToggleState(processor->getParameter(FilePlayerProcessor::Looping) > 0.5f, false);
+    syncButton->setToggleState(processor->getParameter(FilePlayerProcessor::SyncToMainTransport) > 0.5f, false);
 
     filename->addListener(this);
     fileDisplay->addChangeListener(this);
@@ -116,18 +99,14 @@ FilePlayerControl::FilePlayerControl(FilePlayerProcessor* proc)
     setSize(300, 100);
 }
 
-FilePlayerControl::~FilePlayerControl()
-{
+FilePlayerControl::~FilePlayerControl() {
     processor->removeChangeListener(this);
     removeAllChildren();
 }
 
-void FilePlayerControl::paint(Graphics& /*g*/)
-{
-}
+void FilePlayerControl::paint(Graphics& /*g*/) {}
 
-void FilePlayerControl::resized()
-{
+void FilePlayerControl::resized() {
     fileDisplay->setBounds(0, 28, getWidth() - 2, getHeight() - 48);
     filename->setBounds(0, 0, getWidth() - 58, 24);
     syncButton->setBounds(0, getHeight() - 23, 168, 24);
@@ -136,22 +115,14 @@ void FilePlayerControl::resized()
     rtzButton->setBounds(getWidth() - 26, 0, 24, 24);
 }
 
-void FilePlayerControl::buttonClicked(Button* buttonThatWasClicked)
-{
-    if (buttonThatWasClicked == syncButton.get())
-    {
+void FilePlayerControl::buttonClicked(Button* buttonThatWasClicked) {
+    if (buttonThatWasClicked == syncButton.get()) {
         bool val = syncButton->getToggleState();
-        processor->setParameter(FilePlayerProcessor::SyncToMainTransport,
-                                val ? 1.0f : 0.0f);
-    }
-    else if (buttonThatWasClicked == loopButton.get())
-    {
+        processor->setParameter(FilePlayerProcessor::SyncToMainTransport, val ? 1.0f : 0.0f);
+    } else if (buttonThatWasClicked == loopButton.get()) {
         bool val = loopButton->getToggleState();
-        processor->setParameter(FilePlayerProcessor::Looping,
-                                val ? 1.0f : 0.0f);
-    }
-    else if (buttonThatWasClicked == playPauseButton.get())
-    {
+        processor->setParameter(FilePlayerProcessor::Looping, val ? 1.0f : 0.0f);
+    } else if (buttonThatWasClicked == playPauseButton.get()) {
         if (!playing)
             playPauseButton->setImages(pauseImage.get());
         else
@@ -159,58 +130,43 @@ void FilePlayerControl::buttonClicked(Button* buttonThatWasClicked)
         playing = !playing;
 
         processor->setParameter(FilePlayerProcessor::Play, 1.0f);
-    }
-    else if (buttonThatWasClicked == rtzButton.get())
-    {
+    } else if (buttonThatWasClicked == rtzButton.get()) {
         processor->setParameter(FilePlayerProcessor::ReturnToZero, 1.0f);
         fileDisplay->setReadPointer(0.0f);
     }
 }
 
-void FilePlayerControl::filenameComponentChanged(FilenameComponent* filenameComp)
-{
+void FilePlayerControl::filenameComponentChanged(FilenameComponent* filenameComp) {
     File phil = filenameComp->getCurrentFile();
     processor->setFile(phil);
     fileDisplay->setFile(phil);
     lastDir = phil.getParentDirectory();
 }
 
-void FilePlayerControl::timerCallback()
-{
+void FilePlayerControl::timerCallback() {
     if (playing)
         fileDisplay->setReadPointer(static_cast<float>(processor->getReadPosition()));
 }
 
-void FilePlayerControl::changeListenerCallback(ChangeBroadcaster* source)
-{
-    if (source == fileDisplay.get())
-    {
-        processor->setParameter(FilePlayerProcessor::ReadPosition,
-                                fileDisplay->getReadPointer());
+void FilePlayerControl::changeListenerCallback(ChangeBroadcaster* source) {
+    if (source == fileDisplay.get()) {
+        processor->setParameter(FilePlayerProcessor::ReadPosition, fileDisplay->getReadPointer());
         fileDisplay->setReadPointer(static_cast<float>(processor->getReadPosition()));
-    }
-    else if (source == processor)
-    {
-        if (processor->isPlaying())
-        {
+    } else if (source == processor) {
+        if (processor->isPlaying()) {
             playPauseButton->setImages(pauseImage.get());
             playing = true;
-        }
-        else
-        {
+        } else {
             playPauseButton->setImages(playImage.get());
             playing = false;
         }
 
         fileDisplay->setReadPointer(static_cast<float>(processor->getReadPosition()));
-        loopButton->setToggleState(processor->getParameter(FilePlayerProcessor::Looping) > 0.5f,
-                                   false);
-        syncButton->setToggleState(processor->getParameter(FilePlayerProcessor::SyncToMainTransport) > 0.5f,
-                                   false);
+        loopButton->setToggleState(processor->getParameter(FilePlayerProcessor::Looping) > 0.5f, false);
+        syncButton->setToggleState(processor->getParameter(FilePlayerProcessor::SyncToMainTransport) > 0.5f, false);
     }
 }
 
-void FilePlayerControl::setWaveformBackground(const Colour& col)
-{
+void FilePlayerControl::setWaveformBackground(const Colour& col) {
     fileDisplay->setBackgroundColour(col);
 }

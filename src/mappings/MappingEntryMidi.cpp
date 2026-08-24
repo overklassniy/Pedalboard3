@@ -18,16 +18,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "MappingsDialog.h"
-#include "ColourScheme.h"
 #include "MappingEntryMidi.h"
 
-MappingEntryMidi::MappingEntryMidi(MappingsDialog* dlg, int arrayIndex, int cc,
-                                   bool latch, float lowerBound, float upperBound)
-    : mappingsDialog(dlg)
-    , index(arrayIndex)
-    , midiLearn(false)
-{
+#include "ColourScheme.h"
+#include "MappingsDialog.h"
+
+MappingEntryMidi::MappingEntryMidi(MappingsDialog* dlg, int arrayIndex, int cc, bool latch, float lowerBound,
+                                   float upperBound)
+    : mappingsDialog(dlg), index(arrayIndex), midiLearn(false) {
     ccComboBox = std::make_unique<ComboBox>("ccComboBox");
     addAndMakeVisible(ccComboBox.get());
     ccComboBox->setEditableText(false);
@@ -202,14 +200,12 @@ MappingEntryMidi::MappingEntryMidi(MappingsDialog* dlg, int arrayIndex, int cc,
 
     rangeLabel->setInterceptsMouseClicks(false, true);
 
-    slider->setColour(MappingSlider::thumbColourId,
-                      ColourScheme::getInstance().colours["Slider Colour"]);
+    slider->setColour(MappingSlider::thumbColourId, ColourScheme::getInstance().colours["Slider Colour"]);
 
     setSize(728, 400);
 }
 
-MappingEntryMidi::~MappingEntryMidi()
-{
+MappingEntryMidi::~MappingEntryMidi() {
     ccComboBox.reset();
     latchButton.reset();
     slider.reset();
@@ -217,16 +213,14 @@ MappingEntryMidi::~MappingEntryMidi()
     paramComboBox.reset();
 }
 
-void MappingEntryMidi::paint(Graphics& g)
-{
+void MappingEntryMidi::paint(Graphics& g) {
     g.setColour(ColourScheme::getInstance().colours["Vector Colour"]);
 
     g.setColour(Colour(0x80000000));
     g.strokePath(internalPath1, PathStrokeType(5.0000f, PathStrokeType::curved, PathStrokeType::rounded));
 }
 
-void MappingEntryMidi::resized()
-{
+void MappingEntryMidi::resized() {
     ccComboBox->setBounds(8, 8, 144, 24);
     latchButton->setBounds(160, 8, 120, 24);
     slider->setBounds(440, 8, 128, 24);
@@ -238,52 +232,39 @@ void MappingEntryMidi::resized()
     internalPath1.lineTo(298.0f, 28.0f);
 }
 
-void MappingEntryMidi::comboBoxChanged(ComboBox* comboBoxThatHasChanged)
-{
-    if (comboBoxThatHasChanged == ccComboBox.get())
-    {
+void MappingEntryMidi::comboBoxChanged(ComboBox* comboBoxThatHasChanged) {
+    if (comboBoxThatHasChanged == ccComboBox.get()) {
         int selected = ccComboBox->getSelectedId();
 
-        if (selected == 1)
-        {
+        if (selected == 1) {
             midiLearn = true;
             mappingsDialog->activateMidiLearn(index);
-        }
-        else
-        {
-            if (midiLearn)
-            {
+        } else {
+            if (midiLearn) {
                 mappingsDialog->deactivateMidiLearn(index);
                 midiLearn = false;
             }
             mappingsDialog->setCc(index, selected - 2);
         }
-    }
-    else if (comboBoxThatHasChanged == paramComboBox.get())
-    {
+    } else if (comboBoxThatHasChanged == paramComboBox.get()) {
         mappingsDialog->setParameter(index, paramComboBox->getSelectedId() - 1);
     }
 }
 
-void MappingEntryMidi::buttonClicked(Button* buttonThatWasClicked)
-{
-    if (buttonThatWasClicked == latchButton.get())
-    {
+void MappingEntryMidi::buttonClicked(Button* buttonThatWasClicked) {
+    if (buttonThatWasClicked == latchButton.get()) {
         mappingsDialog->setLatch(index, latchButton->getToggleState());
     }
 }
 
-void MappingEntryMidi::sliderValueChanged(MappingSlider* sliderThatWasMoved)
-{
-    if (sliderThatWasMoved == slider.get())
-    {
+void MappingEntryMidi::sliderValueChanged(MappingSlider* sliderThatWasMoved) {
+    if (sliderThatWasMoved == slider.get()) {
         mappingsDialog->setLowerBound(index, static_cast<float>(slider->getMinValue()));
         mappingsDialog->setUpperBound(index, static_cast<float>(slider->getMaxValue()));
     }
 }
 
-void MappingEntryMidi::addParameter(const String& param)
-{
+void MappingEntryMidi::addParameter(const String& param) {
     String tempstr = param;
 
     if (tempstr.isEmpty())
@@ -291,7 +272,6 @@ void MappingEntryMidi::addParameter(const String& param)
     paramComboBox->addItem(tempstr, paramComboBox->getNumItems() + 1);
 }
 
-void MappingEntryMidi::selectParameter(int index)
-{
+void MappingEntryMidi::selectParameter(int index) {
     paramComboBox->setSelectedId(index + 1, true);
 }

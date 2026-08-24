@@ -24,43 +24,61 @@
 #include "PedalboardProcessor.h"
 
 /// Basic processor used to record audio.
-class RecorderProcessor : public PedalboardProcessor,
-                          public ChangeListener,
-                          public ChangeBroadcaster
-{
+class RecorderProcessor : public PedalboardProcessor, public ChangeListener, public ChangeBroadcaster {
   public:
+    /// Constructs the recorder and registers it with the main transport.
     RecorderProcessor();
+    /// Stops any active recording, deletes the writer, and unregisters from the transport.
     ~RecorderProcessor() override;
 
-    /// Sets the sound file to play.
+    /// Sets the file to record to, creating a WAV writer for it.
+    ///
+    /// If a recording is in progress it is stopped first. Any existing file
+    /// at the path is deleted so the new recording overwrites it. Passing an
+    /// empty File finalises and closes the current recording.
+    ///
+    /// @param phil The file path to record to; pass an empty File to finalise.
     void setFile(const File& phil);
-    /// Stores the sound file to record to.
+    /// Stores the file path without creating a writer (used for state restore).
+    ///
+    /// @param phil The file path to cache for later use.
     void cacheFile(const File& phil);
     /// Returns the sound file.
     const File& getFile() const { return soundFile; }
-    /// Returns whether or not we're currently recording.
+    /// Returns whether recording is currently active.
     bool isRecording() const { return recording; }
 
     /// Returns the component which is added to the instance's PluginComponent.
+    ///
+    /// @return A new AudioRecorderControl component; deleted by the caller.
     Component* getControls();
     /// Returns the size of the controls component.
     Point<int> getSize() override { return Point<int>(300, 100); }
 
     /// Updates the bounds of our editor window.
+    ///
+    /// @param bounds The new editor window bounds to store.
     void updateEditorBounds(const Rectangle<int>& bounds);
 
-    /// So we can listen to the main transport.
+    /// Handles main transport state changes to start or stop recording when
+    /// sync mode is enabled.
+    ///
+    /// @param source The change broadcaster that triggered the callback.
     void changeListenerCallback(ChangeBroadcaster* source) override;
 
     /// Provides a description of the processor to the filter graph.
+    ///
+    /// @param description The plugin description to fill in.
     void fillInPluginDescription(PluginDescription& description) const override;
 
-    /// Alters the input audio's level accordingly.
+    /// Writes the incoming audio to the threaded WAV writer.
+    ///
+    /// @param buffer The audio buffer to record from.
+    /// @param midiMessages The MIDI buffer (unused).
     void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) override;
 
-    /// Parameter constants.
-    enum
-    {
+    /// Parameter indices used by the legacy get/set parameter methods.
+    enum {
         Record = 0,
         SyncToMainTransport,
 
@@ -69,45 +87,65 @@ class RecorderProcessor : public PedalboardProcessor,
 
     /// Returns the name of the processor.
     const String getName() const override { return "Audio Recorder"; }
-    /// Ignored.
+    /// Stores the sample rate for the WAV writer; no buffer allocation needed.
+    ///
+    /// @param sampleRate The current sample rate in Hz.
+    /// @param estimatedSamplesPerBlock The maximum number of samples per block (unused).
     void prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) override;
-    /// Ignored.
+    /// No resources to release.
     void releaseResources() override {}
     /// Returns the length of the plugin's tail.
     double getTailLengthSeconds() const override { return 0.0; }
-    /// We definitely want Midi input.
+    /// This processor does not accept MIDI.
     bool acceptsMidi() const override { return false; }
-    /// But we don't need to output it.
+    /// This processor does not produce MIDI.
     bool producesMidi() const override { return false; }
-    /// We have no editor.
+    /// Creates the AudioRecorderEditor for this processor.
     AudioProcessorEditor* createEditor() override;
-    /// We have no editor.
+    /// This processor has a custom editor.
     bool hasEditor() const override { return true; }
 
     // JUCE 8: deprecated parameter methods kept as regular methods for
     // internal use by control components.
     /// Returns the parameter name.
+    ///
+    /// @param parameterIndex The index of the parameter (see the enum above).
+    /// @return The human-readable name of the parameter.
     const String getParameterName(int parameterIndex);
     /// Returns the parameter value (0-1 normalized).
+    ///
+    /// @param parameterIndex The index of the parameter (see the enum above).
+    /// @return The current value of the parameter, normalized to 0-1.
     float getParameter(int parameterIndex);
     /// Returns the parameter's value as a string.
+    ///
+    /// @param parameterIndex The index of the parameter (see the enum above).
+    /// @return A textual representation of the parameter's current value.
     const String getParameterText(int parameterIndex);
     /// Sets the parameter value (0-1 normalized).
+    ///
+    /// @param parameterIndex The index of the parameter (see the enum above).
+    /// @param newValue The new value for the parameter, normalized to 0-1.
     void setParameter(int parameterIndex, float newValue);
 
-    /// We have no programs.
+    /// No programs; returns 0.
     int getNumPrograms() override { return 0; }
-    /// We have no programs.
+    /// No programs; returns 0.
     int getCurrentProgram() override { return 0; }
-    /// We have no programs.
+    /// No programs; no-op.
     void setCurrentProgram(int index) override {}
-    /// We have no programs.
+    /// No programs; returns an empty string.
     const String getProgramName(int index) override { return ""; }
-    /// We have no programs.
+    /// No programs; no-op.
     void changeProgramName(int index, const String& newName) override {}
-    /// Loads the position of the slider and the size and position of the editor.
+    /// Serializes the editor bounds, file path, and sync flag to destData.
+    ///
+    /// @param destData The memory block to serialize state into.
     void getStateInformation(juce::MemoryBlock& destData) override;
-    /// Saves the position of the slider and the size and position of the editor.
+    /// Restores the editor bounds, file path, and sync flag from data.
+    ///
+    /// @param data Pointer to the serialized state data.
+    /// @param sizeInBytes Size of the serialized state data in bytes.
     void setStateInformation(const void* data, int sizeInBytes) override;
 
   private:

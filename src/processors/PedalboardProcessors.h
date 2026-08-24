@@ -21,13 +21,13 @@
 #ifndef PEDALBOARDPROCESSORS_H_
 #define PEDALBOARDPROCESSORS_H_
 
-#include "PedalboardProcessor.h"
-#include "LevelProcessor.h"
 #include "FilePlayerProcessor.h"
-#include "OutputToggleProcessor.h"
-#include "VuMeterProcessor.h"
-#include "RecorderProcessor.h"
-#include "MetronomeProcessor.h"
+#include "LevelProcessor.h"
 #include "LooperProcessor.h"
+#include "MetronomeProcessor.h"
+#include "OutputToggleProcessor.h"
+#include "PedalboardProcessor.h"
+#include "RecorderProcessor.h"
+#include "VuMeterProcessor.h"
 
 #endif

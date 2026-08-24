@@ -27,19 +27,21 @@
 class VuMeterProcessor;
 
 /// The PluginComponent control for the VU meter processor.
-class VuMeterControl : public Component,
-                       public Timer
-{
+class VuMeterControl : public Component, public Timer {
   public:
+    /// Constructs the control, starts a 60 ms repaint timer, and sets the fixed size.
+    ///
+    /// @param proc The VU meter processor to associate with this control.
     VuMeterControl(VuMeterProcessor* proc);
+    /// Destructor; stops the repaint timer.
     ~VuMeterControl() override;
 
-    /// Draws the meter.
+    /// Draws the dual-channel VU meter bars, scale lines, and dB labels.
     void paint(Graphics& g) override;
-    /// Resizes the meter.
+    /// No layout logic; the meter fills the component bounds set at construction.
     void resized() override;
 
-    /// Updates the meter.
+    /// Polls the processor for current left/right levels, converts to dB, and triggers a repaint.
     void timerCallback() override;
 
   private:
@@ -55,11 +57,14 @@ class VuMeterControl : public Component,
 };
 
 /// The full editor for VuMeterProcessor.
-class VuMeterEditor : public AudioProcessorEditor
-{
+class VuMeterEditor : public AudioProcessorEditor {
   public:
-    VuMeterEditor(AudioProcessor* processor,
-                  const Rectangle<int>& windowBounds);
+    /// Constructs the editor, creates the VU meter control, and sets the window size.
+    ///
+    /// @param processor The audio processor to associate with this editor.
+    /// @param windowBounds The saved window bounds to restore.
+    VuMeterEditor(AudioProcessor* processor, const Rectangle<int>& windowBounds);
+    /// Saves the current window bounds back to the processor before deletion.
     ~VuMeterEditor() override;
 
     /// Resizes the meter to fill the window.

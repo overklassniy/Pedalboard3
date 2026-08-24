@@ -27,8 +27,7 @@
 ///
 /// Because JUCE's ApplicationProperties is no longer a singleton, this class
 /// provides a single global instance accessible from anywhere in the codebase.
-class PropertiesSingleton
-{
+class PropertiesSingleton {
   public:
     /// Returns the sole ApplicationProperties instance.
     static ApplicationProperties& getInstance();

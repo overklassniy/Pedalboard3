@@ -19,15 +19,12 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "MetronomeEditor.h"
-#include "MetronomeProcessor.h"
-#include "ColourScheme.h"
 
-MetronomeEditor::MetronomeEditor(MetronomeProcessor* processor,
-                                 const Rectangle<int>& windowBounds)
-    : AudioProcessorEditor(processor),
-      parentBounds(windowBounds),
-      setPos(false)
-{
+#include "ColourScheme.h"
+#include "MetronomeProcessor.h"
+
+MetronomeEditor::MetronomeEditor(MetronomeProcessor* processor, const Rectangle<int>& windowBounds)
+    : AudioProcessorEditor(processor), parentBounds(windowBounds), setPos(false) {
     controls = std::make_unique<MetronomeControl>(processor, true);
     controls->setTopLeftPosition(4, 4);
     controls->setSize(getWidth() - 8, getHeight() - 8);
@@ -37,10 +34,8 @@ MetronomeEditor::MetronomeEditor(MetronomeProcessor* processor,
     startTimer(60);
 }
 
-MetronomeEditor::~MetronomeEditor()
-{
-    if (auto* proc = dynamic_cast<MetronomeProcessor*>(getAudioProcessor()))
-    {
+MetronomeEditor::~MetronomeEditor() {
+    if (auto* proc = dynamic_cast<MetronomeProcessor*>(getAudioProcessor())) {
         if (getParentComponent())
             parentBounds = getTopLevelComponent()->getBounds();
 
@@ -51,26 +46,19 @@ MetronomeEditor::~MetronomeEditor()
     getAudioProcessor()->editorBeingDeleted(this);
 }
 
-void MetronomeEditor::resized()
-{
+void MetronomeEditor::resized() {
     controls->setSize(getWidth() - 8, getHeight() - 8);
 }
 
-void MetronomeEditor::paint(Graphics& g)
-{
+void MetronomeEditor::paint(Graphics& g) {
     g.fillAll(ColourScheme::getInstance().colours["Window Background"]);
 }
 
-void MetronomeEditor::timerCallback()
-{
-    if (!setPos)
-    {
-        if (parentBounds.isEmpty())
-        {
+void MetronomeEditor::timerCallback() {
+    if (!setPos) {
+        if (parentBounds.isEmpty()) {
             setPos = true;
-        }
-        else if (ComponentPeer* peer = getPeer())
-        {
+        } else if (ComponentPeer* peer = getPeer()) {
             peer->setBounds(parentBounds, false);
             setPos = true;
             stopTimer();

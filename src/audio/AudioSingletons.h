@@ -24,10 +24,11 @@
 #include <JuceHeader.h>
 
 /// Singleton wrapper for AudioPluginFormatManager.
-class AudioPluginFormatManagerSingleton
-{
+class AudioPluginFormatManagerSingleton {
   public:
     /// Returns the sole AudioPluginFormatManager instance.
+    ///
+    /// @return The shared AudioPluginFormatManager instance.
     static AudioPluginFormatManager& getInstance();
     /// Kills the instance. Call once at shutdown.
     static void killInstance();
@@ -41,10 +42,11 @@ class AudioPluginFormatManagerSingleton
 };
 
 /// Singleton wrapper for AudioFormatManager.
-class AudioFormatManagerSingleton
-{
+class AudioFormatManagerSingleton {
   public:
     /// Returns the sole AudioFormatManager instance.
+    ///
+    /// @return The shared AudioFormatManager instance.
     static AudioFormatManager& getInstance();
     /// Kills the instance. Call once at shutdown.
     static void killInstance();
@@ -58,10 +60,11 @@ class AudioFormatManagerSingleton
 };
 
 /// Singleton wrapper for AudioThumbnailCache.
-class AudioThumbnailCacheSingleton
-{
+class AudioThumbnailCacheSingleton {
   public:
     /// Returns the sole AudioThumbnailCache instance.
+    ///
+    /// @return The shared AudioThumbnailCache instance.
     static AudioThumbnailCache& getInstance();
     /// Kills the instance. Call once at shutdown.
     static void killInstance();
@@ -75,12 +78,15 @@ class AudioThumbnailCacheSingleton
 };
 
 /// Singleton accessor for KnownPluginList (set by MainPanel on startup).
-class KnownPluginListSingleton
-{
+class KnownPluginListSingleton {
   public:
     /// Sets the global KnownPluginList reference (call from MainPanel constructor).
+    ///
+    /// @param list The KnownPluginList to store as the global reference.
     static void setInstance(KnownPluginList* list) { instance = list; }
     /// Returns the KnownPluginList, or nullptr if not yet set.
+    ///
+    /// @return The global KnownPluginList, or nullptr if not yet set.
     static KnownPluginList* getInstance() { return instance; }
 
   private:

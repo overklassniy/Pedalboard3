@@ -30,36 +30,37 @@
 class MidiMappingManager;
 
 /// Represents a mapping between MIDI CC and a plugin parameter.
-class MidiMapping : public Mapping
-{
+class MidiMapping : public Mapping {
   public:
+    /// Creates a MIDI CC to plugin parameter mapping.
     ///
-    /// manager is the MidiMappingManager to register with.
-    /// graph is the FilterGraph this Mapping exists in.
-    /// pluginId is the uid of the plugin whose parameter is being mapped.
-    /// param is the plugin parameter which is being mapped to.
-    /// midiCc is the MIDI CC being mapped to the parameter.
-    /// latch determines whether the CC should be latched.
-    /// chan is the MIDI channel to respond to (0 means omni).
-    /// lower is the lower bound of the plugin parameter mapping.
-    /// upper is the upper bound of the plugin parameter mapping.
-    MidiMapping(MidiMappingManager* manager,
-                FilterGraph* graph,
-                uint32 pluginId,
-                int param,
-                int midiCc,
-                bool latch,
-                int chan = 0,
-                float lower = 0.0f,
-                float upper = 1.0f);
-    /// Constructor to load Mapping parameters from an XmlElement.
+    /// @param manager The MidiMappingManager to register with.
+    /// @param graph The FilterGraph this Mapping exists in.
+    /// @param pluginId The uid of the plugin whose parameter is being mapped.
+    /// @param param The plugin parameter which is being mapped to.
+    /// @param midiCc The MIDI CC being mapped to the parameter.
+    /// @param latch Determines whether the CC should be latched.
+    /// @param chan The MIDI channel to respond to (0 means omni).
+    /// @param lower The lower bound of the plugin parameter mapping.
+    /// @param upper The upper bound of the plugin parameter mapping.
+    MidiMapping(MidiMappingManager* manager, FilterGraph* graph, uint32 pluginId, int param, int midiCc, bool latch,
+                int chan = 0, float lower = 0.0f, float upper = 1.0f);
+    /// Loads mapping parameters from an XmlElement.
+    ///
+    /// @param manager The MidiMappingManager to register with.
+    /// @param graph The FilterGraph this Mapping exists in.
+    /// @param e The XmlElement to load mapping parameters from.
     MidiMapping(MidiMappingManager* manager, FilterGraph* graph, XmlElement* e);
     ~MidiMapping() override;
 
     /// Called when a MIDI CC message matching this mapping's CC is received.
+    ///
+    /// @param val The value of the received MIDI CC message (0-127).
     void ccReceived(int val);
 
     /// Returns an XmlElement representing this Mapping.
+    ///
+    /// @return A new XmlElement describing this MidiMapping.
     XmlElement* getXml() const override;
 
     /// Returns the MIDI CC this mapping applies to.
@@ -74,14 +75,24 @@ class MidiMapping : public Mapping
     float getUpperBound() const { return upperBound; }
 
     /// Sets the mapping's MIDI CC.
+    ///
+    /// @param val The MIDI CC number to set.
     void setCc(int val);
     /// Sets the mapping's latch value.
+    ///
+    /// @param val Whether the CC should be latched.
     void setLatched(bool val);
     /// Sets the MIDI channel the mapping applies to.
+    ///
+    /// @param val The MIDI channel to set (0 means omni).
     void setChannel(int val);
     /// Sets the mapping's lower bound.
+    ///
+    /// @param val The lower bound value to set.
     void setLowerBound(float val);
     /// Sets the mapping's upper bound.
+    ///
+    /// @param val The upper bound value to set.
     void setUpperBound(float val);
 
   private:
@@ -110,19 +121,24 @@ class MidiMapping : public Mapping
 };
 
 /// Represents a mapping between MIDI CC and an ApplicationCommandTarget.
-class MidiAppMapping
-{
+class MidiAppMapping {
   public:
+    /// Creates a MIDI CC to application command mapping.
     ///
-    /// manager is the MidiMappingManager to register with.
-    /// midiCc is the MIDI CC being mapped to the command.
-    /// commandId is the ID of the ApplicationCommandTarget to invoke.
+    /// @param manager The MidiMappingManager to register with.
+    /// @param midiCc The MIDI CC being mapped to the command.
+    /// @param commandId The ID of the ApplicationCommandTarget to invoke.
     MidiAppMapping(MidiMappingManager* manager, int midiCc, CommandID commandId);
-    /// Constructor to load Mapping parameters from an XmlElement.
+    /// Loads mapping parameters from an XmlElement.
+    ///
+    /// @param manager The MidiMappingManager to register with.
+    /// @param e The XmlElement to load mapping parameters from.
     MidiAppMapping(MidiMappingManager* manager, XmlElement* e);
     ~MidiAppMapping();
 
     /// Returns an XmlElement representing this Mapping.
+    ///
+    /// @return A new XmlElement describing this MidiAppMapping.
     XmlElement* getXml() const;
 
     /// Returns the MIDI CC this mapping applies to.
@@ -141,49 +157,76 @@ class MidiAppMapping
 };
 
 /// Dispatches MIDI CC messages to MidiMappings.
-class MidiMappingManager
-{
+class MidiMappingManager {
   public:
+    /// Creates the manager with the app's ApplicationCommandManager.
+    ///
+    /// @param manager The app's ApplicationCommandManager.
     MidiMappingManager(ApplicationCommandManager* manager);
+    /// Deletes all owned MidiMappings and MidiAppMappings.
     ~MidiMappingManager();
 
     /// Called when a MIDI CC message is received.
+    ///
+    /// @param message The incoming MIDI message.
+    /// @param secondsSinceStart The elapsed time in seconds since playback
+    ///        started, used for tap tempo calculation.
     void midiCcReceived(const MidiMessage& message, double secondsSinceStart);
 
     /// Registers a MidiMapping with the manager.
+    ///
+    /// @param midiCc The MIDI CC to associate the mapping with.
+    /// @param mapping The MidiMapping to register.
     void registerMapping(int midiCc, MidiMapping* mapping);
     /// Unregisters a MidiMapping with the manager.
+    ///
+    /// @param mapping The MidiMapping to unregister.
     void unregisterMapping(MidiMapping* mapping);
 
     /// Registers a MidiAppMapping with the manager.
+    ///
+    /// @param mapping The MidiAppMapping to register.
     void registerAppMapping(MidiAppMapping* mapping);
     /// Unregisters a MidiAppMapping with the manager.
+    ///
+    /// @param mapping The MidiAppMapping to unregister.
     void unregisterAppMapping(MidiAppMapping* mapping);
 
     /// Returns the number of MidiAppMappings.
     int getNumAppMappings() const { return static_cast<int>(appMappings.size()); }
     /// Returns the indexed MidiAppMapping.
+    ///
+    /// @param index The index of the MidiAppMapping to return.
+    /// @return The MidiAppMapping at the given index, or nullptr if out of
+    ///         range.
     MidiAppMapping* getAppMapping(int index);
 
     /// Callback used by the MIDI learn functions.
-    class MidiLearnCallback
-    {
+    class MidiLearnCallback {
       public:
         virtual ~MidiLearnCallback() {}
 
         /// Called when the manager receives a MIDI CC message.
+        ///
+        /// @param val The MIDI CC number that was received.
         virtual void midiCcReceived(int val) = 0;
     };
     /// Registers a callback for the next received MIDI CC message.
     ///
     /// The callback is automatically unregistered after it is called once.
+    ///
+    /// @param callback The callback to register.
     void registerMidiLearnCallback(MidiLearnCallback* callback);
     /// Unregisters a midi learn callback.
     ///
     /// Only needed if the callback is deleted before receiving a MIDI CC.
+    ///
+    /// @param callback The callback to unregister.
     void unregisterMidiLearnCallback(MidiLearnCallback* callback);
 
     /// Returns a StringArray with the full range of named MIDI CCs.
+    ///
+    /// @return A StringArray containing the names of all 128 MIDI CCs.
     static StringArray getCCNames();
 
   private:
@@ -205,13 +248,15 @@ class MidiMappingManager
 };
 
 /// Intercepts MIDI messages so they can be sent to the MidiMappingManager.
-class MidiInterceptor : public AudioPluginInstance
-{
+class MidiInterceptor : public AudioPluginInstance {
   public:
+    /// Creates the interceptor with no audio buses and no manager.
     MidiInterceptor();
     ~MidiInterceptor() override;
 
     /// Registers the current MidiMappingManager with this instance.
+    ///
+    /// @param manager The MidiMappingManager to pass MIDI messages to.
     void setManager(MidiMappingManager* manager);
 
     /// Provides a description of the processor to the filter graph.
@@ -223,8 +268,7 @@ class MidiInterceptor : public AudioPluginInstance
     /// Returns the name of the processor.
     const String getName() const override { return "Midi Interceptor"; }
     /// Ignored.
-    void prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) override
-    {
+    void prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) override {
         juce::ignoreUnused(sampleRate, estimatedSamplesPerBlock);
     }
     /// Ignored.
@@ -246,7 +290,10 @@ class MidiInterceptor : public AudioPluginInstance
     /// We have no programs.
     void setCurrentProgram(int index) override { juce::ignoreUnused(index); }
     /// We have no programs.
-    const String getProgramName(int index) override { juce::ignoreUnused(index); return {}; }
+    const String getProgramName(int index) override {
+        juce::ignoreUnused(index);
+        return {};
+    }
     /// We have no programs.
     void changeProgramName(int index, const String& newName) override { juce::ignoreUnused(index, newName); }
     /// We have no state information.
@@ -255,8 +302,7 @@ class MidiInterceptor : public AudioPluginInstance
     void setStateInformation(const void* data, int sizeInBytes) override { juce::ignoreUnused(data, sizeInBytes); }
 
     /// No audio buses.
-    bool isBusesLayoutSupported(const BusesLayout& layouts) const override
-    {
+    bool isBusesLayoutSupported(const BusesLayout& layouts) const override {
         return layouts.getMainInputChannels() == 0 && layouts.getMainOutputChannels() == 0;
     }
 

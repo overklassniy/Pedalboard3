@@ -18,12 +18,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "LogFile.h"
 #include "LogDisplay.h"
 
+#include "LogFile.h"
 
-LogDisplay::LogDisplay()
-{
+LogDisplay::LogDisplay() {
     logEditor = std::make_unique<juce::TextEditor>("logEditor");
     addAndMakeVisible(*logEditor);
     logEditor->setMultiLine(true);
@@ -57,8 +56,7 @@ LogDisplay::LogDisplay()
     pedalboardButton->addListener(this);
     pedalboardButton->setToggleState(true, false);
 
-    filterLabel = std::make_unique<juce::Label>("filterLabel",
-                                                                  "Filter:");
+    filterLabel = std::make_unique<juce::Label>("filterLabel", "Filter:");
     addAndMakeVisible(*filterLabel);
     filterLabel->setFont(juce::Font(juce::FontOptions().withHeight(15.0f)));
     filterLabel->setJustificationType(juce::Justification::centredLeft);
@@ -66,8 +64,7 @@ LogDisplay::LogDisplay()
     filterLabel->setColour(juce::TextEditor::textColourId, juce::Colours::black);
     filterLabel->setColour(juce::TextEditor::backgroundColourId, juce::Colour(0x0));
 
-    if (LogFile::getInstance().getIsLogging())
-    {
+    if (LogFile::getInstance().getIsLogging()) {
         updateLog(true);
 
         startStopButton->setButtonText("Stop Logging");
@@ -78,21 +75,15 @@ LogDisplay::LogDisplay()
     setSize(600, 400);
 }
 
-
-LogDisplay::~LogDisplay()
-{
+LogDisplay::~LogDisplay() {
     LogFile::getInstance().removeChangeListener(this);
 }
 
-
-void LogDisplay::paint(juce::Graphics& g)
-{
+void LogDisplay::paint(juce::Graphics& g) {
     g.fillAll(juce::Colour(0xffeeece1));
 }
 
-
-void LogDisplay::resized()
-{
+void LogDisplay::resized() {
     logEditor->setBounds(8, 8, getWidth() - 16, getHeight() - 40);
     startStopButton->setBounds(8, getHeight() - 28, 150, 24);
     midiButton->setBounds(208, getHeight() - 28, 56, 24);
@@ -101,56 +92,37 @@ void LogDisplay::resized()
     filterLabel->setBounds(164, getHeight() - 28, 48, 24);
 }
 
-
-void LogDisplay::buttonClicked(juce::Button* buttonThatWasClicked)
-{
-    if (buttonThatWasClicked == startStopButton.get())
-    {
-        if (LogFile::getInstance().getIsLogging())
-        {
-            // Stop logging.
+void LogDisplay::buttonClicked(juce::Button* buttonThatWasClicked) {
+    if (buttonThatWasClicked == startStopButton.get()) {
+        if (LogFile::getInstance().getIsLogging()) {
             LogFile::getInstance().stop();
             logEditor->setText("");
             lastEvent = juce::Time();
 
             startStopButton->setButtonText("Start Logging");
-        }
-        else
-        {
-            // Start logging.
+        } else {
             LogFile::getInstance().start();
 
             startStopButton->setButtonText("Stop Logging");
         }
-    }
-    else if (buttonThatWasClicked == midiButton.get())
-    {
+    } else if (buttonThatWasClicked == midiButton.get()) {
         updateLog(true);
-    }
-    else if (buttonThatWasClicked == oscButton.get())
-    {
+    } else if (buttonThatWasClicked == oscButton.get()) {
         updateLog(true);
-    }
-    else if (buttonThatWasClicked == pedalboardButton.get())
-    {
+    } else if (buttonThatWasClicked == pedalboardButton.get()) {
         updateLog(true);
     }
 }
 
-
-void LogDisplay::changeListenerCallback(juce::ChangeBroadcaster* source)
-{
+void LogDisplay::changeListenerCallback(juce::ChangeBroadcaster* source) {
     if (source == &(LogFile::getInstance()))
         updateLog(false);
 }
 
-
-void LogDisplay::updateLog(bool fromTheBeginning)
-{
+void LogDisplay::updateLog(bool fromTheBeginning) {
     juce::StringArray tempArr;
 
-    if (fromTheBeginning)
-    {
+    if (fromTheBeginning) {
         lastEvent = juce::Time();
         logEditor->setText("");
     }

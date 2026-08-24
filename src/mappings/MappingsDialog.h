@@ -36,49 +36,77 @@ class MappingsDialog : public Component,
                        public MidiMappingManager::MidiLearnCallback,
                        public AsyncUpdater,
                        public juce::Button::Listener,
-                       public juce::ComboBox::Listener
-{
-public:
-    MappingsDialog(MidiMappingManager* manager, OscMappingManager* manager2,
-                   AudioProcessorGraph::Node::Ptr  plugin, Array<Mapping*> maps,
-                   PluginField* field);
+                       public juce::ComboBox::Listener {
+  public:
+    /// Creates the mappings dialog for a single plugin.
+    ///
+    /// @param manager The MidiMappingManager for any MIDI mappings.
+    /// @param manager2 The OscMappingManager for any OSC mappings.
+    /// @param plugin The graph node whose mappings are displayed.
+    /// @param maps The array of existing mappings.
+    /// @param field The PluginField to apply changes to.
+    MappingsDialog(MidiMappingManager* manager, OscMappingManager* manager2, AudioProcessorGraph::Node::Ptr plugin,
+                   Array<Mapping*> maps, PluginField* field);
     ~MappingsDialog() override;
 
     /// Returns the number of active mappings.
     int getNumRows() override;
-    /// Draws a row.
-    void paintListBoxItem(int rowNumber, Graphics& g, int width, int height,
-                          bool rowIsSelected) override;
-    /// Returns the component for a single row.
-    Component* refreshComponentForRow(int rowNumber, bool isRowSelected,
-                                      Component* existingComponentToUpdate) override;
-    /// So the user can select rows.
+    /// Draws the selection highlight and alternating row background.
+    void paintListBoxItem(int rowNumber, Graphics& g, int width, int height, bool rowIsSelected) override;
+    /// Creates the MIDI or OSC entry component for a single row.
+    Component* refreshComponentForRow(int rowNumber, bool isRowSelected, Component* existingComponentToUpdate) override;
+    /// Selects the clicked row, supporting Ctrl multi-selection.
     void listBoxItemClicked(int row, const MouseEvent& e) override;
-    /// So the user can deselect rows.
+    /// Deselects all rows when the background is clicked.
     void backgroundClicked(const MouseEvent& e) override;
 
-    /// So the OscMappingManager can get updated with the correct MIDI over
-    /// OSC address.
+    /// Registers the typed OSC address with the OscMappingManager so it can
+    /// receive MIDI over OSC.
     void textEditorTextChanged(TextEditor& editor) override;
 
     /// Sets the indexed mapping's parameter.
+    ///
+    /// @param index The index of the mapping to update.
+    /// @param val The parameter index to set (-1 for bypass).
     void setParameter(int index, int val);
     /// Sets the indexed mapping's CC.
+    ///
+    /// @param index The index of the mapping to update.
+    /// @param val The MIDI CC number to set.
     void setCc(int index, int val);
     /// Sets the indexed mapping's latch value.
+    ///
+    /// @param index The index of the mapping to update.
+    /// @param val Whether the CC should be latched.
     void setLatch(int index, bool val);
     /// Sets the indexed mapping's lower bound.
+    ///
+    /// @param index The index of the mapping to update.
+    /// @param val The lower bound value to set.
     void setLowerBound(int index, float val);
     /// Sets the indexed mapping's upper bound.
+    ///
+    /// @param index The index of the mapping to update.
+    /// @param val The upper bound value to set.
     void setUpperBound(int index, float val);
     /// Sets the indexed mapping's OSC address.
+    ///
+    /// @param index The index of the mapping to update.
+    /// @param address The OSC address to set.
     void setAddress(int index, const String& address);
     /// Sets the indexed mapping's OSC parameter index.
+    ///
+    /// @param index The index of the mapping to update.
+    /// @param val The OSC parameter index to set.
     void setOscParameter(int index, int val);
 
     /// Activates MIDI learn for the indexed mapping.
+    ///
+    /// @param index The index of the mapping to learn a CC for.
     void activateMidiLearn(int index);
     /// Deactivates MIDI learn for the indexed mapping.
+    ///
+    /// @param index The index of the mapping to stop learning a CC for.
     void deactivateMidiLearn(int index);
     /// The method which gets called when a MIDI learn CC is received.
     void midiCcReceived(int val) override;
@@ -90,18 +118,26 @@ public:
 
     void paint(Graphics& g) override;
     void resized() override;
+    /// Adds or removes mappings, or toggles MIDI override, depending on which
+    /// button was clicked.
     void buttonClicked(Button* buttonThatWasClicked) override;
+    /// Updates the MIDI channel for the plugin and all its MIDI mappings.
     void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override;
 
-private:
-    /// For sorting the results of mappingsList->getSelectedRows().
-    struct MappingComparator
-    {
-        /// For sorting the results of mappingsList->getSelectedRows().
+  private:
+    /// Comparator used to sort selected row indices before deletion.
+    struct MappingComparator {
+        /// Returns -1, 0, or 1 depending on whether first is less than,
+        /// equal to, or greater than second.
+        ///
+        /// @param first The first row index to compare.
+        /// @param second The second row index to compare.
+        /// @return -1 if first is less than second, 0 if equal, 1 if greater.
         int compareElements(int first, int second);
     };
 
-    /// For sorting the results of mappingsList->getSelectedRows().
+    /// Instance used to sort selected rows in descending order so deletion
+    /// does not shift remaining indices.
     MappingComparator comparator;
 
     /// The MidiMappingsManager for any MidiMappings.
@@ -109,7 +145,7 @@ private:
     /// The OscMappingsManager for any OscMappings.
     OscMappingManager* oscManager;
     /// The plugin this dialog refers to.
-    AudioProcessorGraph::Node::Ptr  pluginNode;
+    AudioProcessorGraph::Node::Ptr pluginNode;
     /// The mappings this dialog displays.
     Array<Mapping*> mappings;
     /// The PluginField to apply any mapping changes to.

@@ -19,15 +19,12 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "FilePlayerEditor.h"
-#include "FilePlayerProcessor.h"
-#include "ColourScheme.h"
 
-FilePlayerEditor::FilePlayerEditor(FilePlayerProcessor* processor,
-                                   const Rectangle<int>& windowBounds)
-    : AudioProcessorEditor(processor),
-      parentBounds(windowBounds),
-      setPos(false)
-{
+#include "ColourScheme.h"
+#include "FilePlayerProcessor.h"
+
+FilePlayerEditor::FilePlayerEditor(FilePlayerProcessor* processor, const Rectangle<int>& windowBounds)
+    : AudioProcessorEditor(processor), parentBounds(windowBounds), setPos(false) {
     controls = std::make_unique<FilePlayerControl>(processor);
     controls->setWaveformBackground(Colour(0xFFEEECE1).darker(0.05f));
     controls->setTopLeftPosition(4, 4);
@@ -38,10 +35,8 @@ FilePlayerEditor::FilePlayerEditor(FilePlayerProcessor* processor,
     startTimer(60);
 }
 
-FilePlayerEditor::~FilePlayerEditor()
-{
-    if (auto* proc = dynamic_cast<FilePlayerProcessor*>(getAudioProcessor()))
-    {
+FilePlayerEditor::~FilePlayerEditor() {
+    if (auto* proc = dynamic_cast<FilePlayerProcessor*>(getAudioProcessor())) {
         if (getParentComponent())
             parentBounds = getTopLevelComponent()->getBounds();
 
@@ -52,26 +47,19 @@ FilePlayerEditor::~FilePlayerEditor()
     getAudioProcessor()->editorBeingDeleted(this);
 }
 
-void FilePlayerEditor::resized()
-{
+void FilePlayerEditor::resized() {
     controls->setSize(getWidth() - 8, getHeight() - 8);
 }
 
-void FilePlayerEditor::paint(Graphics& g)
-{
+void FilePlayerEditor::paint(Graphics& g) {
     g.fillAll(ColourScheme::getInstance().colours["Window Background"]);
 }
 
-void FilePlayerEditor::timerCallback()
-{
-    if (!setPos)
-    {
-        if (parentBounds.isEmpty())
-        {
+void FilePlayerEditor::timerCallback() {
+    if (!setPos) {
+        if (parentBounds.isEmpty()) {
             setPos = true;
-        }
-        else if (ComponentPeer* peer = getPeer())
-        {
+        } else if (ComponentPeer* peer = getPeer()) {
             peer->setBounds(parentBounds, false);
             setPos = true;
             stopTimer();

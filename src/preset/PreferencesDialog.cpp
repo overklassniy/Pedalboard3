@@ -18,17 +18,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "MainPanel.h"
-#include "PropertiesSingleton.h"
-#include "ColourScheme.h"
-#include "App.h"
-
 #include "PreferencesDialog.h"
 
-PreferencesDialog::PreferencesDialog(MainPanel* panel, const String& port, const String& multicastAddress)
-{
-    oscPortLabel = std::make_unique<Label>("oscPortLabel",
-                                                             "OSC Port:");
+#include "App.h"
+#include "ColourScheme.h"
+#include "MainPanel.h"
+#include "PropertiesSingleton.h"
+
+PreferencesDialog::PreferencesDialog(MainPanel* panel, const String& port, const String& multicastAddress) {
+    oscPortLabel = std::make_unique<Label>("oscPortLabel", "OSC Port:");
     addAndMakeVisible(*oscPortLabel);
     oscPortLabel->setFont(juce::FontOptions().withHeight(15.0f));
     oscPortLabel->setJustificationType(Justification::centredLeft);
@@ -46,8 +44,7 @@ PreferencesDialog::PreferencesDialog(MainPanel* panel, const String& port, const
     oscPortEditor->setPopupMenuEnabled(true);
     oscPortEditor->setText("5678");
 
-    oscLabel = std::make_unique<Label>("oscLabel",
-                                                         "Open Sound Control Options");
+    oscLabel = std::make_unique<Label>("oscLabel", "Open Sound Control Options");
     addAndMakeVisible(*oscLabel);
     oscLabel->setFont(juce::FontOptions().withHeight(15.0f).withStyle("Bold"));
     oscLabel->setJustificationType(Justification::centredLeft);
@@ -55,8 +52,7 @@ PreferencesDialog::PreferencesDialog(MainPanel* panel, const String& port, const
     oscLabel->setColour(TextEditor::textColourId, Colours::black);
     oscLabel->setColour(TextEditor::backgroundColourId, Colour(0x0));
 
-    oscMulticastLabel = std::make_unique<Label>("oscMulticastLabel",
-                                                                  "OSC Multicast Address:");
+    oscMulticastLabel = std::make_unique<Label>("oscMulticastLabel", "OSC Multicast Address:");
     addAndMakeVisible(*oscMulticastLabel);
     oscMulticastLabel->setFont(juce::FontOptions().withHeight(15.0f));
     oscMulticastLabel->setJustificationType(Justification::centredLeft);
@@ -74,8 +70,7 @@ PreferencesDialog::PreferencesDialog(MainPanel* panel, const String& port, const
     oscMulticastEditor->setPopupMenuEnabled(true);
     oscMulticastEditor->setText({});
 
-    multicastHintLabel = std::make_unique<Label>("multicastHintLabel",
-                                                                   "(leave blank for a one-to-one connection)");
+    multicastHintLabel = std::make_unique<Label>("multicastHintLabel", "(leave blank for a one-to-one connection)");
     addAndMakeVisible(*multicastHintLabel);
     multicastHintLabel->setFont(juce::FontOptions().withHeight(15.0f));
     multicastHintLabel->setJustificationType(Justification::centredLeft);
@@ -84,8 +79,7 @@ PreferencesDialog::PreferencesDialog(MainPanel* panel, const String& port, const
     multicastHintLabel->setColour(TextEditor::textColourId, Colours::black);
     multicastHintLabel->setColour(TextEditor::backgroundColourId, Colour(0x0));
 
-    ioOptionsLabel = std::make_unique<Label>("ioOptionsLabel",
-                                                               "Visible I/O Nodes");
+    ioOptionsLabel = std::make_unique<Label>("ioOptionsLabel", "Visible I/O Nodes");
     addAndMakeVisible(*ioOptionsLabel);
     ioOptionsLabel->setFont(juce::FontOptions().withHeight(15.0f).withStyle("Bold"));
     ioOptionsLabel->setJustificationType(Justification::centredLeft);
@@ -111,8 +105,7 @@ PreferencesDialog::PreferencesDialog(MainPanel* panel, const String& port, const
     oscInputButton->addListener(this);
     oscInputButton->setToggleState(true, false);
 
-    otherLabel = std::make_unique<Label>("otherLabel",
-                                                           "Other Options");
+    otherLabel = std::make_unique<Label>("otherLabel", "Other Options");
     addAndMakeVisible(*otherLabel);
     otherLabel->setFont(juce::FontOptions().withHeight(15.0f).withStyle("Bold"));
     otherLabel->setJustificationType(Justification::centredLeft);
@@ -142,8 +135,7 @@ PreferencesDialog::PreferencesDialog(MainPanel* panel, const String& port, const
     ignorePinNamesButton->setButtonText("Ignore plugin pin names");
     ignorePinNamesButton->addListener(this);
 
-    midiLabel = std::make_unique<Label>("midiLabel",
-                                                          "Midi Options");
+    midiLabel = std::make_unique<Label>("midiLabel", "Midi Options");
     addAndMakeVisible(*midiLabel);
     midiLabel->setFont(juce::FontOptions().withHeight(15.0f).withStyle("Bold"));
     midiLabel->setJustificationType(Justification::centredLeft);
@@ -194,29 +186,40 @@ PreferencesDialog::PreferencesDialog(MainPanel* panel, const String& port, const
     oscPortEditor->addListener(this);
     oscMulticastEditor->addListener(this);
 
-    audioInputButton->setToggleState(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("AudioInput", true), false);
-    midiInputButton->setToggleState(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("MidiInput", true), false);
-    oscInputButton->setToggleState(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("OscInput", true), false);
+    audioInputButton->setToggleState(
+        PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("AudioInput", true), false);
+    midiInputButton->setToggleState(
+        PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("MidiInput", true), false);
+    oscInputButton->setToggleState(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("OscInput", true),
+                                   false);
 
-    midiProgramChangeButton->setToggleState(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("midiProgramChange", false), false);
-    mmcTransportButton->setToggleState(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("mmcTransport", false), false);
+    midiProgramChangeButton->setToggleState(
+        PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("midiProgramChange", false), false);
+    mmcTransportButton->setToggleState(
+        PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("mmcTransport", false), false);
 
-    mappingsWindowButton->setToggleState(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("AutoMappingsWindow", true), false);
-    loopPatchesButton->setToggleState(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("LoopPatches", true), false);
-    windowsOnTopButton->setToggleState(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("WindowsOnTop", false), false);
-    ignorePinNamesButton->setToggleState(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("IgnorePinNames", false), false);
+    mappingsWindowButton->setToggleState(
+        PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("AutoMappingsWindow", true), false);
+    loopPatchesButton->setToggleState(
+        PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("LoopPatches", true), false);
+    windowsOnTopButton->setToggleState(
+        PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("WindowsOnTop", false), false);
+    ignorePinNamesButton->setToggleState(
+        PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("IgnorePinNames", false), false);
 
-    fixedSizeButton->setToggleState(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("fixedSizeWindows", true), false);
+    fixedSizeButton->setToggleState(
+        PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("fixedSizeWindows", true), false);
 
-    pdlAudioSettingsButton->setToggleState(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("pdlAudioSettings", false), false);
+    pdlAudioSettingsButton->setToggleState(
+        PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("pdlAudioSettings", false), false);
 
 #ifndef JUCE_MAC
     useTrayIcon = PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("useTrayIcon", false);
     useTrayIconButton->setToggleState(useTrayIcon, false);
     if (useTrayIcon)
-        startInTrayButton->setToggleState(PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("startInTray", false), false);
-    else
-    {
+        startInTrayButton->setToggleState(
+            PropertiesSingleton::getInstance().getUserSettings()->getBoolValue("startInTray", false), false);
+    else {
         startInTrayButton->setToggleState(false, false);
         startInTrayButton->setEnabled(false);
     }
@@ -225,30 +228,19 @@ PreferencesDialog::PreferencesDialog(MainPanel* panel, const String& port, const
     startInTrayButton->setEnabled(false);
 #endif
 
-    oscPortLabel->setColour(TextEditor::textColourId,
-                            ColourScheme::getInstance().colours["Text Colour"]);
-    oscLabel->setColour(TextEditor::textColourId,
-                        ColourScheme::getInstance().colours["Text Colour"]);
-    oscMulticastLabel->setColour(TextEditor::textColourId,
-                                 ColourScheme::getInstance().colours["Text Colour"]);
-    multicastHintLabel->setColour(TextEditor::textColourId,
-                                  ColourScheme::getInstance().colours["Text Colour"]);
-    ioOptionsLabel->setColour(TextEditor::textColourId,
-                              ColourScheme::getInstance().colours["Text Colour"]);
-    otherLabel->setColour(TextEditor::textColourId,
-                          ColourScheme::getInstance().colours["Text Colour"]);
+    oscPortLabel->setColour(TextEditor::textColourId, ColourScheme::getInstance().colours["Text Colour"]);
+    oscLabel->setColour(TextEditor::textColourId, ColourScheme::getInstance().colours["Text Colour"]);
+    oscMulticastLabel->setColour(TextEditor::textColourId, ColourScheme::getInstance().colours["Text Colour"]);
+    multicastHintLabel->setColour(TextEditor::textColourId, ColourScheme::getInstance().colours["Text Colour"]);
+    ioOptionsLabel->setColour(TextEditor::textColourId, ColourScheme::getInstance().colours["Text Colour"]);
+    otherLabel->setColour(TextEditor::textColourId, ColourScheme::getInstance().colours["Text Colour"]);
 
     setSize(560, 530);
 }
 
+PreferencesDialog::~PreferencesDialog() {}
 
-PreferencesDialog::~PreferencesDialog()
-{
-}
-
-
-void PreferencesDialog::paint(Graphics& g)
-{
+void PreferencesDialog::paint(Graphics& g) {
     g.fillAll(ColourScheme::getInstance().colours["Window Background"]);
 
     g.setColour(ColourScheme::getInstance().colours["Dialog Inner Background"]);
@@ -258,9 +250,7 @@ void PreferencesDialog::paint(Graphics& g)
     g.drawRect(12, 132, getWidth() - 24, 82, 1);
 }
 
-
-void PreferencesDialog::resized()
-{
+void PreferencesDialog::resized() {
     oscPortLabel->setBounds(8, 40, 72, 24);
     oscPortEditor->setBounds(80, 40, 64, 24);
     oscLabel->setBounds(0, 8, 208, 24);
@@ -285,117 +275,78 @@ void PreferencesDialog::resized()
     pdlAudioSettingsButton->setBounds(16, 496, 224, 24);
 }
 
-
-void PreferencesDialog::buttonClicked(Button* buttonThatWasClicked)
-{
-    if (buttonThatWasClicked == audioInputButton.get())
-    {
+void PreferencesDialog::buttonClicked(Button* buttonThatWasClicked) {
+    if (buttonThatWasClicked == audioInputButton.get()) {
         mainPanel->enableAudioInput(audioInputButton->getToggleState());
-    }
-    else if (buttonThatWasClicked == midiInputButton.get())
-    {
+    } else if (buttonThatWasClicked == midiInputButton.get()) {
         mainPanel->enableMidiInput(midiInputButton->getToggleState());
-    }
-    else if (buttonThatWasClicked == oscInputButton.get())
-    {
+    } else if (buttonThatWasClicked == oscInputButton.get()) {
         mainPanel->enableOscInput(oscInputButton->getToggleState());
-    }
-    else if (buttonThatWasClicked == mappingsWindowButton.get())
-    {
+    } else if (buttonThatWasClicked == mappingsWindowButton.get()) {
         mainPanel->setAutoMappingsWindow(mappingsWindowButton->getToggleState());
-    }
-    else if (buttonThatWasClicked == loopPatchesButton.get())
-    {
+    } else if (buttonThatWasClicked == loopPatchesButton.get()) {
         PropertiesSingleton::getInstance().getUserSettings()->setValue("LoopPatches",
                                                                        loopPatchesButton->getToggleState());
-    }
-    else if (buttonThatWasClicked == windowsOnTopButton.get())
-    {
+    } else if (buttonThatWasClicked == windowsOnTopButton.get()) {
         PropertiesSingleton::getInstance().getUserSettings()->setValue("WindowsOnTop",
                                                                        windowsOnTopButton->getToggleState());
-    }
-    else if (buttonThatWasClicked == ignorePinNamesButton.get())
-    {
+    } else if (buttonThatWasClicked == ignorePinNamesButton.get()) {
         PropertiesSingleton::getInstance().getUserSettings()->setValue("IgnorePinNames",
                                                                        ignorePinNamesButton->getToggleState());
-    }
-    else if (buttonThatWasClicked == midiProgramChangeButton.get())
-    {
+    } else if (buttonThatWasClicked == midiProgramChangeButton.get()) {
         PropertiesSingleton::getInstance().getUserSettings()->setValue("midiProgramChange",
                                                                        midiProgramChangeButton->getToggleState());
-    }
-    else if (buttonThatWasClicked == mmcTransportButton.get())
-    {
+    } else if (buttonThatWasClicked == mmcTransportButton.get()) {
         PropertiesSingleton::getInstance().getUserSettings()->setValue("mmcTransport",
                                                                        mmcTransportButton->getToggleState());
-    }
-    else if (buttonThatWasClicked == useTrayIconButton.get())
-    {
+    } else if (buttonThatWasClicked == useTrayIconButton.get()) {
         auto* app = dynamic_cast<Pedalboard3App*>(JUCEApplication::getInstance());
-        (void) app;
-        // TODO: App::showTrayIcon() will be implemented when App is fully ported.
+        if (app)
+            app->showTrayIcon(useTrayIconButton->getToggleState());
+
         if (useTrayIconButton->getToggleState())
             startInTrayButton->setEnabled(true);
-        else
-        {
+        else {
             startInTrayButton->setToggleState(false, false);
             startInTrayButton->setEnabled(false);
         }
 
         PropertiesSingleton::getInstance().getUserSettings()->setValue("useTrayIcon",
                                                                        useTrayIconButton->getToggleState());
-    }
-    else if (buttonThatWasClicked == startInTrayButton.get())
-    {
+    } else if (buttonThatWasClicked == startInTrayButton.get()) {
         PropertiesSingleton::getInstance().getUserSettings()->setValue("startInTray",
                                                                        startInTrayButton->getToggleState());
-    }
-    else if (buttonThatWasClicked == fixedSizeButton.get())
-    {
+    } else if (buttonThatWasClicked == fixedSizeButton.get()) {
         PropertiesSingleton::getInstance().getUserSettings()->setValue("fixedSizeWindows",
                                                                        fixedSizeButton->getToggleState());
-    }
-    else if (buttonThatWasClicked == pdlAudioSettingsButton.get())
-    {
+    } else if (buttonThatWasClicked == pdlAudioSettingsButton.get()) {
         PropertiesSingleton::getInstance().getUserSettings()->setValue("pdlAudioSettings",
                                                                        pdlAudioSettingsButton->getToggleState());
     }
 }
 
-
-void PreferencesDialog::textEditorReturnKeyPressed(TextEditor& editor)
-{
-    if (editor.getName() == "oscPortEditor")
-    {
+void PreferencesDialog::textEditorReturnKeyPressed(TextEditor& editor) {
+    if (editor.getName() == "oscPortEditor") {
         currentPort = editor.getText();
         mainPanel->setSocketPort(currentPort);
-    }
-    else if (editor.getName() == "oscMulticastEditor")
-    {
+    } else if (editor.getName() == "oscMulticastEditor") {
         currentMulticast = editor.getText();
         mainPanel->setSocketMulticast(currentMulticast);
     }
 }
 
-
-void PreferencesDialog::textEditorEscapeKeyPressed(TextEditor& editor)
-{
+void PreferencesDialog::textEditorEscapeKeyPressed(TextEditor& editor) {
     if (editor.getName() == "oscPortEditor")
         editor.setText(currentPort, false);
     else if (editor.getName() == "oscMulticastEditor")
         editor.setText(currentMulticast, false);
 }
 
-
-void PreferencesDialog::textEditorFocusLost(TextEditor& editor)
-{
-    if (editor.getName() == "oscPortEditor")
-    {
+void PreferencesDialog::textEditorFocusLost(TextEditor& editor) {
+    if (editor.getName() == "oscPortEditor") {
         currentPort = editor.getText();
         mainPanel->setSocketPort(currentPort);
-    }
-    else if (editor.getName() == "oscMulticastEditor")
-    {
+    } else if (editor.getName() == "oscMulticastEditor") {
         currentMulticast = editor.getText();
         mainPanel->setSocketMulticast(currentMulticast);
     }

@@ -23,28 +23,19 @@
 
 #include <spdlog/spdlog.h>
 
-// SafePluginScanner
-
 SafePluginScanner::SafePluginScanner(juce::KnownPluginList& listToAddTo, juce::AudioPluginFormat& formatToScan,
                                      juce::FileSearchPath directoriesToSearch, bool searchRecursively,
                                      const juce::File& deadMansPedalFile, bool useOutOfProcess)
-    : useOutOfProcessScanning(useOutOfProcess), pluginList(listToAddTo), format(formatToScan)
-{
-    // Create the base scanner
+    : useOutOfProcessScanning(useOutOfProcess), pluginList(listToAddTo), format(formatToScan) {
     baseScanner = std::make_unique<juce::PluginDirectoryScanner>(listToAddTo, formatToScan, directoriesToSearch,
-                                                                  searchRecursively, deadMansPedalFile);
+                                                                 searchRecursively, deadMansPedalFile);
 
-    if (useOutOfProcessScanning)
-    {
-        // Check if scanner executable exists
+    if (useOutOfProcessScanning) {
         auto scannerExe = PluginScannerClient::getScannerExecutable();
-        if (scannerExe.existsAsFile())
-        {
+        if (scannerExe.existsAsFile()) {
             scannerClient = std::make_unique<PluginScannerClient>();
             spdlog::info("[SafePluginScanner] Using out-of-process scanning");
-        }
-        else
-        {
+        } else {
             spdlog::warn("[SafePluginScanner] Scanner executable not found at {}, falling back to in-process scanning",
                          scannerExe.getFullPathName().toStdString());
             useOutOfProcessScanning = false;
@@ -52,32 +43,27 @@ SafePluginScanner::SafePluginScanner(juce::KnownPluginList& listToAddTo, juce::A
     }
 }
 
-SafePluginScanner::~SafePluginScanner()
-{
+SafePluginScanner::~SafePluginScanner() {
     if (scannerClient)
         scannerClient->stopScanner();
 }
 
-juce::String SafePluginScanner::getNextPluginFileThatWillBeScanned() const
-{
+juce::String SafePluginScanner::getNextPluginFileThatWillBeScanned() const {
     if (baseScanner)
         return baseScanner->getNextPluginFileThatWillBeScanned();
     return {};
 }
 
-float SafePluginScanner::getProgress() const
-{
+float SafePluginScanner::getProgress() const {
     if (baseScanner)
         return baseScanner->getProgress();
     return 1.0f;
 }
 
-bool SafePluginScanner::scanNextFile(bool dontRescanIfAlreadyInList, juce::String& nameOfPluginBeingScanned)
-{
+bool SafePluginScanner::scanNextFile(bool dontRescanIfAlreadyInList, juce::String& nameOfPluginBeingScanned) {
     if (!baseScanner)
         return false;
 
-    // Get the next file to scan from the base scanner
     juce::String nextFile = baseScanner->getNextPluginFileThatWillBeScanned();
 
     if (nextFile.isEmpty())
@@ -85,46 +71,33 @@ bool SafePluginScanner::scanNextFile(bool dontRescanIfAlreadyInList, juce::Strin
 
     nameOfPluginBeingScanned = juce::File(nextFile).getFileName();
 
-    // Check if blacklisted
-    if (PluginBlacklist::getInstance().isBlacklisted(nextFile))
-    {
+    if (PluginBlacklist::getInstance().isBlacklisted(nextFile)) {
         spdlog::debug("[SafePluginScanner] Skipping blacklisted plugin: {}", nextFile.toStdString());
-        // Let the base scanner handle advancing
+        // Let the base scanner handle advancing past the blacklisted file.
         return baseScanner->scanNextFile(dontRescanIfAlreadyInList, nameOfPluginBeingScanned);
     }
 
-    // Use out-of-process scanner if available
-    if (useOutOfProcessScanning && scannerClient)
-    {
+    if (useOutOfProcessScanning && scannerClient) {
         juce::OwnedArray<juce::PluginDescription> results;
 
         bool scanSuccess = scannerClient->scanPlugin(nextFile, format.getName(), results);
 
-        if (scanSuccess)
-        {
-            // Add found plugins to the list
-            for (auto* desc : results)
-            {
+        if (scanSuccess) {
+            for (auto* desc : results) {
                 pluginList.addType(*desc);
             }
             spdlog::debug("[SafePluginScanner] Out-of-process scan found {} plugin(s) in {}", results.size(),
                           nextFile.toStdString());
-        }
-        else
-        {
+        } else {
             spdlog::warn("[SafePluginScanner] Out-of-process scan failed for: {}", nextFile.toStdString());
         }
 
-        // Call base scanner to advance to next file
-        // It may rescan but that's OK - the plugin will already be in the list so it will be fast
+        // The base scanner may rescan, but the plugin is already in the list
+        // so the rescan is fast.
         juce::String dummy;
         return baseScanner->scanNextFile(true, dummy);
-    }
-    else
-    {
-        // Fall back to in-process scanning with timeout protection
-        struct ScanAttemptState
-        {
+    } else {
+        struct ScanAttemptState {
             std::atomic<bool> success{false};
             juce::String scannedName;
         };
@@ -142,14 +115,11 @@ bool SafePluginScanner::scanNextFile(bool dontRescanIfAlreadyInList, juce::Strin
             },
             "Plugin Scan: " + nameOfPluginBeingScanned, scanTimeoutMs, nextFile);
 
-        if (result == TimedOperationResult::Timeout)
-        {
+        if (result == TimedOperationResult::Timeout) {
             spdlog::warn("[SafePluginScanner] Scan timed out, plugin blacklisted: {}", nextFile.toStdString());
             // The timeout handler already blacklisted it, check if more files remain
             return !baseScanner->getNextPluginFileThatWillBeScanned().isEmpty();
-        }
-        else if (result == TimedOperationResult::Exception)
-        {
+        } else if (result == TimedOperationResult::Exception) {
             spdlog::error("[SafePluginScanner] Scan threw exception: {}", nextFile.toStdString());
             return !baseScanner->getNextPluginFileThatWillBeScanned().isEmpty();
         }
@@ -159,15 +129,11 @@ bool SafePluginScanner::scanNextFile(bool dontRescanIfAlreadyInList, juce::Strin
     }
 }
 
-// SafePluginListComponent
-
 SafePluginListComponent::SafePluginListComponent(juce::AudioPluginFormatManager& fm,
                                                  juce::KnownPluginList& listToRepresent,
                                                  const juce::File& deadMansPedalFile,
                                                  juce::PropertiesFile* /*propertiesToUse*/)
-    : formatManager(fm), pluginList(listToRepresent), deadMansPedal(deadMansPedalFile)
-{
-    // Create table
+    : formatManager(fm), pluginList(listToRepresent), deadMansPedal(deadMansPedalFile) {
     table = std::make_unique<juce::TableListBox>("plugins", this);
     table->getHeader().addColumn("Name", 1, 200, 100, 400);
     table->getHeader().addColumn("Type", 2, 80, 50, 100);
@@ -175,7 +141,6 @@ SafePluginListComponent::SafePluginListComponent(juce::AudioPluginFormatManager&
     table->getHeader().addColumn("Manufacturer", 4, 150, 100, 250);
     addAndMakeVisible(table.get());
 
-    // Create buttons
     scanButton = std::make_unique<juce::TextButton>("Scan for new plugins...");
     scanButton->addListener(this);
     addAndMakeVisible(scanButton.get());
@@ -188,7 +153,6 @@ SafePluginListComponent::SafePluginListComponent(juce::AudioPluginFormatManager&
     removeButton->addListener(this);
     addAndMakeVisible(removeButton.get());
 
-    // Progress UI
     progressLabel = std::make_unique<juce::Label>("progress", "");
     progressLabel->setJustificationType(juce::Justification::centredLeft);
     addAndMakeVisible(progressLabel.get());
@@ -200,13 +164,11 @@ SafePluginListComponent::SafePluginListComponent(juce::AudioPluginFormatManager&
     updateList();
 }
 
-SafePluginListComponent::~SafePluginListComponent()
-{
+SafePluginListComponent::~SafePluginListComponent() {
     cancelScan();
 }
 
-void SafePluginListComponent::resized()
-{
+void SafePluginListComponent::resized() {
     auto bounds = getLocalBounds().reduced(4);
 
     auto buttonArea = bounds.removeFromBottom(30);
@@ -226,19 +188,16 @@ void SafePluginListComponent::resized()
     table->setBounds(bounds);
 }
 
-void SafePluginListComponent::paint(juce::Graphics& g)
-{
+void SafePluginListComponent::paint(juce::Graphics& g) {
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
 }
 
-int SafePluginListComponent::getNumRows()
-{
+int SafePluginListComponent::getNumRows() {
     return pluginList.getNumTypes();
 }
 
 void SafePluginListComponent::paintRowBackground(juce::Graphics& g, int rowNumber, int /*width*/, int /*height*/,
-                                                 bool rowIsSelected)
-{
+                                                 bool rowIsSelected) {
     if (rowIsSelected)
         g.fillAll(juce::Colours::lightblue);
     else if (rowNumber % 2)
@@ -246,8 +205,7 @@ void SafePluginListComponent::paintRowBackground(juce::Graphics& g, int rowNumbe
 }
 
 void SafePluginListComponent::paintCell(juce::Graphics& g, int rowNumber, int columnId, int width, int height,
-                                        bool /*rowIsSelected*/)
-{
+                                        bool /*rowIsSelected*/) {
     if (rowNumber >= pluginList.getNumTypes())
         return;
 
@@ -261,8 +219,7 @@ void SafePluginListComponent::paintCell(juce::Graphics& g, int rowNumber, int co
     g.setFont(juce::Font(juce::FontOptions().withHeight(13.0f)));
 
     juce::String text;
-    switch (columnId)
-    {
+    switch (columnId) {
     case 1:
         text = desc.name;
         break;
@@ -280,37 +237,28 @@ void SafePluginListComponent::paintCell(juce::Graphics& g, int rowNumber, int co
     g.drawText(text, 4, 0, width - 8, height, juce::Justification::centredLeft, true);
 }
 
-void SafePluginListComponent::cellClicked(int rowNumber, int /*columnId*/, const juce::MouseEvent&)
-{
+void SafePluginListComponent::cellClicked(int rowNumber, int /*columnId*/, const juce::MouseEvent&) {
     table->selectRow(rowNumber);
 }
 
-void SafePluginListComponent::sortOrderChanged(int newSortColumnId, bool isForwards)
-{
+void SafePluginListComponent::sortOrderChanged(int newSortColumnId, bool isForwards) {
     sortColumnId = newSortColumnId;
     sortForward = isForwards;
     updateList();
 }
 
-void SafePluginListComponent::buttonClicked(juce::Button* button)
-{
-    if (button == scanButton.get())
-    {
+void SafePluginListComponent::buttonClicked(juce::Button* button) {
+    if (button == scanButton.get()) {
         if (scanning)
             cancelScan();
         else
             startScan();
-    }
-    else if (button == clearButton.get())
-    {
+    } else if (button == clearButton.get()) {
         pluginList.clear();
         updateList();
-    }
-    else if (button == removeButton.get())
-    {
+    } else if (button == removeButton.get()) {
         auto selected = table->getSelectedRow();
-        if (selected >= 0 && selected < pluginList.getNumTypes())
-        {
+        if (selected >= 0 && selected < pluginList.getNumTypes()) {
             auto types = pluginList.getTypes();
             pluginList.removeType(types[static_cast<size_t>(selected)]);
             updateList();
@@ -318,8 +266,7 @@ void SafePluginListComponent::buttonClicked(juce::Button* button)
     }
 }
 
-void SafePluginListComponent::startScan()
-{
+void SafePluginListComponent::startScan() {
     if (scanning)
         return;
 
@@ -329,12 +276,9 @@ void SafePluginListComponent::startScan()
     scanProgress = 0.0;
     progressLabel->setText("Starting scan...", juce::dontSendNotification);
 
-    // Create scanner for VST3 format
-    for (int i = 0; i < formatManager.getNumFormats(); ++i)
-    {
+    for (int i = 0; i < formatManager.getNumFormats(); ++i) {
         auto* format = formatManager.getFormat(i);
-        if (format->getName() == "VST3")
-        {
+        if (format->getName() == "VST3") {
             auto searchPaths = format->getDefaultLocationsToSearch();
             scanner = std::make_unique<SafePluginScanner>(pluginList, *format, searchPaths, true, deadMansPedal, true);
             break;
@@ -347,8 +291,7 @@ void SafePluginListComponent::startScan()
         scanFinished();
 }
 
-void SafePluginListComponent::cancelScan()
-{
+void SafePluginListComponent::cancelScan() {
     if (!scanning)
         return;
 
@@ -357,10 +300,8 @@ void SafePluginListComponent::cancelScan()
     scanFinished();
 }
 
-void SafePluginListComponent::timerCallback()
-{
-    if (!scanner)
-    {
+void SafePluginListComponent::timerCallback() {
+    if (!scanner) {
         scanFinished();
         return;
     }
@@ -371,22 +312,19 @@ void SafePluginListComponent::timerCallback()
     scanProgress = static_cast<double>(scanner->getProgress());
     progressLabel->setText("Scanning: " + pluginName, juce::dontSendNotification);
 
-    if (!hasMore)
-    {
+    if (!hasMore) {
         scanFinished();
     }
 
     updateList();
 }
 
-void SafePluginListComponent::updateList()
-{
+void SafePluginListComponent::updateList() {
     table->updateContent();
     table->repaint();
 }
 
-void SafePluginListComponent::scanFinished()
-{
+void SafePluginListComponent::scanFinished() {
     scanning = false;
     scanner.reset();
     stopTimer();

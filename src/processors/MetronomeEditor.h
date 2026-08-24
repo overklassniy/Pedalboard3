@@ -21,20 +21,22 @@
 #ifndef METRONOMEEDITOR_H_
 #define METRONOMEEDITOR_H_
 
+#include "MetronomeControl.h"
+
 #include <JuceHeader.h>
 #include <memory>
-
-#include "MetronomeControl.h"
 
 class MetronomeProcessor;
 
 /// The full editor for MetronomeProcessor.
-class MetronomeEditor : public AudioProcessorEditor,
-                        public Timer
-{
+class MetronomeEditor : public AudioProcessorEditor, public Timer {
   public:
-    MetronomeEditor(MetronomeProcessor* processor,
-                    const Rectangle<int>& windowBounds);
+    /// Creates the full editor with the saved window bounds.
+    ///
+    /// @param processor The metronome processor to associate with this editor.
+    /// @param windowBounds The saved window bounds to restore.
+    MetronomeEditor(MetronomeProcessor* processor, const Rectangle<int>& windowBounds);
+    /// Saves the editor bounds back to the processor.
     ~MetronomeEditor() override;
 
     /// Resizes the controls to fill the window.

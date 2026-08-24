@@ -21,8 +21,7 @@
 #include <JuceHeader.h>
 
 /// ListBox model for displaying blacklisted plugins.
-class BlacklistListModel : public ListBoxModel
-{
+class BlacklistListModel : public ListBoxModel {
   public:
     BlacklistListModel() { refresh(); }
 
@@ -42,8 +41,7 @@ class BlacklistListModel : public ListBoxModel
 };
 
 /// Component for managing the plugin blacklist.
-class BlacklistComponent : public Component, public Button::Listener
-{
+class BlacklistComponent : public Component, public Button::Listener {
   public:
     BlacklistComponent();
     ~BlacklistComponent() override = default;
@@ -68,8 +66,7 @@ class BlacklistComponent : public Component, public Button::Listener
 };
 
 /// Window for managing plugin blacklist.
-class BlacklistWindow : public DocumentWindow
-{
+class BlacklistWindow : public DocumentWindow {
   public:
     BlacklistWindow();
     ~BlacklistWindow() override = default;

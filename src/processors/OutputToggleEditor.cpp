@@ -19,26 +19,22 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "OutputToggleEditor.h"
-#include "OutputToggleProcessor.h"
-#include "JuceHelperStuff.h"
+
 #include "ColourScheme.h"
+#include "JuceHelperStuff.h"
+#include "OutputToggleProcessor.h"
 #include "Vectors.h"
 
-OutputToggleControl::OutputToggleControl(OutputToggleProcessor* proc)
-    : processor(proc)
-{
-    std::unique_ptr<Drawable> im1(JuceHelperStuff::loadSVGFromMemory(Vectors::outputtoggle1_svg,
-                                                                      Vectors::outputtoggle1_svgSize));
-    std::unique_ptr<Drawable> im2(JuceHelperStuff::loadSVGFromMemory(Vectors::outputtoggle2_svg,
-                                                                      Vectors::outputtoggle2_svgSize));
+OutputToggleControl::OutputToggleControl(OutputToggleProcessor* proc) : processor(proc) {
+    std::unique_ptr<Drawable> im1(
+        JuceHelperStuff::loadSVGFromMemory(Vectors::outputtoggle1_svg, Vectors::outputtoggle1_svgSize));
+    std::unique_ptr<Drawable> im2(
+        JuceHelperStuff::loadSVGFromMemory(Vectors::outputtoggle2_svg, Vectors::outputtoggle2_svgSize));
 
-    toggleButton = std::make_unique<DrawableButton>("toggleButton",
-                                                     DrawableButton::ImageFitted);
+    toggleButton = std::make_unique<DrawableButton>("toggleButton", DrawableButton::ImageFitted);
     toggleButton->setImages(im1.get(), nullptr, nullptr, nullptr, im2.get());
-    toggleButton->setColour(DrawableButton::backgroundColourId,
-                            Colours::transparentBlack);
-    toggleButton->setColour(DrawableButton::backgroundOnColourId,
-                            Colours::transparentBlack);
+    toggleButton->setColour(DrawableButton::backgroundColourId, Colours::transparentBlack);
+    toggleButton->setColour(DrawableButton::backgroundOnColourId, Colours::transparentBlack);
     toggleButton->setClickingTogglesState(true);
     toggleButton->setTopLeftPosition(0, 0);
     toggleButton->setSize(48, 48);
@@ -50,39 +46,29 @@ OutputToggleControl::OutputToggleControl(OutputToggleProcessor* proc)
     setSize(48, 48);
 }
 
-OutputToggleControl::~OutputToggleControl()
-{
+OutputToggleControl::~OutputToggleControl() {
     removeAllChildren();
 }
 
-void OutputToggleControl::timerCallback()
-{
+void OutputToggleControl::timerCallback() {
     toggleButton->setToggleState(processor->getParameter(0) > 0.5f, false);
 }
 
-void OutputToggleControl::buttonClicked(Button* /*button*/)
-{
+void OutputToggleControl::buttonClicked(Button* /*button*/) {
     processor->setParameter(0, toggleButton->getToggleState() ? 1.0f : 0.0f);
 }
 
-OutputToggleEditor::OutputToggleEditor(AudioProcessor* processor,
-                                       const Rectangle<int>& windowBounds)
-    : AudioProcessorEditor(processor),
-      parentBounds(windowBounds),
-      setPos(false)
-{
-    std::unique_ptr<Drawable> im1(JuceHelperStuff::loadSVGFromMemory(Vectors::outputtoggle1_svg,
-                                                                      Vectors::outputtoggle1_svgSize));
-    std::unique_ptr<Drawable> im2(JuceHelperStuff::loadSVGFromMemory(Vectors::outputtoggle2_svg,
-                                                                      Vectors::outputtoggle2_svgSize));
+OutputToggleEditor::OutputToggleEditor(AudioProcessor* processor, const Rectangle<int>& windowBounds)
+    : AudioProcessorEditor(processor), parentBounds(windowBounds), setPos(false) {
+    std::unique_ptr<Drawable> im1(
+        JuceHelperStuff::loadSVGFromMemory(Vectors::outputtoggle1_svg, Vectors::outputtoggle1_svgSize));
+    std::unique_ptr<Drawable> im2(
+        JuceHelperStuff::loadSVGFromMemory(Vectors::outputtoggle2_svg, Vectors::outputtoggle2_svgSize));
 
-    toggleButton = std::make_unique<DrawableButton>("toggleButton",
-                                                     DrawableButton::ImageFitted);
+    toggleButton = std::make_unique<DrawableButton>("toggleButton", DrawableButton::ImageFitted);
     toggleButton->setImages(im1.get(), nullptr, nullptr, nullptr, im2.get());
-    toggleButton->setColour(DrawableButton::backgroundColourId,
-                            Colours::transparentBlack);
-    toggleButton->setColour(DrawableButton::backgroundOnColourId,
-                            Colours::transparentBlack);
+    toggleButton->setColour(DrawableButton::backgroundColourId, Colours::transparentBlack);
+    toggleButton->setColour(DrawableButton::backgroundOnColourId, Colours::transparentBlack);
     toggleButton->setClickingTogglesState(true);
     toggleButton->setTopLeftPosition(0, 0);
     toggleButton->setSize(48, 48);
@@ -93,10 +79,8 @@ OutputToggleEditor::OutputToggleEditor(AudioProcessor* processor,
     startTimer(60);
 }
 
-OutputToggleEditor::~OutputToggleEditor()
-{
-    if (auto* proc = dynamic_cast<OutputToggleProcessor*>(getAudioProcessor()))
-    {
+OutputToggleEditor::~OutputToggleEditor() {
+    if (auto* proc = dynamic_cast<OutputToggleProcessor*>(getAudioProcessor())) {
         if (getParentComponent())
             parentBounds = getTopLevelComponent()->getBounds();
 
@@ -107,35 +91,27 @@ OutputToggleEditor::~OutputToggleEditor()
     getAudioProcessor()->editorBeingDeleted(this);
 }
 
-void OutputToggleEditor::resized()
-{
+void OutputToggleEditor::resized() {
     toggleButton->setSize(getWidth(), getHeight());
 }
 
-void OutputToggleEditor::paint(Graphics& g)
-{
+void OutputToggleEditor::paint(Graphics& g) {
     g.fillAll(ColourScheme::getInstance().colours["Window Background"]);
 }
 
-void OutputToggleEditor::timerCallback()
-{
+void OutputToggleEditor::timerCallback() {
     toggleButton->setToggleState(getAudioProcessor()->getParameter(0) > 0.5f, false);
 
-    if (!setPos)
-    {
-        if (parentBounds.isEmpty())
-        {
+    if (!setPos) {
+        if (parentBounds.isEmpty()) {
             setPos = true;
-        }
-        else if (ComponentPeer* peer = getPeer())
-        {
+        } else if (ComponentPeer* peer = getPeer()) {
             peer->setBounds(parentBounds, false);
             setPos = true;
         }
     }
 }
 
-void OutputToggleEditor::buttonClicked(Button* /*button*/)
-{
+void OutputToggleEditor::buttonClicked(Button* /*button*/) {
     getAudioProcessor()->setParameter(0, toggleButton->getToggleState() ? 1.0f : 0.0f);
 }

@@ -22,21 +22,48 @@
 
 #include <JuceHeader.h>
 
+class TrayIcon;
+
 /// Main JUCE application class. Bootstraps the main window and audio engine.
-class Pedalboard3App : public juce::JUCEApplication
-{
+class Pedalboard3App : public juce::JUCEApplication {
   public:
+    /// Default constructor.
     Pedalboard3App() = default;
+
+    /// Destructor.
     ~Pedalboard3App() override = default;
 
+    /// Creates the properties singleton and main window at startup.
+    ///
+    /// @param commandLine The command-line arguments passed to the application (currently unused).
     void initialise(const juce::String& commandLine) override;
+
+    /// Destroys the main window and tears down all audio singletons.
     void shutdown() override;
 
+    /// Returns the application name.
     const juce::String getApplicationName() override { return "Pedalboard3"; }
+
+    /// Returns the application version string.
     const juce::String getApplicationVersion() override { return "3.0.0"; }
+
+    /// Reports whether multiple instances may run simultaneously.
     bool moreThanOneInstanceAllowed() override { return true; }
+
+    /// Called when a second instance is launched; currently unused.
+    ///
+    /// @param commandLine The command-line arguments passed to the second instance (currently unused).
     void anotherInstanceStarted(const juce::String& commandLine) override;
 
+    /// Shows or hides the system tray icon.
+    ///
+    /// @param val True to show the tray icon; false to hide it.
+    void showTrayIcon(bool val);
+
   private:
+    /// The top-level document window.
     std::unique_ptr<juce::DocumentWindow> mainWindow;
+
+    /// The optional system tray icon (not used on macOS).
+    std::unique_ptr<TrayIcon> trayIcon;
 };

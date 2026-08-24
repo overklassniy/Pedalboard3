@@ -29,34 +29,47 @@
 /// 3. startFadeIn() is called - audio fades back in over fadeMs
 ///
 /// All operations are audio-thread safe using atomics.
-class CrossfadeMixerProcessor : public AudioProcessor
-{
+class CrossfadeMixerProcessor : public AudioProcessor {
   public:
+    /// Constructs the mixer with stereo input and output buses.
     CrossfadeMixerProcessor();
     ~CrossfadeMixerProcessor() override = default;
 
     // Crossfade control (call from message thread)
 
     /// Start fading audio out. Call before clearing the graph.
+    ///
+    /// @param durationMs Fade duration in milliseconds; defaults to 100 if <= 0.
     void startFadeOut(int durationMs = 100);
 
     /// Start fading audio in. Call after loading the new patch.
+    ///
+    /// @param durationMs Fade duration in milliseconds; defaults to 100 if <= 0.
     void startFadeIn(int durationMs = 100);
 
-    /// Returns true if currently fading (out or in)
+    /// Returns true if currently fading (out or in).
     bool isFading() const { return fading.load(); }
 
-    /// Returns true if currently faded out (silent)
+    /// Returns true if currently faded out (silent).
     bool isSilent() const { return fadeGain.load() < 0.001f; }
 
-    /// Set the default fade duration (stored in settings)
+    /// Sets the default fade duration in milliseconds.
     void setDefaultFadeDuration(int ms) { defaultFadeMs = ms; }
+    /// Returns the default fade duration in milliseconds.
     int getDefaultFadeDuration() const { return defaultFadeMs; }
 
     // AudioProcessor implementation
 
+    /// Stores the sample rate for fade duration calculations.
+    ///
+    /// @param sampleRate The current sample rate in Hz.
+    /// @param samplesPerBlock The maximum number of samples per block (unused).
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override {}
+    /// Applies the current fade gain ramp to the audio buffer.
+    ///
+    /// @param buffer The audio buffer to apply the fade gain to.
+    /// @param midi The MIDI buffer (unused).
     void processBlock(AudioBuffer<float>& buffer, MidiBuffer& midi) override;
 
     // AudioProcessor boilerplate
@@ -80,10 +93,18 @@ class CrossfadeMixerProcessor : public AudioProcessor
 
   private:
     // Fade state (all atomic for audio thread safety)
+
+    /// Whether a fade is currently in progress.
     std::atomic<bool> fading{false};
-    std::atomic<bool> fadingOut{false};     // true = fading out, false = fading in
-    std::atomic<float> fadeGain{1.0f};      // Current gain (0.0 to 1.0)
-    std::atomic<float> fadeIncrement{0.0f}; // Per-sample gain change
+
+    /// Direction of the current fade: true for fade out, false for fade in.
+    std::atomic<bool> fadingOut{false};
+
+    /// Current gain applied to the output, ranging from 0.0 to 1.0.
+    std::atomic<float> fadeGain{1.0f};
+
+    /// Per-sample gain change used during the fade ramp.
+    std::atomic<float> fadeIncrement{0.0f};
 
     double currentSampleRate = 44100.0;
     int defaultFadeMs = 100;

@@ -24,7 +24,6 @@
 #include <JuceHeader.h>
 #include <atomic>
 
-
 /// SafetyLimiterProcessor
 ///
 /// Final output protection that:
@@ -33,31 +32,54 @@
 /// - Auto-mutes on DC offset (>0.5 for 500ms)
 /// - Auto-mutes on sustained ultrasonic content (>18kHz)
 /// - Requires manual unmute via Panic command
-class SafetyLimiterProcessor : public AudioProcessor
-{
+class SafetyLimiterProcessor : public AudioProcessor {
   public:
+    /// Constructs the safety limiter with stereo input and output buses.
     SafetyLimiterProcessor();
+    /// Defaulted destructor.
     ~SafetyLimiterProcessor() override = default;
 
+    /// Calculates timing thresholds and decay coefficients for the given sample rate.
+    ///
+    /// @param sampleRate The current sample rate in Hz.
+    /// @param samplesPerBlock The maximum number of samples per block (unused).
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
+    /// No resources to release.
     void releaseResources() override;
+    /// Applies soft-knee limiting, DC blocking, and auto-mute detection to the buffer.
+    ///
+    /// @param buffer The audio buffer to process in place.
+    /// @param midiMessages The MIDI buffer (unused).
     void processBlock(AudioBuffer<float>& buffer, MidiBuffer& midiMessages) override;
 
+    /// Returns the processor's display name.
     const String getName() const override { return "SafetyLimiter"; }
+    /// This processor does not accept MIDI.
     bool acceptsMidi() const override { return false; }
+    /// This processor does not produce MIDI.
     bool producesMidi() const override { return false; }
+    /// Returns the tail length in seconds (always zero).
     double getTailLengthSeconds() const override { return 0.0; }
 
+    /// Returns 1 (a single default program).
     int getNumPrograms() override { return 1; }
+    /// Returns the current program index (always 0).
     int getCurrentProgram() override { return 0; }
+    /// No-op; only one program exists.
     void setCurrentProgram(int) override {}
+    /// Returns an empty program name.
     const String getProgramName(int) override { return {}; }
+    /// No-op; program names cannot be changed.
     void changeProgramName(int, const String&) override {}
 
+    /// No state to serialize; no-op.
     void getStateInformation(MemoryBlock&) override {}
+    /// No state to restore; no-op.
     void setStateInformation(const void*, int) override {}
 
+    /// This processor has no editor.
     bool hasEditor() const override { return false; }
+    /// Returns nullptr; this processor has no editor.
     AudioProcessorEditor* createEditor() override { return nullptr; }
 
     /// Safety state queries (thread-safe).
@@ -68,8 +90,9 @@ class SafetyLimiterProcessor : public AudioProcessor
     void unmute() { muted.store(false); }
 
     /// Check if mute was triggered since last check (for toast notification).
-    bool checkAndClearMuteTriggered()
-    {
+    ///
+    /// @return True if a mute was triggered since the last call, false otherwise.
+    bool checkAndClearMuteTriggered() {
         bool expected = true;
         return muteTriggered.compare_exchange_strong(expected, false);
     }
@@ -78,42 +101,60 @@ class SafetyLimiterProcessor : public AudioProcessor
     bool isAudioActive() const { return audioActive.load(); }
 
     /// Output level metering (peak with decay, read by UI for Audio Output VU).
-    float getOutputLevel(int channel) const
-    {
+    ///
+    /// @param channel The channel index to read (0 or 1).
+    /// @return The current output peak level for the given channel.
+    float getOutputLevel(int channel) const {
         if (channel >= 0 && channel < 2)
             return outputLevels[channel].load(std::memory_order_relaxed);
         return 0.0f;
     }
 
     /// Input level metering (peak with decay, read by UI for Audio Input VU).
-    float getInputLevel(int channel) const
-    {
+    ///
+    /// @param channel The channel index to read (0 or 1).
+    /// @return The current input peak level for the given channel.
+    float getInputLevel(int channel) const {
         if (channel >= 0 && channel < 2)
             return inputLevels[channel].load(std::memory_order_relaxed);
         return 0.0f;
     }
 
     /// VU-ballistic level (300ms integration, read by UI for VU meter display).
-    float getOutputVuLevel(int channel) const
-    {
+    ///
+    /// @param channel The channel index to read (0 or 1).
+    /// @return The current output VU level for the given channel.
+    float getOutputVuLevel(int channel) const {
         if (channel >= 0 && channel < 2)
             return outputVuLevels[channel].load(std::memory_order_relaxed);
         return 0.0f;
     }
-    float getInputVuLevel(int channel) const
-    {
+    /// VU-ballistic input level (300ms integration, read by UI for VU meter display).
+    ///
+    /// @param channel The channel index to read (0 or 1).
+    /// @return The current input VU level for the given channel.
+    float getInputVuLevel(int channel) const {
         if (channel >= 0 && channel < 2)
             return inputVuLevels[channel].load(std::memory_order_relaxed);
         return 0.0f;
     }
 
     /// Called from MeteringProcessorPlayer after graph processes (RT-safe).
+    ///
+    /// @param outputData Array of per-channel output sample buffers.
+    /// @param numChannels Number of channels in the output data.
+    /// @param numSamples Number of samples per channel.
     void updateOutputLevelsFromDevice(const float* const* outputData, int numChannels, int numSamples);
     /// Called from MeteringProcessorPlayer before graph processes (RT-safe).
+    ///
+    /// @param inputData Array of per-channel input sample buffers.
+    /// @param numChannels Number of channels in the input data.
+    /// @param numSamples Number of samples per channel.
     void updateInputLevelsFromDevice(const float* const* inputData, int numChannels, int numSamples);
 
-    /// Static instance accessor for PluginComponent to read output levels.
+    /// Returns the singleton instance used by PluginComponent to read output levels.
     static SafetyLimiterProcessor* getInstance() { return instance; }
+    /// Sets the singleton instance; called from prepareToPlay.
     static void setInstance(SafetyLimiterProcessor* inst) { instance = inst; }
 
   private:

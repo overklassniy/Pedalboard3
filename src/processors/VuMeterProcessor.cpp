@@ -19,36 +19,28 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "VuMeterProcessor.h"
+
 #include "VuMeterEditor.h"
 
 #include <cmath>
 
-VuMeterProcessor::VuMeterProcessor():
-levelLeft(0.0f),
-levelRight(0.0f)
-{
+VuMeterProcessor::VuMeterProcessor() : levelLeft(0.0f), levelRight(0.0f) {
     setPlayConfigDetails(2, 0, 0, 0);
 }
 
-VuMeterProcessor::~VuMeterProcessor()
-{
+VuMeterProcessor::~VuMeterProcessor() {}
 
-}
-
-Component *VuMeterProcessor::getControls()
-{
-    VuMeterControl *retval = new VuMeterControl(this);
+Component* VuMeterProcessor::getControls() {
+    VuMeterControl* retval = new VuMeterControl(this);
 
     return retval;
 }
 
-void VuMeterProcessor::updateEditorBounds(const Rectangle<int>& bounds)
-{
+void VuMeterProcessor::updateEditorBounds(const Rectangle<int>& bounds) {
     editorBounds = bounds;
 }
 
-void VuMeterProcessor::fillInPluginDescription(PluginDescription &description) const
-{
+void VuMeterProcessor::fillInPluginDescription(PluginDescription& description) const {
     description.name = "VU Meter";
     description.descriptiveName = "Simple VU Meter.";
     description.pluginFormatName = "Internal";
@@ -61,47 +53,40 @@ void VuMeterProcessor::fillInPluginDescription(PluginDescription &description) c
     description.numOutputChannels = 0;
 }
 
-void VuMeterProcessor::processBlock(juce::AudioBuffer<float> &buffer,
-                                    juce::MidiBuffer &midiMessages)
-{
+void VuMeterProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
     int i;
-    float *dataLeft;
-    float *dataRight;
+    float* dataLeft;
+    float* dataRight;
 
     jassert(buffer.getNumChannels() > 1);
 
     dataLeft = buffer.getWritePointer(0);
     dataRight = buffer.getWritePointer(1);
 
-    for(i=0;i<buffer.getNumSamples();++i)
-    {
-        if(std::fabs(dataLeft[i]) > levelLeft)
+    for (i = 0; i < buffer.getNumSamples(); ++i) {
+        if (std::fabs(dataLeft[i]) > levelLeft)
             levelLeft = std::fabs(dataLeft[i]);
-        else if(levelLeft > 0.0f)
-        {
+        else if (levelLeft > 0.0f) {
             levelLeft -= 0.00001f;
-            if(levelLeft < 0.0f)
+            if (levelLeft < 0.0f)
                 levelLeft = 0.0f;
         }
 
-        if(std::fabs(dataRight[i]) > levelRight)
+        if (std::fabs(dataRight[i]) > levelRight)
             levelRight = std::fabs(dataRight[i]);
-        else if(levelRight > 0.0f)
-        {
+        else if (levelRight > 0.0f) {
             levelRight -= 0.00001f;
-            if(levelRight < 0.0f)
+            if (levelRight < 0.0f)
                 levelRight = 0.0f;
         }
     }
 }
 
-AudioProcessorEditor *VuMeterProcessor::createEditor()
-{
+AudioProcessorEditor* VuMeterProcessor::createEditor() {
     return new VuMeterEditor(this, editorBounds);
 }
 
-void VuMeterProcessor::getStateInformation(juce::MemoryBlock &destData)
-{
+void VuMeterProcessor::getStateInformation(juce::MemoryBlock& destData) {
     XmlElement xml("Pedalboard2VuMeterSettings");
 
     xml.setAttribute("editorX", editorBounds.getX());
@@ -112,14 +97,11 @@ void VuMeterProcessor::getStateInformation(juce::MemoryBlock &destData)
     copyXmlToBinary(xml, destData);
 }
 
-void VuMeterProcessor::setStateInformation(const void *data, int sizeInBytes)
-{
+void VuMeterProcessor::setStateInformation(const void* data, int sizeInBytes) {
     std::unique_ptr<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
 
-    if (xmlState != nullptr)
-    {
-        if (xmlState->hasTagName("Pedalboard2VuMeterSettings"))
-        {
+    if (xmlState != nullptr) {
+        if (xmlState->hasTagName("Pedalboard2VuMeterSettings")) {
             editorBounds.setX(xmlState->getIntAttribute("editorX"));
             editorBounds.setY(xmlState->getIntAttribute("editorY"));
             editorBounds.setWidth(xmlState->getIntAttribute("editorW"));

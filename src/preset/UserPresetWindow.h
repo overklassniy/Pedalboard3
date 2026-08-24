@@ -29,54 +29,51 @@
 ///
 /// Displays a tree view of plugins and their presets, with buttons to
 /// copy, remove, import, export, and rename presets.
-class UserPresetWindow : public Component,
-                         public juce::Button::Listener
-{
+class UserPresetWindow : public Component, public juce::Button::Listener {
   public:
+    /// Creates the preset window using the given known plugin list.
+    ///
+    /// @param knownPlugins The known plugin list used to populate the import plugin selector.
     UserPresetWindow(KnownPluginList* knownPlugins);
+    /// Destructor. Detaches the tree root from the TreeView.
     ~UserPresetWindow() override;
 
+    /// Paints the window background.
+    ///
+    /// @param g The graphics context to draw with.
     void paint(Graphics& g) override;
+    /// Lays out the tree view and buttons.
     void resized() override;
+    /// Handles copy, remove, import, export, and rename button clicks.
+    ///
+    /// @param buttonThatWasClicked The button that was clicked.
     void buttonClicked(Button* buttonThatWasClicked) override;
 
   private:
     /// The preset item for the TreeView.
-    class PresetItem : public TreeViewItem
-    {
+    class PresetItem : public TreeViewItem {
       public:
-        PresetItem(const File& preset) :
-            name(preset.getFileNameWithoutExtension()),
-            presetFile(preset)
-        {
-        }
+        PresetItem(const File& preset) : name(preset.getFileNameWithoutExtension()), presetFile(preset) {}
 
         ~PresetItem() override = default;
 
-        /// Returns true, obviously.
+        /// Returns false because preset items are leaf nodes.
         bool mightContainSubItems() override { return false; }
 
-        /// Draws the item.
-        void paintItem(Graphics& g, int width, int height) override
-        {
-            if (isSelected())
-            {
+        /// Draws the preset name with a selection gradient when selected.
+        ///
+        /// @param g The graphics context to draw with.
+        /// @param width The width of the item in pixels.
+        /// @param height The height of the item in pixels.
+        void paintItem(Graphics& g, int width, int height) override {
+            if (isSelected()) {
                 Colour highlight = ColourScheme::getInstance().colours["List Selected Colour"];
-                ColourGradient basil(highlight.brighter(0.4f),
-                                     0.0f,
-                                     0.0f,
-                                     highlight.darker(0.125f),
-                                     0.0f,
-                                     static_cast<float>(height),
-                                     false);
+                ColourGradient basil(highlight.brighter(0.4f), 0.0f, 0.0f, highlight.darker(0.125f), 0.0f,
+                                     static_cast<float>(height), false);
 
                 g.setGradientFill(basil);
 
-                g.fillRoundedRectangle(0.0f,
-                                       0.0f,
-                                       static_cast<float>(width) - 4.0f,
-                                       static_cast<float>(height),
-                                       4.0f);
+                g.fillRoundedRectangle(0.0f, 0.0f, static_cast<float>(width) - 4.0f, static_cast<float>(height), 4.0f);
             }
 
             g.setColour(ColourScheme::getInstance().colours["Text Colour"]);
@@ -96,28 +93,25 @@ class UserPresetWindow : public Component,
     };
 
     /// The plugin item for the TreeView.
-    class PluginItem : public TreeViewItem
-    {
+    class PluginItem : public TreeViewItem {
       public:
-        PluginItem(const File& plugin) :
-            name(plugin.getFileName()),
-            pluginDir(plugin)
-        {
+        PluginItem(const File& plugin) : name(plugin.getFileName()), pluginDir(plugin) {
             setLinesDrawnForSubItems(true);
             setOpen(true);
         }
 
         ~PluginItem() override = default;
 
-        /// Returns true, obviously.
+        /// Returns true because plugin items contain preset sub-items.
         bool mightContainSubItems() override { return true; }
 
-        /// Returns false.
+        /// Returns false because plugin items act as group headers, not selections.
         bool canBeSelected() const override { return false; }
 
-        /// Adds all the sub-items (presets in this plugin's directory).
-        void itemOpennessChanged(bool isNowOpen) override
-        {
+        /// Rebuilds sub-items by scanning for .fxp files in this plugin's directory.
+        ///
+        /// @param isNowOpen Whether the item is now open.
+        void itemOpennessChanged(bool isNowOpen) override {
             Array<File> presets;
 
             clearSubItems();
@@ -127,9 +121,12 @@ class UserPresetWindow : public Component,
                 addSubItem(new PresetItem(preset));
         }
 
-        /// Draws the item.
-        void paintItem(Graphics& g, int width, int height) override
-        {
+        /// Draws the plugin name in bold text.
+        ///
+        /// @param g The graphics context to draw with.
+        /// @param width The width of the item in pixels.
+        /// @param height The height of the item in pixels.
+        void paintItem(Graphics& g, int width, int height) override {
             g.setColour(ColourScheme::getInstance().colours["Text Colour"]);
             g.setFont(juce::FontOptions().withHeight(16.0f).withStyle("Bold"));
             g.drawText(name, 0, 0, width, height, Justification::centredLeft, false);
@@ -144,23 +141,22 @@ class UserPresetWindow : public Component,
     };
 
     /// The root item in the presetList.
-    class RootItem : public TreeViewItem
-    {
+    class RootItem : public TreeViewItem {
       public:
-        RootItem()
-        {
+        RootItem() {
             setLinesDrawnForSubItems(false);
             setOpen(true);
         }
 
         ~RootItem() override = default;
 
-        /// Returns true, obviously.
+        /// Returns true because the root contains plugin sub-items.
         bool mightContainSubItems() override { return true; }
 
-        /// Adds all the sub-items (plugin directories).
-        void itemOpennessChanged(bool isNowOpen) override
-        {
+        /// Rebuilds sub-items by scanning for plugin directories under the presets folder.
+        ///
+        /// @param isNowOpen Whether the item is now open.
+        void itemOpennessChanged(bool isNowOpen) override {
             File presetDir = File::getSpecialLocation(File::userApplicationDataDirectory)
                                  .getChildFile("Pedalboard3")
                                  .getChildFile("presets");
@@ -177,7 +173,7 @@ class UserPresetWindow : public Component,
     /// The root TreeViewItem.
     RootItem treeRoot;
 
-    /// Used by the Import... button.
+    /// Plugin list used to populate the import plugin selector.
     KnownPluginList* knownPluginList;
 
     std::unique_ptr<TreeView> presetList;

@@ -29,32 +29,47 @@ class PluginComponent;
 ///
 /// Displays a combo box with plugin presets and user-saved presets,
 /// along with import and save buttons.
-class PresetBar : public Component,
-                  public juce::Button::Listener,
-                  public juce::ComboBox::Listener
-{
+class PresetBar : public Component, public juce::Button::Listener, public juce::ComboBox::Listener {
   public:
+    /// Creates the preset bar for the given plugin component.
+    ///
+    /// @param comp The parent PluginComponent this bar belongs to.
     PresetBar(PluginComponent* comp);
+    /// Destructor.
     ~PresetBar() override;
 
-    /// So we can do things when the user clicks one of the buttons.
+    /// Handles import and save button clicks.
+    ///
+    /// @param button The button that was clicked.
     void buttonClicked(Button* button) override;
 
+    /// Paints the bar background.
+    ///
+    /// @param g The graphics context to draw with.
     void paint(Graphics& g) override;
+    /// Lays out the combo box, label, and buttons.
     void resized() override;
+    /// Handles preset selection, user preset loading, and preset renaming.
+    ///
+    /// @param comboBoxThatHasChanged The combo box whose selection changed.
     void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override;
 
   private:
-    /// Helper method. Fills out presetsComboBox correctly.
+    /// Populates the combo box with plugin presets followed by user-saved presets.
     void fillOutComboBox();
 
-    /// Helper method to load an SVG file from a binary chunk of data.
+    /// Loads an SVG drawable from a binary data chunk.
+    ///
+    /// @param dataToInitialiseFrom Pointer to the raw SVG data in memory.
+    /// @param sizeInBytes The size of the data in bytes.
+    ///
+    /// @return The loaded Drawable, or nullptr if parsing failed.
     Drawable* loadSVGFromMemory(const void* dataToInitialiseFrom, size_t sizeInBytes);
 
-    /// The 'parent' PluginComponent.
+    /// The parent PluginComponent this bar belongs to.
     PluginComponent* component;
 
-    /// Used to figure out which preset the user's just changed the name of.
+    /// Tracks the last selected combo box ID to detect preset name edits.
     int lastComboBox;
 
     std::unique_ptr<ComboBox> presetsComboBox;

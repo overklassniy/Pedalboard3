@@ -21,10 +21,10 @@
 #ifndef FILEPLAYERCONTROL_H_
 #define FILEPLAYERCONTROL_H_
 
+#include "WaveformDisplay.h"
+
 #include <JuceHeader.h>
 #include <memory>
-
-#include "WaveformDisplay.h"
 
 class FilePlayerProcessor;
 
@@ -33,27 +33,40 @@ class FilePlayerControl : public Component,
                           public FilenameComponentListener,
                           public Timer,
                           public ChangeListener,
-                          public juce::Button::Listener
-{
+                          public juce::Button::Listener {
   public:
+    /// Creates the control panel for the given file player processor.
+    ///
+    /// @param proc The file player processor to associate with this control.
     FilePlayerControl(FilePlayerProcessor* proc);
     ~FilePlayerControl() override;
 
     /// Called when the user selects a sound file.
+    ///
+    /// @param filenameComp The filename component whose selected file changed.
     void filenameComponentChanged(FilenameComponent* filenameComp) override;
     /// Called on each timer tick to update the read position.
     void timerCallback() override;
     /// Called when the waveform display or processor broadcasts a change.
+    ///
+    /// @param source The change broadcaster that triggered the callback.
     void changeListenerCallback(ChangeBroadcaster* source) override;
 
     /// Changes the waveform display background colour.
+    ///
+    /// @param col The new background colour for the waveform display.
     void setWaveformBackground(const Colour& col);
 
     /// Last directory used for file browsing.
     static File lastDir;
 
+    /// Empty paint override; the component has no custom painting.
     void paint(Graphics& g) override;
+    /// Lays out the waveform display, filename selector, and buttons.
     void resized() override;
+    /// Handles sync, loop, play/pause, and return-to-zero button clicks.
+    ///
+    /// @param buttonThatWasClicked The button that was clicked by the user.
     void buttonClicked(Button* buttonThatWasClicked) override;
 
   private:

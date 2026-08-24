@@ -19,52 +19,45 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "RecorderProcessor.h"
-#include "AudioRecorderEditor.h"
+
 #include "AudioRecorderControl.h"
+#include "AudioRecorderEditor.h"
 #include "AudioSingletons.h"
 #include "MainTransport.h"
 
-RecorderProcessor::RecorderProcessor():
-threadWriter(0),
-thumbnail(512,
-          AudioFormatManagerSingleton::getInstance(),
-          AudioThumbnailCacheSingleton::getInstance()),
-recording(false),
-stopRecording(false),
-syncToMainTransport(false),
-currentRate(44100.0)
-{
+RecorderProcessor::RecorderProcessor()
+    : threadWriter(0),
+      thumbnail(512, AudioFormatManagerSingleton::getInstance(), AudioThumbnailCacheSingleton::getInstance()),
+      recording(false), stopRecording(false), syncToMainTransport(false), currentRate(44100.0) {
     setPlayConfigDetails(2, 0, 0, 0);
 
     MainTransport::getInstance()->registerTransport(this);
 }
 
-RecorderProcessor::~RecorderProcessor()
-{
+RecorderProcessor::~RecorderProcessor() {
     removeAllChangeListeners();
     MainTransport::getInstance()->unregisterTransport(this);
 
-    if(threadWriter)
+    if (threadWriter)
         delete threadWriter;
 }
 
-void RecorderProcessor::setFile(const File& phil)
-{
+void RecorderProcessor::setFile(const File& phil) {
     WavAudioFormat wavFormat;
     StringPairArray metadata;
-    AudioFormatWriter *writer;
-    FileOutputStream *philStream;
+    AudioFormatWriter* writer;
+    FileOutputStream* philStream;
 
-    if(recording)
-    {
+    if (recording) {
         stopRecording = true;
 
-        //Wait till the end of the current audio buffer.
-        while(recording) {Thread::sleep(10);}
+        // Wait till the end of the current audio buffer.
+        while (recording) {
+            Thread::sleep(10);
+        }
     }
 
-    if(threadWriter)
-    {
+    if (threadWriter) {
         delete threadWriter;
         threadWriter = 0;
 
@@ -73,81 +66,58 @@ void RecorderProcessor::setFile(const File& phil)
 
     soundFile = phil;
 
-    //So we overwrite any previous file.
-    if(soundFile.existsAsFile())
-    {
-        if(!soundFile.deleteFile())
-        {
-            AlertWindow::showMessageBox(AlertWindow::WarningIcon,
-                                        "Could not delete existing file",
+    // So we overwrite any previous file.
+    if (soundFile.existsAsFile()) {
+        if (!soundFile.deleteFile()) {
+            AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Could not delete existing file",
                                         "Have you got the file open elsewhere? (e.g. in another File Player)");
 
             soundFile = File();
         }
     }
 
-    if(soundFile != File())
-    {
+    if (soundFile != File()) {
         philStream = new FileOutputStream(soundFile);
 
-        writer = wavFormat.createWriterFor(philStream,
-                                            currentRate,
-                                            2,
-                                            16,
-                                            metadata,
-                                            0);
-        if(!writer)
-        {
+        writer = wavFormat.createWriterFor(philStream, currentRate, 2, 16, metadata, 0);
+        if (!writer) {
             delete philStream;
             soundFile = File();
             threadWriter = 0;
-        }
-        else
-        {
-            threadWriter = new AudioFormatWriter::ThreadedWriter(writer,
-                                                                 AudioThumbnailCacheSingleton::getInstance().getTimeSliceThread(),
-                                                                 16384);
+        } else {
+            threadWriter = new AudioFormatWriter::ThreadedWriter(
+                writer, AudioThumbnailCacheSingleton::getInstance().getTimeSliceThread(), 16384);
             threadWriter->setDataReceiver(&thumbnail);
         }
     }
 }
 
-void RecorderProcessor::cacheFile(const File& phil)
-{
+void RecorderProcessor::cacheFile(const File& phil) {
     soundFile = phil;
 }
 
-Component *RecorderProcessor::getControls()
-{
-    AudioRecorderControl *retval = new AudioRecorderControl(this, thumbnail);
+Component* RecorderProcessor::getControls() {
+    AudioRecorderControl* retval = new AudioRecorderControl(this, thumbnail);
 
     return retval;
 }
 
-void RecorderProcessor::updateEditorBounds(const Rectangle<int>& bounds)
-{
+void RecorderProcessor::updateEditorBounds(const Rectangle<int>& bounds) {
     editorBounds = bounds;
 }
 
-void RecorderProcessor::changeListenerCallback(ChangeBroadcaster *source)
-{
-    if(source == MainTransport::getInstance())
-    {
-        if(syncToMainTransport)
-        {
-            //Play/pause the transport source.
-            if(MainTransport::getInstance()->getState())
-            {
-                if(!recording)
+void RecorderProcessor::changeListenerCallback(ChangeBroadcaster* source) {
+    if (source == MainTransport::getInstance()) {
+        if (syncToMainTransport) {
+            // Play/pause the transport source.
+            if (MainTransport::getInstance()->getState()) {
+                if (!recording)
                     setFile(soundFile);
 
-                if(!recording && !stopRecording && threadWriter)
+                if (!recording && !stopRecording && threadWriter)
                     recording = true;
-            }
-            else
-            {
-                if(recording)
-                {
+            } else {
+                if (recording) {
                     stopRecording = true;
 
                     setFile(File());
@@ -158,8 +128,7 @@ void RecorderProcessor::changeListenerCallback(ChangeBroadcaster *source)
     }
 }
 
-void RecorderProcessor::fillInPluginDescription(PluginDescription &description) const
-{
+void RecorderProcessor::fillInPluginDescription(PluginDescription& description) const {
     description.name = "Audio Recorder";
     description.descriptiveName = "Simple audio recorder.";
     description.pluginFormatName = "Internal";
@@ -172,129 +141,109 @@ void RecorderProcessor::fillInPluginDescription(PluginDescription &description) 
     description.numOutputChannels = 0;
 }
 
-void RecorderProcessor::processBlock(juce::AudioBuffer<float> &buffer,
-                                     juce::MidiBuffer &midiMessages)
-{
-    float *data[2];
+void RecorderProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
+    float* data[2];
 
     jassert(buffer.getNumChannels() > 1);
 
     data[0] = buffer.getWritePointer(0);
     data[1] = buffer.getWritePointer(1);
 
-    if(recording && threadWriter)
-    {
-        threadWriter->write((const float **)data, buffer.getNumSamples());
+    if (recording && threadWriter) {
+        threadWriter->write((const float**)data, buffer.getNumSamples());
 
-        if(stopRecording)
-        {
+        if (stopRecording) {
             recording = false;
             stopRecording = false;
         }
-    }
-    else if(recording)
-    {
+    } else if (recording) {
         recording = false;
         stopRecording = false;
     }
 }
 
-AudioProcessorEditor *RecorderProcessor::createEditor()
-{
+AudioProcessorEditor* RecorderProcessor::createEditor() {
     return new AudioRecorderEditor(this, editorBounds, thumbnail);
 }
 
-void RecorderProcessor::prepareToPlay(double sampleRate,
-                                      int estimatedSamplesPerBlock)
-{
+void RecorderProcessor::prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) {
     currentRate = sampleRate;
 }
 
-const String RecorderProcessor::getParameterName(int parameterIndex)
-{
+const String RecorderProcessor::getParameterName(int parameterIndex) {
     String retval;
 
-    switch(parameterIndex)
-    {
-        case Record:
-            retval = "Record";
-            break;
-        case SyncToMainTransport:
-            retval = "Sync to Main Transport";
-            break;
+    switch (parameterIndex) {
+    case Record:
+        retval = "Record";
+        break;
+    case SyncToMainTransport:
+        retval = "Sync to Main Transport";
+        break;
     }
 
     return retval;
 }
 
-float RecorderProcessor::getParameter(int parameterIndex)
-{
+float RecorderProcessor::getParameter(int parameterIndex) {
     float retval = 0.0f;
 
-    switch(parameterIndex)
-    {
-        case SyncToMainTransport:
-            retval = syncToMainTransport ? 1.0f : 0.0f;
-            break;
+    switch (parameterIndex) {
+    case SyncToMainTransport:
+        retval = syncToMainTransport ? 1.0f : 0.0f;
+        break;
     }
 
     return retval;
 }
 
-const String RecorderProcessor::getParameterText(int parameterIndex)
-{
+const String RecorderProcessor::getParameterText(int parameterIndex) {
     String retval;
 
-    switch(parameterIndex)
-    {
-        case SyncToMainTransport:
-            if(syncToMainTransport)
-                retval = "synced";
-            else
-                retval = "not synced";
-            break;
+    switch (parameterIndex) {
+    case SyncToMainTransport:
+        if (syncToMainTransport)
+            retval = "synced";
+        else
+            retval = "not synced";
+        break;
     }
 
     return retval;
 }
 
-void RecorderProcessor::setParameter(int parameterIndex, float newValue)
-{
-    switch(parameterIndex)
-    {
-        case Record:
-            if(newValue > 0.5f)
-            {
-                if(!recording)
-                    setFile(soundFile);
+void RecorderProcessor::setParameter(int parameterIndex, float newValue) {
+    switch (parameterIndex) {
+    case Record:
+        if (newValue > 0.5f) {
+            if (!recording)
+                setFile(soundFile);
 
-                if(!recording && !stopRecording && threadWriter)
-                    recording = true;
-                else if(recording)
-                {
-                    stopRecording = true;
+            if (!recording && !stopRecording && threadWriter)
+                recording = true;
+            else if (recording) {
+                stopRecording = true;
 
-                    //Saves the file to disk.
-                    setFile(File());
+                // Saves the file to disk.
+                setFile(File());
 
-                    if(syncToMainTransport)
-                        MainTransport::getInstance()->transportFinished();
-                }
-                sendChangeMessage();
+                if (syncToMainTransport)
+                    MainTransport::getInstance()->transportFinished();
             }
-            break;
-        case SyncToMainTransport:
-            if(newValue > 0.5f)
-                syncToMainTransport = true;
-            else
-                syncToMainTransport = false;
             sendChangeMessage();
-            break;
+        }
+        break;
+    case SyncToMainTransport:
+        if (newValue > 0.5f)
+            syncToMainTransport = true;
+        else
+            syncToMainTransport = false;
+        sendChangeMessage();
+        break;
     }
 }
 
-void RecorderProcessor::getStateInformation(juce::MemoryBlock &destData)
-{
+void RecorderProcessor::getStateInformation(juce::MemoryBlock& destData) {
     XmlElement xml("Pedalboard2RecorderSettings");
 
     xml.setAttribute("editorX", editorBounds.getX());
@@ -308,14 +257,11 @@ void RecorderProcessor::getStateInformation(juce::MemoryBlock &destData)
     copyXmlToBinary(xml, destData);
 }
 
-void RecorderProcessor::setStateInformation(const void *data, int sizeInBytes)
-{
+void RecorderProcessor::setStateInformation(const void* data, int sizeInBytes) {
     std::unique_ptr<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
 
-    if (xmlState != nullptr)
-    {
-        if (xmlState->hasTagName("Pedalboard2RecorderSettings"))
-        {
+    if (xmlState != nullptr) {
+        if (xmlState->hasTagName("Pedalboard2RecorderSettings")) {
             editorBounds.setX(xmlState->getIntAttribute("editorX"));
             editorBounds.setY(xmlState->getIntAttribute("editorY"));
             editorBounds.setWidth(xmlState->getIntAttribute("editorW"));

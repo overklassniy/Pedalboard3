@@ -20,10 +20,10 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "InternalFilters.h"
+
 #include "OscMappingManager.h"
 
-InternalPluginFormat::InternalPluginFormat()
-{
+InternalPluginFormat::InternalPluginFormat() {
     {
         AudioProcessorGraph::AudioGraphIOProcessor p(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
         p.fillInPluginDescription(audioOutDesc);
@@ -48,21 +48,21 @@ InternalPluginFormat::InternalPluginFormat()
     // when the built-in processors are ported.
 }
 
-void InternalPluginFormat::createPluginInstance(const PluginDescription& desc,
-                                                double initialSampleRate,
-                                                int initialBufferSize,
-                                                PluginCreationCallback callback)
-{
+void InternalPluginFormat::createPluginInstance(const PluginDescription& desc, double initialSampleRate,
+                                                int initialBufferSize, PluginCreationCallback callback) {
     juce::ignoreUnused(initialSampleRate, initialBufferSize);
 
     std::unique_ptr<AudioPluginInstance> instance;
 
     if (desc.name == audioOutDesc.name)
-        instance = std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
+        instance = std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(
+            AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
     else if (desc.name == audioInDesc.name)
-        instance = std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
+        instance = std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(
+            AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
     else if (desc.name == midiInDesc.name)
-        instance = std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(AudioProcessorGraph::AudioGraphIOProcessor::midiInputNode);
+        instance = std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(
+            AudioProcessorGraph::AudioGraphIOProcessor::midiInputNode);
     else if (desc.name == oscInputDesc.name)
         instance = std::make_unique<OscInput>();
 
@@ -72,10 +72,8 @@ void InternalPluginFormat::createPluginInstance(const PluginDescription& desc,
     callback(std::move(instance), error);
 }
 
-const PluginDescription* InternalPluginFormat::getDescriptionFor(const InternalFilterType type)
-{
-    switch (type)
-    {
+const PluginDescription* InternalPluginFormat::getDescriptionFor(const InternalFilterType type) {
+    switch (type) {
     case audioInputFilter:
         return &audioInDesc;
     case audioOutputFilter:
@@ -89,8 +87,7 @@ const PluginDescription* InternalPluginFormat::getDescriptionFor(const InternalF
     }
 }
 
-void InternalPluginFormat::getAllTypes(OwnedArray<PluginDescription>& results)
-{
+void InternalPluginFormat::getAllTypes(OwnedArray<PluginDescription>& results) {
     for (int i = 0; i < static_cast<int>(endOfFilterTypes); ++i)
         results.add(new PluginDescription(*getDescriptionFor(static_cast<InternalFilterType>(i))));
 }

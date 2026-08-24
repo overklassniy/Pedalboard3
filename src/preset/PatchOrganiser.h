@@ -29,37 +29,66 @@ class MainPanel;
 ///
 /// Displays a list of patches with buttons to add, copy, remove, reorder,
 /// and import patches. Patch names can be edited by double-clicking.
-class PatchOrganiser : public Component,
-                       public ListBoxModel,
-                       public Label::Listener,
-                       public juce::Button::Listener
-{
+class PatchOrganiser : public Component, public ListBoxModel, public Label::Listener, public juce::Button::Listener {
   public:
+    /// Creates the patch organiser linked to the given MainPanel and patch array.
+    ///
+    /// @param panel The MainPanel that owns this organiser.
+    /// @param patchArray The shared patch array owned by MainPanel.
     PatchOrganiser(MainPanel* panel, Array<XmlElement*>& patchArray);
+    /// Destructor.
     ~PatchOrganiser() override;
 
-    /// Returns the number of active mappings.
+    /// Returns the number of patches in the list.
+    ///
+    /// @return The number of patches.
     int getNumRows() override;
-    /// Draws a row.
+    /// Draws the background for a list row when it is selected or alternating.
+    ///
+    /// @param rowNumber The index of the row to paint.
+    /// @param g The graphics context to draw with.
+    /// @param width The width of the row in pixels.
+    /// @param height The height of the row in pixels.
+    /// @param rowIsSelected Whether the row is currently selected.
     void paintListBoxItem(int rowNumber, Graphics& g, int width, int height, bool rowIsSelected) override;
-    /// Returns the component for a single row.
+    /// Returns the editable label component for a single row, reusing existing ones.
+    ///
+    /// @param rowNumber The index of the row to refresh.
+    /// @param isRowSelected Whether the row is currently selected.
+    /// @param existingComponentToUpdate The existing component to reuse or delete.
+    ///
+    /// @return The label component for the row, or nullptr if the row is out of range.
     Component* refreshComponentForRow(int rowNumber, bool isRowSelected, Component* existingComponentToUpdate) override;
-    /// So the user can select rows.
+    /// Handles row selection and double-click to edit patch names.
+    ///
+    /// @param row The index of the clicked row.
+    /// @param e The mouse event details.
     void listBoxItemClicked(int row, const MouseEvent& e) override;
-    /// So the user can deselect rows.
+    /// Deselects all rows when the background is clicked.
+    ///
+    /// @param e The mouse event details.
     void backgroundClicked(const MouseEvent& e) override;
 
     /// Called when the user changes a patch name by editing the label.
+    ///
+    /// @param labelThatHasChanged The label whose text was changed.
     void labelTextChanged(Label* labelThatHasChanged) override;
 
+    /// Paints the component background.
+    ///
+    /// @param g The graphics context to draw with.
     void paint(Graphics& g) override;
+    /// Lays out the list box and buttons.
     void resized() override;
+    /// Handles add, copy, remove, move, and import button clicks.
+    ///
+    /// @param buttonThatWasClicked The button that was clicked.
     void buttonClicked(Button* buttonThatWasClicked) override;
 
   private:
-    /// The MainPanel.
+    /// The MainPanel that owns this organiser.
     MainPanel* mainPanel;
-    /// Our copy of the available patches.
+    /// Reference to the shared patch array owned by MainPanel.
     Array<XmlElement*>& patches;
 
     std::unique_ptr<ListBox> patchList;

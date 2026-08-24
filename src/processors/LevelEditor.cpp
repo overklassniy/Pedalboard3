@@ -19,12 +19,11 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "LevelEditor.h"
-#include "LevelProcessor.h"
-#include "ColourScheme.h"
 
-LevelControl::LevelControl(LevelProcessor* proc)
-    : processor(proc)
-{
+#include "ColourScheme.h"
+#include "LevelProcessor.h"
+
+LevelControl::LevelControl(LevelProcessor* proc) : processor(proc) {
     slider = std::make_unique<Slider>();
     addAndMakeVisible(*slider);
 
@@ -36,35 +35,27 @@ LevelControl::LevelControl(LevelProcessor* proc)
     slider->addListener(this);
     slider->setTopLeftPosition(0, 0);
     slider->setSize(64, 64);
-    slider->setColour(Slider::rotarySliderFillColourId,
-                      ColourScheme::getInstance().colours["Level Dial Colour"]);
+    slider->setColour(Slider::rotarySliderFillColourId, ColourScheme::getInstance().colours["Level Dial Colour"]);
 
     startTimer(60);
 
     setSize(64, 64);
 }
 
-LevelControl::~LevelControl()
-{
+LevelControl::~LevelControl() {
     removeAllChildren();
 }
 
-void LevelControl::timerCallback()
-{
+void LevelControl::timerCallback() {
     slider->setValue(processor->getParameter(0) * 2.0f);
 }
 
-void LevelControl::sliderValueChanged(Slider* /*slider*/)
-{
+void LevelControl::sliderValueChanged(Slider* /*slider*/) {
     processor->setParameter(0, static_cast<float>(slider->getValue()) * 0.5f);
 }
 
-LevelEditor::LevelEditor(AudioProcessor* processor,
-                         const Rectangle<int>& windowBounds)
-    : AudioProcessorEditor(processor),
-      parentBounds(windowBounds),
-      setPos(false)
-{
+LevelEditor::LevelEditor(AudioProcessor* processor, const Rectangle<int>& windowBounds)
+    : AudioProcessorEditor(processor), parentBounds(windowBounds), setPos(false) {
     slider = std::make_unique<Slider>();
     addAndMakeVisible(*slider);
 
@@ -76,17 +67,14 @@ LevelEditor::LevelEditor(AudioProcessor* processor,
     slider->addListener(this);
     slider->setTopLeftPosition(0, 0);
     slider->setSize(192, 192);
-    slider->setColour(Slider::rotarySliderFillColourId,
-                      ColourScheme::getInstance().colours["Level Dial Colour"]);
+    slider->setColour(Slider::rotarySliderFillColourId, ColourScheme::getInstance().colours["Level Dial Colour"]);
 
     setSize(192, 192);
     startTimer(60);
 }
 
-LevelEditor::~LevelEditor()
-{
-    if (auto* proc = dynamic_cast<LevelProcessor*>(getAudioProcessor()))
-    {
+LevelEditor::~LevelEditor() {
+    if (auto* proc = dynamic_cast<LevelProcessor*>(getAudioProcessor())) {
         if (getParentComponent())
             parentBounds = getTopLevelComponent()->getBounds();
 
@@ -97,50 +85,39 @@ LevelEditor::~LevelEditor()
     getAudioProcessor()->editorBeingDeleted(this);
 }
 
-void LevelEditor::resized()
-{
+void LevelEditor::resized() {
     const int h = getHeight();
     const int deskH = static_cast<int>(static_cast<float>(getParentMonitorArea().getHeight()) / 1.5f);
 
     slider->setSize(getWidth(), h);
 
-    if (h > 250)
-    {
+    if (h > 250) {
         if (h < deskH)
             slider->setMouseDragSensitivity(h);
         else
             slider->setMouseDragSensitivity(deskH);
-    }
-    else
-    {
+    } else {
         slider->setMouseDragSensitivity(250);
     }
 }
 
-void LevelEditor::paint(Graphics& g)
-{
+void LevelEditor::paint(Graphics& g) {
     g.fillAll(ColourScheme::getInstance().colours["Window Background"]);
 }
 
-void LevelEditor::timerCallback()
-{
+void LevelEditor::timerCallback() {
     slider->setValue(getAudioProcessor()->getParameter(0) * 2.0f);
 
-    if (!setPos)
-    {
-        if (parentBounds.isEmpty())
-        {
+    if (!setPos) {
+        if (parentBounds.isEmpty()) {
             setPos = true;
-        }
-        else if (ComponentPeer* peer = getPeer())
-        {
+        } else if (ComponentPeer* peer = getPeer()) {
             peer->setBounds(parentBounds, false);
             setPos = true;
         }
     }
 }
 
-void LevelEditor::sliderValueChanged(Slider* /*slider*/)
-{
+void LevelEditor::sliderValueChanged(Slider* /*slider*/) {
     getAudioProcessor()->setParameter(0, static_cast<float>(slider->getValue()) * 0.5f);
 }

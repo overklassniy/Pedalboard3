@@ -26,35 +26,54 @@
 class MappingsDialog;
 
 /// A single row in the MappingsDialog representing an OSC mapping.
-class MappingEntryOsc : public Component,
-                        public juce::ComboBox::Listener,
-                        public juce::Slider::Listener
-{
-public:
-    MappingEntryOsc(MappingsDialog* dlg, int arrayIndex, const String& oscAddress,
-                    int oscParam, const StringArray& possibleAddresses);
+class MappingEntryOsc : public Component, public juce::ComboBox::Listener, public juce::Slider::Listener {
+  public:
+    /// Creates an OSC mapping entry row.
+    ///
+    /// @param dlg The parent MappingsDialog.
+    /// @param arrayIndex The row's position in the mappings array.
+    /// @param oscAddress The initial OSC address.
+    /// @param oscParam The initial OSC parameter index.
+    /// @param possibleAddresses Populates the address combo box with
+    ///        previously received addresses.
+    MappingEntryOsc(MappingsDialog* dlg, int arrayIndex, const String& oscAddress, int oscParam,
+                    const StringArray& possibleAddresses);
     ~MappingEntryOsc() override;
 
-    /// Used to update the mapping's OSC address.
+    /// Updates the mapping's OSC address when the text changes.
+    ///
+    /// @param editor The text editor whose text changed.
     void textEditorTextChanged(TextEditor& editor);
-    /// Used to update the mapping's OSC address.
+    /// Updates the mapping's OSC address when the user presses Return.
+    ///
+    /// @param editor The text editor in which Return was pressed.
     void textEditorReturnKeyPressed(TextEditor& editor);
-    /// Used to revert any changes the user made.
+    /// Reverts any address changes the user made when Escape is pressed.
+    ///
+    /// @param editor The text editor in which Escape was pressed.
     void textEditorEscapeKeyPressed(TextEditor& editor);
-    /// Used to update the mapping's OSC address.
+    /// Updates the mapping's OSC address when the editor loses focus.
+    ///
+    /// @param editor The text editor that lost focus.
     void textEditorFocusLost(TextEditor& editor);
 
-    /// Fills out the parameter combo box.
+    /// Adds a parameter name to the parameter combo box.
+    ///
+    /// @param param The parameter name to add.
     void addParameter(const String& param);
-    /// Selects the currently-selected parameter in the combo box.
+    /// Selects the parameter at the given index in the combo box.
+    ///
+    /// @param index The zero-based index of the parameter to select.
     void selectParameter(int index);
 
     void paint(Graphics& g) override;
     void resized() override;
+    /// Forwards parameter or address changes to the parent dialog.
     void comboBoxChanged(ComboBox* comboBoxThatHasChanged) override;
+    /// Forwards OSC parameter index changes to the parent dialog.
     void sliderValueChanged(Slider* sliderThatWasMoved) override;
 
-private:
+  private:
     /// The MappingsDialog which holds the mappings array for this plugin.
     MappingsDialog* mappingsDialog;
     /// The index of the mapping within its parent's Array.

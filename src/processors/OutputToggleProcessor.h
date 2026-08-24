@@ -24,24 +24,32 @@
 #include "PedalboardProcessor.h"
 
 /// Simple processor which lets you toggle between outputs.
-class OutputToggleProcessor : public PedalboardProcessor
-{
+class OutputToggleProcessor : public PedalboardProcessor {
   public:
     OutputToggleProcessor();
     ~OutputToggleProcessor() override;
 
     /// Returns the component which is added to the instance's PluginComponent.
+    ///
+    /// @return A new OutputToggleControl component; deleted by the caller.
     Component* getControls();
     /// Returns the size of the controls component.
     Point<int> getSize() override { return Point<int>(48, 48); }
 
     /// Updates the bounds of our editor window.
+    ///
+    /// @param bounds The new editor window bounds to store.
     void updateEditorBounds(const Rectangle<int>& bounds);
 
     /// Provides a description of the processor to the filter graph.
+    ///
+    /// @param description The plugin description to fill in.
     void fillInPluginDescription(PluginDescription& description) const override;
 
     /// Alters the input audio's level accordingly.
+    ///
+    /// @param buffer The audio buffer to crossfade between the two outputs.
+    /// @param midiMessages The MIDI buffer (unused).
     void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) override;
 
     /// Returns the name of the processor.
@@ -52,22 +60,31 @@ class OutputToggleProcessor : public PedalboardProcessor
     void releaseResources() override {}
     /// Returns the length of the plugin's tail.
     double getTailLengthSeconds() const override { return 0.0; }
-    /// We definitely want Midi input.
+    /// Does not accept MIDI input.
     bool acceptsMidi() const override { return false; }
-    /// But we don't need to output it.
+    /// Does not produce MIDI output.
     bool producesMidi() const override { return false; }
-    /// We have no editor.
+    /// Creates the full editor window.
     AudioProcessorEditor* createEditor() override;
-    /// We have no editor.
+    /// Returns true; a full editor is available.
     bool hasEditor() const override { return true; }
 
-    // JUCE 8: deprecated parameter methods kept as regular methods for
-    // internal use by control components.
+    /// JUCE 8: deprecated parameter methods kept as regular methods for
+    /// internal use by control components.
     /// Returns the parameter value (0-1 normalized).
+    ///
+    /// @param parameterIndex The index of the parameter (unused; only parameter 0 exists).
+    /// @return 1.0f if toggled on, 0.0f if toggled off.
     float getParameter(int parameterIndex) { return toggle ? 1.0f : 0.0f; }
     /// Sets the parameter value (0-1 normalized).
+    ///
+    /// @param parameterIndex The index of the parameter (unused; only parameter 0 exists).
+    /// @param newValue The new toggle state; values above 0.5 set toggle on.
     void setParameter(int parameterIndex, float newValue);
     /// Returns the parameter's value as a string.
+    ///
+    /// @param parameterIndex The index of the parameter (unused; only parameter 0 exists).
+    /// @return "Output 1" if toggled on, "Output 2" if toggled off.
     const String getParameterText(int parameterIndex);
 
     /// We have no programs.
@@ -81,8 +98,13 @@ class OutputToggleProcessor : public PedalboardProcessor
     /// We have no programs.
     void changeProgramName(int index, const String& newName) override {}
     /// Loads the position of the slider and the size and position of the editor.
+    ///
+    /// @param destData The memory block to serialize state into.
     void getStateInformation(juce::MemoryBlock& destData) override;
     /// Saves the position of the slider and the size and position of the editor.
+    ///
+    /// @param data Pointer to the serialized state data.
+    /// @param sizeInBytes Size of the serialized state data in bytes.
     void setStateInformation(const void* data, int sizeInBytes) override;
 
   private:

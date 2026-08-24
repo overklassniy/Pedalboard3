@@ -25,135 +25,192 @@
 #include <JuceHeader.h>
 
 /// LookAndFeel class implementing custom buttons, scrollbars, menus, and other widgets.
-class BranchesLAF : public juce::LookAndFeel
-{
+class BranchesLAF : public juce::LookAndFeel {
   public:
+    /// Configures the widget colours from the current ColourScheme.
     BranchesLAF();
     ~BranchesLAF() override;
 
     /// Draws the button background.
-    void drawButtonBackground(juce::Graphics &g,
-                              juce::Button &button,
-                              const juce::Colour &backgroundColour,
-                              bool shouldDrawButtonAsHighlighted,
-                              bool shouldDrawButtonAsDown) override;
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param button The button being drawn.
+    /// @param backgroundColour The base background colour for the button.
+    /// @param shouldDrawButtonAsHighlighted Whether the button should be drawn in its highlighted state.
+    /// @param shouldDrawButtonAsDown Whether the button should be drawn in its pressed-down state.
+    void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
+                              bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
     /// Draws button text.
-    void drawButtonText(juce::Graphics &g,
-                        juce::TextButton &button,
-                        bool shouldDrawButtonAsHighlighted,
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param button The text button being drawn.
+    /// @param shouldDrawButtonAsHighlighted Whether the button should be drawn in its highlighted state.
+    /// @param shouldDrawButtonAsDown Whether the button should be drawn in its pressed-down state.
+    void drawButtonText(juce::Graphics& g, juce::TextButton& button, bool shouldDrawButtonAsHighlighted,
                         bool shouldDrawButtonAsDown) override;
 
     /// Draws the scrollbar buttons.
-    void drawScrollbarButton(juce::Graphics &g,
-                             juce::ScrollBar &scrollbar,
-                             int width,
-                             int height,
-                             int buttonDirection,
-                             bool isScrollbarVertical,
-                             bool isMouseOverButton,
-                             bool isButtonDown) override;
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param scrollbar The scrollbar the button belongs to.
+    /// @param width The width of the button.
+    /// @param height The height of the button.
+    /// @param buttonDirection The direction of the button (0=up, 1=right, 2=down, 3=left).
+    /// @param isScrollbarVertical Whether the scrollbar is oriented vertically.
+    /// @param isMouseOverButton Whether the mouse is over the button.
+    /// @param isButtonDown Whether the button is currently pressed.
+    void drawScrollbarButton(juce::Graphics& g, juce::ScrollBar& scrollbar, int width, int height, int buttonDirection,
+                             bool isScrollbarVertical, bool isMouseOverButton, bool isButtonDown) override;
     /// Draws the scrollbar.
-    void drawScrollbar(juce::Graphics &g,
-                       juce::ScrollBar &scrollbar,
-                       int x,
-                       int y,
-                       int width,
-                       int height,
-                       bool isScrollbarVertical,
-                       int thumbStartPosition,
-                       int thumbSize,
-                       bool isMouseOver,
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param scrollbar The scrollbar being drawn.
+    /// @param x The x position of the scrollbar.
+    /// @param y The y position of the scrollbar.
+    /// @param width The width of the scrollbar.
+    /// @param height The height of the scrollbar.
+    /// @param isScrollbarVertical Whether the scrollbar is oriented vertically.
+    /// @param thumbStartPosition The start position of the scrollbar thumb.
+    /// @param thumbSize The size of the scrollbar thumb.
+    /// @param isMouseOver Whether the mouse is over the scrollbar.
+    /// @param isMouseDown Whether the mouse button is currently pressed.
+    void drawScrollbar(juce::Graphics& g, juce::ScrollBar& scrollbar, int x, int y, int width, int height,
+                       bool isScrollbarVertical, int thumbStartPosition, int thumbSize, bool isMouseOver,
                        bool isMouseDown) override;
 
     /// Draws the menubar background.
-    void drawMenuBarBackground(juce::Graphics &g,
-                               int width,
-                               int height,
-                               bool isMouseOverBar,
-                               juce::MenuBarComponent &menuBar) override;
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param width The width of the menubar.
+    /// @param height The height of the menubar.
+    /// @param isMouseOverBar Whether the mouse is over the menubar.
+    /// @param menuBar The menubar component being drawn.
+    void drawMenuBarBackground(juce::Graphics& g, int width, int height, bool isMouseOverBar,
+                               juce::MenuBarComponent& menuBar) override;
     /// Returns the menubar font.
-    juce::Font getMenuBarFont(juce::MenuBarComponent &menuBar,
-                              int itemIndex,
-                              const juce::String &itemText) override;
+    ///
+    /// @param menuBar The menubar component.
+    /// @param itemIndex The index of the menu item.
+    /// @param itemText The text of the menu item.
+    /// @return The font to use for the menubar item.
+    juce::Font getMenuBarFont(juce::MenuBarComponent& menuBar, int itemIndex, const juce::String& itemText) override;
     /// Draws the menubar items.
-    void drawMenuBarItem(juce::Graphics &g,
-                         int width,
-                         int height,
-                         int itemIndex,
-                         const juce::String &itemText,
-                         bool isMouseOverItem,
-                         bool isMenuOpen,
-                         bool isMouseOverBar,
-                         juce::MenuBarComponent &menuBar) override;
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param width The width of the item.
+    /// @param height The height of the item.
+    /// @param itemIndex The index of the menu item.
+    /// @param itemText The text of the menu item.
+    /// @param isMouseOverItem Whether the mouse is over the item.
+    /// @param isMenuOpen Whether the item's menu is open.
+    /// @param isMouseOverBar Whether the mouse is over the menubar.
+    /// @param menuBar The menubar component being drawn.
+    void drawMenuBarItem(juce::Graphics& g, int width, int height, int itemIndex, const juce::String& itemText,
+                         bool isMouseOverItem, bool isMenuOpen, bool isMouseOverBar,
+                         juce::MenuBarComponent& menuBar) override;
     /// The width of a menubar item.
-    int getMenuBarItemWidth(juce::MenuBarComponent &menuBar,
-                            int itemIndex,
-                            const juce::String &itemText) override;
+    ///
+    /// @param menuBar The menubar component.
+    /// @param itemIndex The index of the menu item.
+    /// @param itemText The text of the menu item.
+    /// @return The width in pixels of the menubar item.
+    int getMenuBarItemWidth(juce::MenuBarComponent& menuBar, int itemIndex, const juce::String& itemText) override;
     /// Returns the popup menu font.
-    juce::Font getPopupMenuFont() override
-    {
-        return juce::Font(juce::FontOptions().withHeight(15.0f));
-    }
+    juce::Font getPopupMenuFont() override { return juce::Font(juce::FontOptions().withHeight(15.0f)); }
     /// Draws the popup menu background.
-    void drawPopupMenuBackground(juce::Graphics &g, int width, int height) override;
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param width The width of the popup menu.
+    /// @param height The height of the popup menu.
+    void drawPopupMenuBackground(juce::Graphics& g, int width, int height) override;
     /// Cancels menus' drop shadow.
     int getMenuWindowFlags() override { return 0; }
 
     /// Returns the image of a folder for the file chooser.
-    const juce::Drawable *getDefaultFolderImage() override;
+    ///
+    /// @return A drawable folder image used by the file chooser.
+    const juce::Drawable* getDefaultFolderImage() override;
     /// Draws a combobox (used in the file chooser).
-    void drawComboBox(juce::Graphics &g,
-                      int width,
-                      int height,
-                      bool isButtonDown,
-                      int buttonX,
-                      int buttonY,
-                      int buttonW,
-                      int buttonH,
-                      juce::ComboBox &box) override;
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param width The width of the combobox.
+    /// @param height The height of the combobox.
+    /// @param isButtonDown Whether the combobox button is pressed.
+    /// @param buttonX The x position of the dropdown button.
+    /// @param buttonY The y position of the dropdown button.
+    /// @param buttonW The width of the dropdown button.
+    /// @param buttonH The height of the dropdown button.
+    /// @param box The combobox being drawn.
+    void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown, int buttonX, int buttonY,
+                      int buttonW, int buttonH, juce::ComboBox& box) override;
 
     /// Draws the ProgressBar.
-    void drawProgressBar(juce::Graphics &g,
-                         juce::ProgressBar &progressBar,
-                         int width,
-                         int height,
-                         double progress,
-                         const juce::String &textToShow) override;
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param progressBar The progress bar being drawn.
+    /// @param width The width of the progress bar.
+    /// @param height The height of the progress bar.
+    /// @param progress The current progress value (0.0 to 1.0).
+    /// @param textToShow The text to display on the progress bar.
+    void drawProgressBar(juce::Graphics& g, juce::ProgressBar& progressBar, int width, int height, double progress,
+                         const juce::String& textToShow) override;
 
     /// Draws the KeymapChange button.
-    void drawKeymapChangeButton(juce::Graphics &g,
-                                int width,
-                                int height,
-                                juce::Button &button,
-                                const juce::String &keyDescription) override;
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param width The width of the button.
+    /// @param height The height of the button.
+    /// @param button The button being drawn.
+    /// @param keyDescription The text describing the assigned key, or empty if no key is assigned.
+    void drawKeymapChangeButton(juce::Graphics& g, int width, int height, juce::Button& button,
+                                const juce::String& keyDescription) override;
 
     /// Draws a Label.
-    void drawLabel(juce::Graphics &g, juce::Label &label) override;
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param label The label being drawn.
+    void drawLabel(juce::Graphics& g, juce::Label& label) override;
 
     /// Draws a ToggleButton.
-    void drawToggleButton(juce::Graphics &g,
-                          juce::ToggleButton &button,
-                          bool shouldDrawButtonAsHighlighted,
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param button The toggle button being drawn.
+    /// @param shouldDrawButtonAsHighlighted Whether the button should be drawn in its highlighted state.
+    /// @param shouldDrawButtonAsDown Whether the button should be drawn in its pressed-down state.
+    void drawToggleButton(juce::Graphics& g, juce::ToggleButton& button, bool shouldDrawButtonAsHighlighted,
                           bool shouldDrawButtonAsDown) override;
 
     /// Draws a tick box.
-    void drawTickBox(juce::Graphics &g,
-                     juce::Component &component,
-                     float x, float y, float w, float h,
-                     bool ticked,
-                     bool isEnabled,
-                     bool shouldDrawButtonAsHighlighted,
-                     bool shouldDrawButtonAsDown) override;
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param component The component the tick box belongs to.
+    /// @param x The x position of the tick box.
+    /// @param y The y position of the tick box.
+    /// @param w The width of the tick box.
+    /// @param h The height of the tick box.
+    /// @param ticked Whether the tick box is checked.
+    /// @param isEnabled Whether the tick box is enabled.
+    /// @param shouldDrawButtonAsHighlighted Whether the tick box should be drawn in its highlighted state.
+    /// @param shouldDrawButtonAsDown Whether the tick box should be drawn in its pressed-down state.
+    void drawTickBox(juce::Graphics& g, juce::Component& component, float x, float y, float w, float h, bool ticked,
+                     bool isEnabled, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 
     /// Fills in the TextEditor background.
-    void fillTextEditorBackground(juce::Graphics &g, int width, int height,
-                                  juce::TextEditor &textEditor) override;
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param width The width of the text editor (unused).
+    /// @param height The height of the text editor (unused).
+    /// @param textEditor The text editor being drawn.
+    void fillTextEditorBackground(juce::Graphics& g, int width, int height, juce::TextEditor& textEditor) override;
 
     /// Draws the callout box background.
-    void drawCallOutBoxBackground(juce::CallOutBox &box,
-                                  juce::Graphics &g,
-                                  const juce::Path &path,
-                                  juce::Image &cachedImage) override;
+    ///
+    /// @param box The callout box being drawn.
+    /// @param g The graphics context to draw with.
+    /// @param path The path of the callout box shape.
+    /// @param cachedImage The cached image to draw into.
+    void drawCallOutBoxBackground(juce::CallOutBox& box, juce::Graphics& g, const juce::Path& path,
+                                  juce::Image& cachedImage) override;
 };
 
 #endif

@@ -31,21 +31,39 @@ class MetronomeControl : public Component,
                          public FilenameComponentListener,
                          public ChangeListener,
                          public juce::Button::Listener,
-                         public juce::Label::Listener
-{
+                         public juce::Label::Listener {
   public:
-    /// @param editors If false, the file selectors are hidden for use on the plugin surface.
+    /// Creates the metronome control.
+    ///
+    /// When editors is false the file selectors are hidden, for use on the
+    /// plugin surface rather than in the full editor window.
+    ///
+    /// @param proc The metronome processor to associate with this control.
+    /// @param editors Whether to show the file selector controls.
     MetronomeControl(MetronomeProcessor* proc, bool editors);
+    /// Removes change listeners and child components.
     ~MetronomeControl() override;
 
     /// Called when the user selects an accent or click sound file.
+    ///
+    /// @param fileComponentThatHasChanged The filename component whose selected file changed.
     void filenameComponentChanged(FilenameComponent* fileComponentThatHasChanged) override;
     /// Called when the processor broadcasts a change.
+    ///
+    /// @param source The change broadcaster that triggered the callback.
     void changeListenerCallback(ChangeBroadcaster* source) override;
 
+    /// Empty paint override.
     void paint(Graphics& g) override;
+    /// Lays out the buttons, file selectors and time signature labels.
     void resized() override;
+    /// Handles sync and play/pause button clicks.
+    ///
+    /// @param buttonThatWasClicked The button that was clicked by the user.
     void buttonClicked(Button* buttonThatWasClicked) override;
+    /// Updates the time signature numerator or denominator.
+    ///
+    /// @param labelThatHasChanged The label whose text was edited.
     void labelTextChanged(Label* labelThatHasChanged) override;
 
   private:

@@ -18,26 +18,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+#include "MappingsDialog.h"
+
+#include "BypassableInstance.h"
+#include "ColourScheme.h"
+#include "Mapping.h"
 #include "MappingEntryMidi.h"
 #include "MappingEntryOsc.h"
 #include "MidiMappingManager.h"
 #include "OscMappingManager.h"
-#include "Mapping.h"
 #include "PluginField.h"
-#include "ColourScheme.h"
-#include "BypassableInstance.h"
-#include "MappingsDialog.h"
 
 MappingsDialog::MappingsDialog(MidiMappingManager* manager, OscMappingManager* manager2,
-                               AudioProcessorGraph::Node::Ptr  plugin, Array<Mapping*> maps,
-                               PluginField* field)
-    : midiManager(manager)
-    , oscManager(manager2)
-    , pluginNode(plugin)
-    , mappings(maps)
-    , pluginField(field)
-    , midiLearnIndex(-1)
-{
+                               AudioProcessorGraph::Node::Ptr plugin, Array<Mapping*> maps, PluginField* field)
+    : midiManager(manager), oscManager(manager2), pluginNode(plugin), mappings(maps), pluginField(field),
+      midiLearnIndex(-1) {
     mappingsList = std::make_unique<ListBox>(String(), this);
     addAndMakeVisible(mappingsList.get());
     mappingsList->setName("mappingsList");
@@ -62,8 +57,7 @@ MappingsDialog::MappingsDialog(MidiMappingManager* manager, OscMappingManager* m
     overrideMidiButton->setButtonText("Override plugin's default MIDI behaviour");
     overrideMidiButton->addListener(this);
 
-    oscMidiAddressLabel = std::make_unique<Label>("oscMidiAddressLabel",
-                                                   "OSC MIDI Address:");
+    oscMidiAddressLabel = std::make_unique<Label>("oscMidiAddressLabel", "OSC MIDI Address:");
     addAndMakeVisible(oscMidiAddressLabel.get());
     oscMidiAddressLabel->setFont(Font(juce::FontOptions().withHeight(15.0f)));
     oscMidiAddressLabel->setJustificationType(Justification::centredLeft);
@@ -81,8 +75,7 @@ MappingsDialog::MappingsDialog(MidiMappingManager* manager, OscMappingManager* m
     oscMidiAddress->setPopupMenuEnabled(true);
     oscMidiAddress->setText({});
 
-    oscHintLabel = std::make_unique<Label>("oscHintLabel",
-                                            "(leave blank if you don't want to receive MIDI over OSC)");
+    oscHintLabel = std::make_unique<Label>("oscHintLabel", "(leave blank if you don't want to receive MIDI over OSC)");
     addAndMakeVisible(oscHintLabel.get());
     oscHintLabel->setFont(Font(juce::FontOptions().withHeight(15.0f)));
     oscHintLabel->setJustificationType(Justification::centredRight);
@@ -91,8 +84,7 @@ MappingsDialog::MappingsDialog(MidiMappingManager* manager, OscMappingManager* m
     oscHintLabel->setColour(TextEditor::textColourId, Colours::black);
     oscHintLabel->setColour(TextEditor::backgroundColourId, Colour(0x0));
 
-    midiChannelLabel = std::make_unique<Label>("midiChannelLabel",
-                                                "MIDI Channel:");
+    midiChannelLabel = std::make_unique<Label>("midiChannelLabel", "MIDI Channel:");
     addAndMakeVisible(midiChannelLabel.get());
     midiChannelLabel->setFont(Font(juce::FontOptions().withHeight(15.0f)));
     midiChannelLabel->setJustificationType(Justification::centredLeft);
@@ -141,8 +133,7 @@ MappingsDialog::MappingsDialog(MidiMappingManager* manager, OscMappingManager* m
     {
         auto* proc = dynamic_cast<BypassableInstance*>(pluginNode->getProcessor());
 
-        if (proc)
-        {
+        if (proc) {
             oscMidiAddress->setText(oscManager->getMIDIProcessorAddress(proc));
 
             midiChannelComboBox->setSelectedId(proc->getMIDIChannel() + 1);
@@ -153,8 +144,7 @@ MappingsDialog::MappingsDialog(MidiMappingManager* manager, OscMappingManager* m
     setSize(738, 400);
 }
 
-MappingsDialog::~MappingsDialog()
-{
+MappingsDialog::~MappingsDialog() {
     if (midiLearnIndex > -1)
         midiManager->unregisterMidiLearnCallback(this);
 
@@ -170,15 +160,13 @@ MappingsDialog::~MappingsDialog()
     midiChannelComboBox.reset();
 }
 
-void MappingsDialog::paint(Graphics& g)
-{
+void MappingsDialog::paint(Graphics& g) {
     g.fillAll(Colour(0xffeeece1));
 
     g.fillAll(ColourScheme::getInstance().colours["Window Background"]);
 }
 
-void MappingsDialog::resized()
-{
+void MappingsDialog::resized() {
     mappingsList->setBounds(8, 40, getWidth() - 16, getHeight() - 79);
     addMidiButton->setBounds(8, getHeight() - 31, 80, 24);
     addOscButton->setBounds(96, getHeight() - 31, 72, 24);
@@ -191,72 +179,47 @@ void MappingsDialog::resized()
     midiChannelComboBox->setBounds(576, getHeight() - 31, 64, 24);
 }
 
-void MappingsDialog::buttonClicked(Button* buttonThatWasClicked)
-{
-    if (buttonThatWasClicked == addMidiButton.get())
-    {
-        auto* mapping = new MidiMapping(midiManager,
-                                        pluginField->getFilterGraph(),
-                                        pluginNode->nodeID.uid,
-                                        0,
-                                        0,
-                                        false,
-                                        midiChannelComboBox->getSelectedId() - 1,
-                                        0.0f,
-                                        1.0f);
+void MappingsDialog::buttonClicked(Button* buttonThatWasClicked) {
+    if (buttonThatWasClicked == addMidiButton.get()) {
+        auto* mapping = new MidiMapping(midiManager, pluginField->getFilterGraph(), pluginNode->nodeID.uid, 0, 0, false,
+                                        midiChannelComboBox->getSelectedId() - 1, 0.0f, 1.0f);
         midiManager->registerMapping(0, mapping);
         mappings.add(mapping);
         pluginField->addMapping(mapping);
         mappingsList->updateContent();
         repaint();
-    }
-    else if (buttonThatWasClicked == addOscButton.get())
-    {
-        auto* mapping = new OscMapping(oscManager,
-                                       pluginField->getFilterGraph(),
-                                       pluginNode->nodeID.uid,
-                                       0,
-                                       "",
-                                       0);
+    } else if (buttonThatWasClicked == addOscButton.get()) {
+        auto* mapping = new OscMapping(oscManager, pluginField->getFilterGraph(), pluginNode->nodeID.uid, 0, "", 0);
         oscManager->registerMapping("", mapping);
         mappings.add(mapping);
         pluginField->addMapping(mapping);
         mappingsList->updateContent();
         repaint();
-    }
-    else if (buttonThatWasClicked == deleteButton.get())
-    {
+    } else if (buttonThatWasClicked == deleteButton.get()) {
         int i;
         Array<int> mappingsToDelete;
         const SparseSet<int> selectedRows = mappingsList->getSelectedRows();
 
-        for (i = 0; i < selectedRows.size(); ++i)
-        {
+        for (i = 0; i < selectedRows.size(); ++i) {
             jassert(selectedRows[i] < mappings.size());
 
             mappingsToDelete.add(selectedRows[i]);
         }
 
         mappingsToDelete.sort(comparator);
-        for (i = (mappingsToDelete.size() - 1); i >= 0; --i)
-        {
+        for (i = (mappingsToDelete.size() - 1); i >= 0; --i) {
             pluginField->removeMapping(mappings[mappingsToDelete[i]]);
             mappings.remove(mappingsToDelete[i]);
         }
 
         mappingsList->updateContent();
-    }
-    else if (buttonThatWasClicked == overrideMidiButton.get())
-    {
-        pluginField->enableMidiForNode(pluginNode,
-                                       overrideMidiButton->getToggleState());
+    } else if (buttonThatWasClicked == overrideMidiButton.get()) {
+        pluginField->enableMidiForNode(pluginNode, overrideMidiButton->getToggleState());
     }
 }
 
-void MappingsDialog::comboBoxChanged(ComboBox* comboBoxThatHasChanged)
-{
-    if (comboBoxThatHasChanged == midiChannelComboBox.get())
-    {
+void MappingsDialog::comboBoxChanged(ComboBox* comboBoxThatHasChanged) {
+    if (comboBoxThatHasChanged == midiChannelComboBox.get()) {
         int i;
         int channel = midiChannelComboBox->getSelectedId() - 1;
         auto* proc = dynamic_cast<BypassableInstance*>(pluginNode->getProcessor());
@@ -264,8 +227,7 @@ void MappingsDialog::comboBoxChanged(ComboBox* comboBoxThatHasChanged)
         if (proc)
             proc->setMIDIChannel(channel);
 
-        for (i = 0; i < mappings.size(); ++i)
-        {
+        for (i = 0; i < mappings.size(); ++i) {
             auto* tempMapping = dynamic_cast<MidiMapping*>(mappings[i]);
 
             if (tempMapping)
@@ -274,41 +236,26 @@ void MappingsDialog::comboBoxChanged(ComboBox* comboBoxThatHasChanged)
     }
 }
 
-int MappingsDialog::getNumRows()
-{
+int MappingsDialog::getNumRows() {
     return mappings.size();
 }
 
-void MappingsDialog::paintListBoxItem(int rowNumber,
-                                      Graphics& g,
-                                      int width,
-                                      int height,
-                                      bool rowIsSelected)
-{
+void MappingsDialog::paintListBoxItem(int rowNumber, Graphics& g, int width, int height, bool rowIsSelected) {
     Colour highlight = ColourScheme::getInstance().colours["List Selected Colour"];
 
-    if (rowIsSelected)
-    {
-        ColourGradient basil(highlight.brighter(0.4f),
-                             0.0f,
-                             0.0f,
-                             highlight.darker(0.125f),
-                             0.0f,
-                             static_cast<float>(height),
-                             false);
+    if (rowIsSelected) {
+        ColourGradient basil(highlight.brighter(0.4f), 0.0f, 0.0f, highlight.darker(0.125f), 0.0f,
+                             static_cast<float>(height), false);
 
         g.setGradientFill(basil);
 
         g.fillAll();
-    }
-    else if (rowNumber % 2)
+    } else if (rowNumber % 2)
         g.fillAll(Colour(0x10000000));
 }
 
-Component* MappingsDialog::refreshComponentForRow(int rowNumber,
-                                                  bool isRowSelected,
-                                                  Component* existingComponentToUpdate)
-{
+Component* MappingsDialog::refreshComponentForRow(int rowNumber, bool isRowSelected,
+                                                  Component* existingComponentToUpdate) {
     int i;
     int numParams;
     int selectedParam;
@@ -319,14 +266,9 @@ Component* MappingsDialog::refreshComponentForRow(int rowNumber,
     if (existingComponentToUpdate)
         delete existingComponentToUpdate;
 
-    if (midiMapping)
-    {
-        retval = new MappingEntryMidi(this,
-                                      rowNumber,
-                                      midiMapping->getCc(),
-                                      midiMapping->getLatched(),
-                                      midiMapping->getLowerBound(),
-                                      midiMapping->getUpperBound());
+    if (midiMapping) {
+        retval = new MappingEntryMidi(this, rowNumber, midiMapping->getCc(), midiMapping->getLatched(),
+                                      midiMapping->getLowerBound(), midiMapping->getUpperBound());
 
         // Fill out the parameters combo box.
         auto* proc = pluginNode->getProcessor();
@@ -339,13 +281,8 @@ Component* MappingsDialog::refreshComponentForRow(int rowNumber,
         if (selectedParam == -1)
             selectedParam = numParams;
         static_cast<MappingEntryMidi*>(retval)->selectParameter(selectedParam);
-    }
-    else if (oscMapping)
-    {
-        retval = new MappingEntryOsc(this,
-                                     rowNumber,
-                                     oscMapping->getAddress(),
-                                     oscMapping->getParameterIndex(),
+    } else if (oscMapping) {
+        retval = new MappingEntryOsc(this, rowNumber, oscMapping->getAddress(), oscMapping->getParameterIndex(),
                                      oscManager->getReceivedAddresses());
 
         // Fill out the parameters combo box.
@@ -364,34 +301,29 @@ Component* MappingsDialog::refreshComponentForRow(int rowNumber,
     return retval;
 }
 
-void MappingsDialog::listBoxItemClicked(int row, const MouseEvent& e)
-{
+void MappingsDialog::listBoxItemClicked(int row, const MouseEvent& e) {
     mappingsList->selectRow(row, false, !e.mods.isCtrlDown());
 }
 
-void MappingsDialog::backgroundClicked(const MouseEvent&)
-{
+void MappingsDialog::backgroundClicked(const MouseEvent&) {
     mappingsList->deselectAllRows();
 }
 
-void MappingsDialog::textEditorTextChanged(TextEditor& editor)
-{
+void MappingsDialog::textEditorTextChanged(TextEditor& editor) {
     auto* proc = dynamic_cast<BypassableInstance*>(pluginNode->getProcessor());
 
     if (proc)
         oscManager->registerMIDIProcessor(editor.getText(), proc);
 }
 
-void MappingsDialog::setParameter(int index, int val)
-{
+void MappingsDialog::setParameter(int index, int val) {
     auto* proc = pluginNode->getProcessor();
     if (val == static_cast<int>(proc->getParameters().size()))
         val = -1;
     mappings[index]->setParameter(val);
 }
 
-void MappingsDialog::setCc(int index, int val)
-{
+void MappingsDialog::setCc(int index, int val) {
     auto* midiMapping = dynamic_cast<MidiMapping*>(mappings[index]);
 
     if (midiMapping)
@@ -400,8 +332,7 @@ void MappingsDialog::setCc(int index, int val)
         jassertfalse;
 }
 
-void MappingsDialog::setLatch(int index, bool val)
-{
+void MappingsDialog::setLatch(int index, bool val) {
     auto* midiMapping = dynamic_cast<MidiMapping*>(mappings[index]);
 
     if (midiMapping)
@@ -410,8 +341,7 @@ void MappingsDialog::setLatch(int index, bool val)
         jassertfalse;
 }
 
-void MappingsDialog::setLowerBound(int index, float val)
-{
+void MappingsDialog::setLowerBound(int index, float val) {
     auto* midiMapping = dynamic_cast<MidiMapping*>(mappings[index]);
 
     if (midiMapping)
@@ -420,8 +350,7 @@ void MappingsDialog::setLowerBound(int index, float val)
         jassertfalse;
 }
 
-void MappingsDialog::setUpperBound(int index, float val)
-{
+void MappingsDialog::setUpperBound(int index, float val) {
     auto* midiMapping = dynamic_cast<MidiMapping*>(mappings[index]);
 
     if (midiMapping)
@@ -430,8 +359,7 @@ void MappingsDialog::setUpperBound(int index, float val)
         jassertfalse;
 }
 
-void MappingsDialog::setAddress(int index, const String& address)
-{
+void MappingsDialog::setAddress(int index, const String& address) {
     auto* oscMapping = dynamic_cast<OscMapping*>(mappings[index]);
 
     if (oscMapping)
@@ -440,8 +368,7 @@ void MappingsDialog::setAddress(int index, const String& address)
         jassertfalse;
 }
 
-void MappingsDialog::setOscParameter(int index, int val)
-{
+void MappingsDialog::setOscParameter(int index, int val) {
     auto* oscMapping = dynamic_cast<OscMapping*>(mappings[index]);
 
     if (oscMapping)
@@ -450,31 +377,25 @@ void MappingsDialog::setOscParameter(int index, int val)
         jassertfalse;
 }
 
-void MappingsDialog::activateMidiLearn(int index)
-{
-    if (index > -1)
-    {
+void MappingsDialog::activateMidiLearn(int index) {
+    if (index > -1) {
         midiLearnIndex = index;
 
         midiManager->registerMidiLearnCallback(this);
     }
 }
 
-void MappingsDialog::deactivateMidiLearn(int /*index*/)
-{
+void MappingsDialog::deactivateMidiLearn(int /*index*/) {
     midiLearnIndex = -1;
 
     midiManager->unregisterMidiLearnCallback(this);
 }
 
-void MappingsDialog::midiCcReceived(int val)
-{
-    if (midiLearnIndex > -1)
-    {
+void MappingsDialog::midiCcReceived(int val) {
+    if (midiLearnIndex > -1) {
         auto* mapping = dynamic_cast<MidiMapping*>(mappings[midiLearnIndex]);
 
-        if (mapping)
-        {
+        if (mapping) {
             mapping->setCc(val);
             triggerAsyncUpdate();
         }
@@ -483,18 +404,15 @@ void MappingsDialog::midiCcReceived(int val)
     }
 }
 
-void MappingsDialog::handleAsyncUpdate()
-{
+void MappingsDialog::handleAsyncUpdate() {
     updateListBox();
 }
 
-void MappingsDialog::updateListBox()
-{
+void MappingsDialog::updateListBox() {
     mappingsList->updateContent();
 }
 
-int MappingsDialog::MappingComparator::compareElements(int first, int second)
-{
+int MappingsDialog::MappingComparator::compareElements(int first, int second) {
     int retval = 0;
 
     if (first < second)

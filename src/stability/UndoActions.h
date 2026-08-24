@@ -24,8 +24,7 @@ class FilterGraph;
 
 /// Base class for FilterGraph undo actions.
 /// Stores a reference to the FilterGraph.
-class FilterGraphAction : public juce::UndoableAction
-{
+class FilterGraphAction : public juce::UndoableAction {
   public:
     explicit FilterGraphAction(FilterGraph& graph) : filterGraph(graph) {}
 
@@ -35,14 +34,11 @@ class FilterGraphAction : public juce::UndoableAction
 
 /// Undoable action for adding a plugin.
 /// Undo removes the plugin.
-class AddPluginAction : public FilterGraphAction
-{
+class AddPluginAction : public FilterGraphAction {
   public:
     AddPluginAction(FilterGraph& graph, const juce::PluginDescription& desc, double xPos, double yPos)
         : FilterGraphAction(graph), pluginDescription(desc), x(xPos), y(yPos),
-          nodeId(juce::AudioProcessorGraph::NodeID())
-    {
-    }
+          nodeId(juce::AudioProcessorGraph::NodeID()) {}
 
     bool perform() override;
     bool undo() override;
@@ -62,14 +58,11 @@ class AddPluginAction : public FilterGraphAction
 
 /// Undoable action for removing a plugin.
 /// Undo recreates the plugin and restores connections.
-class RemovePluginAction : public FilterGraphAction
-{
+class RemovePluginAction : public FilterGraphAction {
   public:
     RemovePluginAction(FilterGraph& graph, juce::AudioProcessorGraph::NodeID id, const juce::PluginDescription& desc,
                        double xPos, double yPos, const std::vector<juce::AudioProcessorGraph::Connection>& conns)
-        : FilterGraphAction(graph), nodeId(id), pluginDescription(desc), x(xPos), y(yPos), connections(conns)
-    {
-    }
+        : FilterGraphAction(graph), nodeId(id), pluginDescription(desc), x(xPos), y(yPos), connections(conns) {}
 
     bool perform() override;
     bool undo() override;
@@ -87,15 +80,12 @@ class RemovePluginAction : public FilterGraphAction
 
 /// Undoable action for adding a connection.
 /// Undo removes the connection.
-class AddConnectionAction : public FilterGraphAction
-{
+class AddConnectionAction : public FilterGraphAction {
   public:
     AddConnectionAction(FilterGraph& graph, juce::AudioProcessorGraph::NodeID srcNode, int srcChannel,
                         juce::AudioProcessorGraph::NodeID destNode, int destChannel)
         : FilterGraphAction(graph), sourceNode(srcNode), sourceChannel(srcChannel), destNode(destNode),
-          destChannel(destChannel)
-    {
-    }
+          destChannel(destChannel) {}
 
     bool perform() override;
     bool undo() override;
@@ -113,15 +103,12 @@ class AddConnectionAction : public FilterGraphAction
 
 /// Undoable action for removing a connection.
 /// Undo adds the connection back.
-class RemoveConnectionAction : public FilterGraphAction
-{
+class RemoveConnectionAction : public FilterGraphAction {
   public:
     RemoveConnectionAction(FilterGraph& graph, juce::AudioProcessorGraph::NodeID srcNode, int srcChannel,
                            juce::AudioProcessorGraph::NodeID destNode, int destChannel)
         : FilterGraphAction(graph), sourceNode(srcNode), sourceChannel(srcChannel), destNode(destNode),
-          destChannel(destChannel)
-    {
-    }
+          destChannel(destChannel) {}
 
     bool perform() override;
     bool undo() override;
