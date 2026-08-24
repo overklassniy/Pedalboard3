@@ -1,19 +1,42 @@
 # src/app/
 
-Application shell for Pedalboard3.
+Application shell for Pedalboard3. Contains the JUCE application entry
+point, the main top-level UI component that coordinates the audio engine
+and all sub-systems, and auxiliary UI components for the about dialog,
+log display, and system tray icon.
 
 ## Contents
 
-- `App.cpp` / `App.h` — JUCE application entry point and main window
-- `MainPanel.cpp` / `MainPanel.h` — main UI container (menu bar, patch bar, transport, canvas viewport, file-based document handling, command manager)
-- `AboutPage.cpp` / `AboutPage.h` — about dialog component
-- `LogDisplay.cpp` / `LogDisplay.h` — log message display component
-- `TrayIcon.cpp` / `TrayIcon.h` — system tray icon with popup menu (Windows/Linux only)
+- `App.cpp` / `App.h` – `Pedalboard3App`, the JUCE `JUCEApplication` subclass that bootstraps the main window and tears down audio singletons at shutdown
+- `MainPanel.cpp` / `MainPanel.h` – `MainPanel`, the central UI component and `FileBasedDocument` that owns the `FilterGraph`, `AudioDeviceManager`, `KnownPluginList`, `OSCReceiver`, patch list, transport controls, menu bar, and command dispatch; also defines `PluginListWindow`
+- `AboutPage.cpp` / `AboutPage.h` – `AboutPage`, a dialog component showing application version, credits, hyperlinks, and the current local IP address
+- `LogDisplay.cpp` / `LogDisplay.h` – `LogDisplay`, a component with a read-only text editor, start/stop logging button, and event-type filter toggles that displays events from the `LogFile` singleton
+- `TrayIcon.cpp` / `TrayIcon.h` – `TrayIcon`, a `SystemTrayIconComponent` with a right-click popup menu and double-click window toggle (compiled only when `JUCE_MAC` is not defined)
 
 ## Integration
 
-`MainPanel` is the central coordinator that owns the `FilterGraph`, mapping
-managers, patch organiser, and all command handling. It is created by `App`
-and fills the main window. `MainPanel` includes headers from `audio/`,
-`canvas/`, `mappings/`, `osc/`, `preset/`, `stability/`, `processors/`,
-`util/`, and `lookandfeel/`.
+`Pedalboard3App` (in `App.h`) creates the `DocumentWindow` and optional
+`TrayIcon` at startup. The main window's content component is `MainPanel`,
+which is the central coordinator for the entire application.
+
+`MainPanel` directly includes headers from `audio/` (`AudioSingletons.h`,
+`FilterGraph.h`, `MainTransport.h`, `MidiAppFifo.h`), `canvas/`
+(`PluginField.h`), `lookandfeel/` (`ColourScheme.h`, `ColourSchemeEditor.h`),
+`mappings/` (`ApplicationMappingsEditor.h`, `TapTempoBox.h`), `preset/`
+(`PatchOrganiser.h`, `PreferencesDialog.h`, `UserPresetWindow.h`),
+`processors/` (`PedalboardProcessors.h`), and `util/` (`Images.h`,
+`JuceHelperStuff.h`, `LogFile.h`, `PropertiesSingleton.h`, `Vectors.h`).
+
+`MainPanel` accesses the `MidiMappingManager` and `OscMappingManager`
+through `PluginField` (in `canvas/`) rather than including their headers
+directly. It does not directly include headers from `osc/` or `stability/`,
+but interacts with those sub-systems transitively through the command
+system and `PluginField`.
+
+All files in this directory are compiled into the `Pedalboard3` GUI
+application target.
+
+## Constraints
+
+- `TrayIcon.h` and `TrayIcon.cpp` are guarded by `#ifndef JUCE_MAC` — the system tray icon is not built on macOS.
+- `MainPanel` inherits `juce::FileBasedDocument` and uses `.pdl` as the patch document extension; individual graph saves use `.filtergraph` (defined in `audio/FilterGraph.h`).

@@ -1,16 +1,35 @@
 # src/lookandfeel/
 
-Custom LookAndFeel and colour scheme system for Pedalboard3.
+Custom LookAndFeel and colour scheme system for Pedalboard3. This folder
+holds the application's widget drawing style, the named-colour palette that
+feeds it, and the editor dialog that lets users customise and save colour
+schemes.
 
 ## Contents
 
-- `BranchesLAF.cpp` / `BranchesLAF.h` — custom LookAndFeel ported from the original Pedalboard2 (draws buttons, sliders, combo boxes, headers, etc. using SVG vector graphics)
-- `ColourScheme.cpp` / `ColourScheme.h` — theme colour system (manages named colours, loads/saves schemes)
-- `ColourSchemeEditor.cpp` / `ColourSchemeEditor.h` — colour scheme editor dialog (list, selector, preset save/load/delete)
+- `BranchesLAF.h` / `BranchesLAF.cpp` – `BranchesLAF`, a `juce::LookAndFeel`
+  subclass (originally written for the Branches story editor, adapted for
+  Pedalboard3) that draws buttons, scrollbar buttons/thumbs, menu bars, popup
+  menus, combo boxes, progress bars, keymap buttons, labels, toggle buttons,
+  tick boxes, text editor backgrounds, and callout boxes. Its constructor
+  configures widget colours from the current `ColourScheme`.
+- `ColourScheme.h` / `ColourScheme.cpp` – `ColourScheme`, a singleton struct
+  holding a `std::map<String, Colour>` of named colours plus the current
+  preset name, with methods to list, load, save, and compare colour scheme
+  presets.
+- `ColourSchemeEditor.h` / `ColourSchemeEditor.cpp` – `ColourSchemeEditor`, a
+  `Component`/`ListBoxModel`/`ChangeBroadcaster` dialog with a colour
+  selector, a colour list, and a combo box plus buttons for choosing, saving,
+  and deleting colour scheme presets.
 
 ## Integration
 
-`BranchesLAF` is applied to the entire application UI and uses embedded SVG
-data from `util/Vectors` and `util/LookAndFeelImages`. `ColourScheme`
-provides the colour palette that `BranchesLAF` and other components query.
-`ColourSchemeEditor` is opened from the Options menu in `app/MainPanel`.
+`BranchesLAF` is the application's custom LookAndFeel; it is included by
+`app/App.cpp` and configures its widget colours from `ColourScheme`. It draws
+the file-chooser folder icon and magnifying glass from embedded graphics in
+`util/LookAndFeelImages` (it includes `LookAndFeelImages.h` directly).
+`ColourScheme` is the singleton colour palette queried by `BranchesLAF` and
+other components. `ColourSchemeEditor` uses embedded SVG button graphics from
+`util/Vectors` (it includes `Vectors.h`) and is instantiated from the Options
+menu in `app/MainPanel` (see `MainPanel.cpp`), which listens for its change
+broadcasts to refresh the UI.

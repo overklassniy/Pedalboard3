@@ -1,3 +1,37 @@
+Pedalboard3 — a free, open-source VST3 plugin host for live performance.
+A modernized rebuild of Pedalboard2, preserving the original user interface
+while running on JUCE 8 and C++20.
+
+Copyright (C) 2011 Niall Moody
+Copyright (C) 2024 Project12x
+Copyright (C) 2026 overklassniy
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Attribution chain:
+
+  Pedalboard2 (2011)        Niall Moody
+    Original VST2/AU/LADSPA host built on JUCE 1.x.
+
+  Pedalboard3 (2024)        Project12x
+    Fork adding VST3 hosting and stability infrastructure.
+
+  Pedalboard3 (2026)        overklassniy
+    Modernized rebuild on JUCE 8.0.15 and C++20.
+
+The full text of the GNU General Public License v3 follows.
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
@@ -186,8 +220,8 @@ measures.
 
   When you convey a covered work, you waive any legal power to forbid
 circumvention of technological measures to the extent such circumvention
-is effected by exercising rights under this License with respect to
-the covered work, and you disclaim any intention to limit operation or
+is effected by exercising rights under this License with respect to the
+covered work, and you disclaim any intention to limit operation or
 modification of the work as a means of enforcing, against the work's
 users, your or third parties' legal rights to forbid circumvention of
 technological measures.
@@ -259,7 +293,7 @@ in one of these ways:
     written offer, valid for at least three years and valid for as
     long as you offer spare parts or customer support for that product
     model, to give anyone who possesses the object code either (1) a
-    copy of the Corresponding Source for all the software in the
+    copy of the Corresponding Source for all of the software in the
     product that is covered by this License, on a durable physical
     medium customarily used for software interchange, for a price no
     more than your reasonable cost of physically performing this

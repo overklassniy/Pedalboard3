@@ -1,24 +1,19 @@
 # src/scanner/
 
-Out-of-process plugin scanner for Pedalboard3.
+Out-of-process plugin scanning infrastructure and plugin instance pooling for Pedalboard3. This folder provides a separate console application that scans plugins in an isolated process so that a crashing plugin cannot take down the host, along with client-side IPC wrappers, a higher-level safe scanner with fallback, and a sliding-window plugin pool for instant patch switching.
 
 ## Contents
 
-- `PluginScannerMain.cpp` — entry point for the `Pedalboard3Scanner` console application. Runs in a separate process so that a crashing plugin during scanning cannot take down the main application.
-- `PluginScannerIPC.h` — IPC protocol definitions (message types, scan result codes, shared data structures)
-- `PluginScannerClient.cpp` / `PluginScannerClient.h` — client-side IPC wrapper used by the main application to communicate with the scanner process
-- `SafePluginScanner.cpp` / `SafePluginScanner.h` — safe plugin scanner wrapper with crash recovery and plugin list component UI
-- `PluginPoolManager.cpp` / `PluginPoolManager.h` — plugin instance pool manager (reuses plugin instances to avoid repeated loading)
+- `PluginScannerMain.cpp` – entry point for the `Pedalboard3Scanner` console application. Defines `PluginScannerApplication` (a `juce::JUCEApplicationBase`) that registers plugin formats, connects to the host via a Windows named pipe, receives `ScanPlugin` requests, and sends back `ScanResult` or `ScanError`/`ScanCrash` responses.
+- `PluginScannerIPC.h` – IPC protocol definitions in the `PluginScannerIPC` namespace. Defines the pipe name (`\\.\pipe\Pedalboard3PluginScanner`), protocol version, scan timeout, `MessageType` enum (Ping, ScanPlugin, Shutdown, Pong, ScanResult, ScanError, ScanCrash, Ready), `ScanResultCode` enum, `MessageHeader` struct, and `ScanRequest`/`ScanResponse` structs with JSON serialization.
+- `PluginScannerClient.cpp` / `PluginScannerClient.h` – host-side IPC client. Launches the scanner process, sends scan requests over the named pipe, waits for responses with a timeout, and automatically restarts the scanner after a crash. Exposes a `Listener` interface for scan progress, completion, and crash events.
+- `SafePluginScanner.cpp` / `SafePluginScanner.h` – higher-level scanner wrapper. Uses `PluginScannerClient` for out-of-process scanning when available, falling back to in-process `juce::PluginDirectoryScanner` with timeout protection otherwise. Also defines `SafePluginListComponent`, a drop-in replacement for `juce::PluginListComponent` that drives `SafePluginScanner` from a timer and provides a table-based plugin list UI with scan and clear buttons.
+- `PluginPoolManager.cpp` / `PluginPoolManager.h` – singleton sliding-window plugin pool (`PluginPoolManager`, extends `juce::Thread`). Preloads plugin instances for the current patch plus N patches ahead or behind so that patch switching is near-instant. Tracks per-patch plugin requirements, loading progress, and memory usage, and notifies listeners via `PluginPoolListener`.
 
 ## Integration
 
-The scanner communicates with the main application via IPC
-(`PluginScannerIPC.h`). The main app (`app/MainPanel`) launches the scanner
-as a child process via `PluginScannerClient`, sends scan requests, and
-receives plugin descriptions or crash notifications back. `SafePluginScanner`
-provides a higher-level wrapper with automatic retry and blacklist integration
-(via `stability/PluginBlacklist`). `PluginPoolManager` manages a pool of
-loaded plugin instances for efficient plugin editing.
+`PluginScannerMain.cpp` is the sole source file for the separate `Pedalboard3Scanner` console app target, defined in the root `CMakeLists.txt` via `juce_add_console_app(Pedalboard3Scanner)`. The remaining files (`PluginScannerIPC.h`, `PluginScannerClient`, `SafePluginScanner`, `PluginPoolManager`) are compiled into the main `Pedalboard3` target. `PluginScannerClient::getScannerExecutable()` looks for the scanner binary in the same directory as the main executable at runtime; the root `CMakeLists.txt` does not include a post-build copy command, so the scanner binary must be placed alongside the host manually or through the build system's output configuration. `SafePluginScanner` integrates with `stability/PluginBlacklist` to skip known-bad plugins and with `stability/CrashProtection` for timeout-protected in-process scanning. `PluginPoolManager` is a singleton designed for use by the patch-switching code in `app/MainPanel`.
 
-The scanner binary is copied next to `Pedalboard3.exe` at build time via a
-CMake post-build command.
+## Constraints
+
+The IPC protocol uses Windows named pipes and is currently Windows-specific. The scanner process communicates exclusively through the `PluginScannerIPC` message format; protocol version mismatches are rejected. `SafePluginListComponent` is provided as an alternative to JUCE's `PluginListComponent` but is not currently wired into `app/MainPanel`'s `PluginListWindow`, which still uses the standard `juce::PluginListComponent`. Likewise, `PluginPoolManager` is compiled into the main target but is not yet referenced outside this folder.
