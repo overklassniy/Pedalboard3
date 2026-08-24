@@ -52,23 +52,69 @@ from a modern VST3 fork.
 
 ### Build From Source
 
-Requirements:
+#### Prerequisites
 
-- Visual Studio 2022 (Windows) or GCC 11+/Clang 12+ (Linux)
-- CMake 3.24+
-- Git
+| Platform | Requirements |
+| --- | --- |
+| Windows | Visual Studio 2022 (BuildTools or full IDE) with C++ workload, CMake 3.24+, Git |
+| Linux | GCC 11+ or Clang 12+, CMake 3.24+, Git, ALSA dev headers, JACK dev headers (optional) |
 
-```bash
-git clone --recursive <repo-url>
-cd Pedalboard3
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release
+VS 2022 bundles CMake 3.31 at:
+
+```
+C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin
 ```
 
-Output: `build/Pedalboard3_artefacts/Release/Pedalboard3.exe` (Windows) or
-`build/Pedalboard3_artefacts/Release/Pedalboard3` (Linux).
+Add this path to your `PATH` environment variable, or use the full path in
+commands.
 
-See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions.
+#### JUCE submodule
+
+JUCE is pinned to tag `8.0.15`. Do NOT update to JUCE 9.x — it has breaking
+API changes (notably `Typeface::createSystemTypefaceFor` crashes on Windows
+with DirectWrite, and `createFromSVG_string` is JUCE 9 only).
+
+```powershell
+git clone --recursive <repo-url>
+cd Pedalboard3
+git submodule update --init --recursive
+```
+
+If the submodule is missing, clone it manually:
+
+```powershell
+git clone --depth 1 --branch 8.0.15 https://github.com/juce-framework/JUCE.git JUCE
+```
+
+#### Configure and build (Windows)
+
+```powershell
+cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_BUILD_TYPE=Release
+cmake --build build --config Release -- /m
+```
+
+#### Configure and build (Linux)
+
+```bash
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+
+#### Build artifacts
+
+- `build/Pedalboard3_artefacts/Release/Pedalboard3.exe` (Windows)
+- `build/Pedalboard3_artefacts/Release/Pedalboard3` (Linux)
+- `build/Pedalboard3Scanner_artefacts/Release/Pedalboard3Scanner.exe` (Windows)
+
+#### Dependencies (fetched via CPM.cmake)
+
+| Dependency | Version | Purpose |
+| --- | --- | --- |
+| JUCE | 8.0.15 | Audio framework (submodule) |
+| fmt | 12.2.0 | String formatting |
+| spdlog | v1.17.0 | Logging |
+| nlohmann_json | v3.12.0 | JSON settings |
+| Catch2 | v3.15.3 | Unit tests (optional) |
 
 ---
 
@@ -90,13 +136,44 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions.
 
 ---
 
-## Documentation
+## Architecture
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how it is built
-- [docs/BUILD.md](docs/BUILD.md) — detailed build instructions
-- [docs/USER_GUIDE.md](docs/USER_GUIDE.md) — end-user feature documentation
-- [docs/MIGRATION.md](docs/MIGRATION.md) — JUCE 1.x to 8.0 porting notes
-- [AGENTS.md](AGENTS.md) — build setup and JUCE 8 API notes for developers
+- UI is ported from the original Pedalboard2 (Niall Moody, 2011-2013),
+  preserving the original `BranchesLAF` LookAndFeel and layout.
+- VST3 hosting via JUCE's built-in `JUCE_PLUGINHOST_VST3`.
+- OSC via JUCE's `juce_osc` module (replaces the original's custom
+  `NiallsOSCLib`/`NiallsSocketLib`).
+- Stability infrastructure (out-of-process scanner, crash protection,
+  blacklist, safety limiter, crossfade patch switching, JSON settings,
+  undo/redo) ported from the pedalboard3-VST3 fork.
+
+### Reference codebases
+
+- `pedalboard2-OLD/` – original Pedalboard2 source (UI source of truth). Read-only reference.
+- `pedalboard3-VST3/` – VST3 fork (JUCE 8 migration patterns + stability infra source). Read-only reference.
+
+Both are in `.gitignore` and are not part of the Pedalboard3 source tree.
+
+### JUCE 8 API notes
+
+- `AudioProcessor::createEditor()` is private — use `createEditorAndMakeActive()`.
+- `Font::getStringWidth` removed — use `juce::GlyphArrangement::getStringWidthInt`.
+- `Font(15.0f)` → `Font(FontOptions().withHeight(15.0f))`.
+- `Drawable::createFromSVG(XmlElement)` is correct for 8.0.15 (NOT `createFromSVG_string`).
+- `ScopedPointer<T>` → `std::unique_ptr<T>`.
+- `node->nodeID` (uint32) → `node->nodeID.uid`.
+- `getNumConnections()`/`getConnection(i)` → `getConnections()` (returns `std::vector`).
+- `Graphics`: call `setColour` before `setFont` before `drawText`.
+
+---
+
+## Repository Workflow
+
+This is a single-developer repository. Do not create pull requests by default.
+
+1. Work on the requested branch or create a feature branch when useful.
+2. Commit focused changes locally following Conventional Commits.
+3. Push the branch or `main` directly when the user asks to back up or publish work.
 
 ---
 

@@ -116,149 +116,186 @@ juce_generate_juce_header(Pedalboard3)
 # ==============================================================================
 # Source Files
 # ==============================================================================
-# Phase 1: Core Audio/Graph Engine (Phase 3 UI files are in src/ and will be enabled once build errors are resolved)
 target_sources(Pedalboard3 PRIVATE
-    # Application
-    src/App.cpp
-    src/App.h
+    # Application shell
+    src/app/App.cpp
+    src/app/App.h
+    src/app/MainPanel.cpp
+    src/app/MainPanel.h
+    src/app/AboutPage.cpp
+    src/app/AboutPage.h
+    src/app/LogDisplay.cpp
+    src/app/LogDisplay.h
+    src/app/TrayIcon.cpp
+    src/app/TrayIcon.h
 
-    # Audio Core
-    src/AudioSingletons.cpp
-    src/AudioSingletons.h
-    src/FilterGraph.cpp
-    src/FilterGraph.h
-    src/InternalFilters.cpp
-    src/InternalFilters.h
-    src/BypassableInstance.cpp
-    src/BypassableInstance.h
-    src/MainTransport.cpp
-    src/MainTransport.h
-    src/MidiAppFifo.cpp
-    src/MidiAppFifo.h
+    # Audio core
+    src/audio/AudioSingletons.cpp
+    src/audio/AudioSingletons.h
+    src/audio/FilterGraph.cpp
+    src/audio/FilterGraph.h
+    src/audio/InternalFilters.cpp
+    src/audio/InternalFilters.h
+    src/audio/BypassableInstance.cpp
+    src/audio/BypassableInstance.h
+    src/audio/MainTransport.cpp
+    src/audio/MainTransport.h
+    src/audio/MidiAppFifo.cpp
+    src/audio/MidiAppFifo.h
 
-    # OSC (juce_osc replacement for NiallsOSCLib)
-    src/Mapping.cpp
-    src/Mapping.h
-    src/OscMappingManager.cpp
-    src/OscMappingManager.h
-    src/TapTempoHelper.cpp
-    src/TapTempoHelper.h
+    # OSC mapping
+    src/osc/Mapping.cpp
+    src/osc/Mapping.h
+    src/osc/OscMappingManager.cpp
+    src/osc/OscMappingManager.h
+    src/osc/TapTempoHelper.cpp
+    src/osc/TapTempoHelper.h
 
-    # Phase 3 UI files have been ported to src/ but are temporarily disabled from
-    # the build while their JUCE 8 API mismatches are being fixed. Re-enable by
-    # adding them back to this list once they compile cleanly.
+    # Utilities and embedded resources
+    src/util/PropertiesSingleton.cpp
+    src/util/PropertiesSingleton.h
+    src/util/LogFile.cpp
+    src/util/LogFile.h
+    src/util/JuceHelperStuff.cpp
+    src/util/JuceHelperStuff.h
+    src/util/Vectors.cpp
+    src/util/Vectors.h
+    src/util/Images.cpp
+    src/util/Images.h
+    src/util/LookAndFeelImages.cpp
+    src/util/LookAndFeelImages.h
 
-    # Group 1: Utilities
-    src/PropertiesSingleton.cpp
-    src/PropertiesSingleton.h
-    src/LogFile.cpp
-    src/LogFile.h
-    src/JuceHelperStuff.cpp
-    src/JuceHelperStuff.h
-    src/Vectors.cpp
-    src/Vectors.h
-    src/Images.cpp
-    src/Images.h
-    src/LookAndFeelImages.cpp
-    src/LookAndFeelImages.h
+    # LookAndFeel and colour scheme
+    src/lookandfeel/BranchesLAF.cpp
+    src/lookandfeel/BranchesLAF.h
+    src/lookandfeel/ColourScheme.cpp
+    src/lookandfeel/ColourScheme.h
+    src/lookandfeel/ColourSchemeEditor.cpp
+    src/lookandfeel/ColourSchemeEditor.h
 
-    # Group 2: LookAndFeel and colour scheme
-    src/ColourScheme.cpp
-    src/ColourScheme.h
-    src/ColourSchemeEditor.cpp
-    src/ColourSchemeEditor.h
-    src/BranchesLAF.cpp
-    src/BranchesLAF.h
+    # Built-in processors (split into per-class files)
+    src/processors/PedalboardProcessor.h
+    src/processors/LevelProcessor.cpp
+    src/processors/LevelProcessor.h
+    src/processors/FilePlayerProcessor.cpp
+    src/processors/FilePlayerProcessor.h
+    src/processors/OutputToggleProcessor.cpp
+    src/processors/OutputToggleProcessor.h
+    src/processors/VuMeterProcessor.cpp
+    src/processors/VuMeterProcessor.h
+    src/processors/RecorderProcessor.cpp
+    src/processors/RecorderProcessor.h
+    src/processors/MetronomeProcessor.cpp
+    src/processors/MetronomeProcessor.h
+    src/processors/LooperProcessor.cpp
+    src/processors/LooperProcessor.h
+    src/processors/LevelEditor.cpp
+    src/processors/LevelEditor.h
+    src/processors/FilePlayerEditor.cpp
+    src/processors/FilePlayerEditor.h
+    src/processors/OutputToggleEditor.cpp
+    src/processors/OutputToggleEditor.h
+    src/processors/VuMeterEditor.cpp
+    src/processors/VuMeterEditor.h
+    src/processors/AudioRecorderEditor.cpp
+    src/processors/AudioRecorderEditor.h
+    src/processors/MetronomeEditor.cpp
+    src/processors/MetronomeEditor.h
+    src/processors/PedalboardProcessors.cpp
+    src/processors/PedalboardProcessors.h
+    src/processors/PedalboardProcessorEditors.cpp
+    src/processors/PedalboardProcessorEditors.h
+    src/processors/AudioRecorderControl.cpp
+    src/processors/AudioRecorderControl.h
+    src/processors/FilePlayerControl.cpp
+    src/processors/FilePlayerControl.h
+    src/processors/LooperControl.cpp
+    src/processors/LooperControl.h
+    src/processors/LooperEditor.cpp
+    src/processors/LooperEditor.h
+    src/processors/MetronomeControl.cpp
+    src/processors/MetronomeControl.h
+    src/processors/WaveformDisplay.cpp
+    src/processors/WaveformDisplay.h
+    src/processors/VuMeterDsp.h
+    src/processors/SafetyLimiter.cpp
+    src/processors/SafetyLimiter.h
+    src/processors/CrossfadeMixer.cpp
+    src/processors/CrossfadeMixer.h
 
-    # Group 3: Built-in processors
-    src/PedalboardProcessors.cpp
-    src/PedalboardProcessors.h
-    src/PedalboardProcessorEditors.cpp
-    src/PedalboardProcessorEditors.h
-    src/AudioRecorderControl.cpp
-    src/AudioRecorderControl.h
-    src/FilePlayerControl.cpp
-    src/FilePlayerControl.h
-    src/LooperControl.cpp
-    src/LooperControl.h
-    src/LooperEditor.cpp
-    src/LooperEditor.h
-    src/MetronomeControl.cpp
-    src/MetronomeControl.h
-    src/WaveformDisplay.cpp
-    src/WaveformDisplay.h
+    # Plugin canvas
+    src/canvas/PluginComponent.cpp
+    src/canvas/PluginComponent.h
+    src/canvas/PluginField.cpp
+    src/canvas/PluginField.h
 
-    # Group 4: Plugin canvas
-    src/PluginComponent.cpp
-    src/PluginComponent.h
-    src/PluginField.cpp
-    src/PluginField.h
+    # Mappings
+    src/mappings/MidiMappingManager.cpp
+    src/mappings/MidiMappingManager.h
+    src/mappings/MappingsDialog.cpp
+    src/mappings/MappingsDialog.h
+    src/mappings/MappingEntryMidi.cpp
+    src/mappings/MappingEntryMidi.h
+    src/mappings/MappingEntryOsc.cpp
+    src/mappings/MappingEntryOsc.h
+    src/mappings/MappingSlider.cpp
+    src/mappings/MappingSlider.h
+    src/mappings/MidiCcAlertWindow.cpp
+    src/mappings/MidiCcAlertWindow.h
+    src/mappings/ApplicationMappingsEditor.cpp
+    src/mappings/ApplicationMappingsEditor.h
+    src/mappings/TapTempoBox.cpp
+    src/mappings/TapTempoBox.h
 
-    # Group 5: Mappings
-    src/MidiMappingManager.cpp
-    src/MidiMappingManager.h
-    src/MappingsDialog.cpp
-    src/MappingsDialog.h
-    src/MappingEntryMidi.cpp
-    src/MappingEntryMidi.h
-    src/MappingEntryOsc.cpp
-    src/MappingEntryOsc.h
-    src/MappingSlider.cpp
-    src/MappingSlider.h
-    src/MidiCcAlertWindow.cpp
-    src/MidiCcAlertWindow.h
-    src/ApplicationMappingsEditor.cpp
-    src/ApplicationMappingsEditor.h
+    # Patch and preset management
+    src/preset/PatchOrganiser.cpp
+    src/preset/PatchOrganiser.h
+    src/preset/PresetManager.cpp
+    src/preset/PresetManager.h
+    src/preset/PresetBar.cpp
+    src/preset/PresetBar.h
+    src/preset/UserPresetWindow.cpp
+    src/preset/UserPresetWindow.h
+    src/preset/PreferencesDialog.cpp
+    src/preset/PreferencesDialog.h
 
-    # Group 6: Main UI
-    src/MainPanel.cpp
-    src/MainPanel.h
-    src/AboutPage.cpp
-    src/AboutPage.h
-    src/LogDisplay.cpp
-    src/LogDisplay.h
-    src/TapTempoBox.cpp
-    src/TapTempoBox.h
-    src/PresetBar.cpp
-    src/PresetBar.h
+    # Stability infrastructure
+    src/stability/SettingsManager.cpp
+    src/stability/SettingsManager.h
+    src/stability/PluginBlacklist.cpp
+    src/stability/PluginBlacklist.h
+    src/stability/CrashProtection.cpp
+    src/stability/CrashProtection.h
+    src/stability/UndoActions.cpp
+    src/stability/UndoActions.h
+    src/stability/BlacklistWindow.cpp
+    src/stability/BlacklistWindow.h
 
-    # Group 7: Patch/preset management
-    src/PatchOrganiser.cpp
-    src/PatchOrganiser.h
-    src/PresetManager.cpp
-    src/PresetManager.h
-    src/UserPresetWindow.cpp
-    src/UserPresetWindow.h
-    src/PreferencesDialog.cpp
-    src/PreferencesDialog.h
-    src/TrayIcon.cpp
-    src/TrayIcon.h
+    # Scanner infrastructure
+    src/scanner/PluginScannerIPC.h
+    src/scanner/PluginScannerClient.cpp
+    src/scanner/PluginScannerClient.h
+    src/scanner/SafePluginScanner.cpp
+    src/scanner/SafePluginScanner.h
+    src/scanner/PluginPoolManager.cpp
+    src/scanner/PluginPoolManager.h
+)
 
-    # Group 8: Stability infrastructure
-    src/VuMeterDsp.h
-    src/SafetyLimiter.cpp
-    src/SafetyLimiter.h
-    src/CrossfadeMixer.cpp
-    src/CrossfadeMixer.h
-    src/SettingsManager.cpp
-    src/SettingsManager.h
-    src/PluginBlacklist.cpp
-    src/PluginBlacklist.h
-    src/CrashProtection.cpp
-    src/CrashProtection.h
-    src/UndoActions.cpp
-    src/UndoActions.h
-    src/BlacklistWindow.cpp
-    src/BlacklistWindow.h
-
-    # Group 9: Scanner infrastructure
-    src/PluginScannerIPC.h
-    src/PluginScannerClient.cpp
-    src/PluginScannerClient.h
-    src/SafePluginScanner.cpp
-    src/SafePluginScanner.h
-    src/PluginPoolManager.cpp
-    src/PluginPoolManager.h
+# ==============================================================================
+# Include Directories (flat includes work across all subdirectories)
+# ==============================================================================
+target_include_directories(Pedalboard3 PRIVATE
+    src/app
+    src/audio
+    src/osc
+    src/util
+    src/lookandfeel
+    src/processors
+    src/canvas
+    src/mappings
+    src/preset
+    src/stability
+    src/scanner
 )
 
 # ==============================================================================
@@ -352,7 +389,11 @@ juce_add_console_app(Pedalboard3Scanner
 juce_generate_juce_header(Pedalboard3Scanner)
 
 target_sources(Pedalboard3Scanner PRIVATE
-    src/PluginScannerMain.cpp
+    src/scanner/PluginScannerMain.cpp
+)
+
+target_include_directories(Pedalboard3Scanner PRIVATE
+    src/scanner
 )
 
 target_compile_definitions(Pedalboard3Scanner PRIVATE

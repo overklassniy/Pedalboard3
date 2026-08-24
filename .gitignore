@@ -58,7 +58,3 @@ JuceLibraryCode/
 # Crash dumps
 crashdumps/
 *.dmp
-
-# Reference codebases (not part of this project's source)
-pedalboard2-OLD/
-pedalboard3-VST3/
