@@ -238,6 +238,12 @@ bool PluginField::isInterestedInFileDrag(const juce::StringArray& files)
             retval = true;
             break;
         }
+#elif defined(__linux__)
+        if (files[i].endsWith(".so") || files[i].endsWithIgnoreCase(".vst3"))
+        {
+            retval = true;
+            break;
+        }
 #endif
         // If they're sound files.
         else if (files[i].endsWithIgnoreCase(".wav") ||
@@ -270,6 +276,9 @@ void PluginField::filesDropped(const juce::StringArray& files, int x, int y)
             pluginsInArray = true;
 #elif defined(__APPLE__)
         if (files[i].endsWith(".vst") || files[i].endsWith(".vst3") || files[i].endsWith(".component"))
+            pluginsInArray = true;
+#elif defined(__linux__)
+        if (files[i].endsWith(".so") || files[i].endsWithIgnoreCase(".vst3"))
             pluginsInArray = true;
 #endif
         // If they're sound files.

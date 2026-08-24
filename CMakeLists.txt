@@ -233,6 +233,32 @@ target_sources(Pedalboard3 PRIVATE
     src/PreferencesDialog.h
     src/TrayIcon.cpp
     src/TrayIcon.h
+
+    # Group 8: Stability infrastructure
+    src/VuMeterDsp.h
+    src/SafetyLimiter.cpp
+    src/SafetyLimiter.h
+    src/CrossfadeMixer.cpp
+    src/CrossfadeMixer.h
+    src/SettingsManager.cpp
+    src/SettingsManager.h
+    src/PluginBlacklist.cpp
+    src/PluginBlacklist.h
+    src/CrashProtection.cpp
+    src/CrashProtection.h
+    src/UndoActions.cpp
+    src/UndoActions.h
+    src/BlacklistWindow.cpp
+    src/BlacklistWindow.h
+
+    # Group 9: Scanner infrastructure
+    src/PluginScannerIPC.h
+    src/PluginScannerClient.cpp
+    src/PluginScannerClient.h
+    src/SafePluginScanner.cpp
+    src/SafePluginScanner.h
+    src/PluginPoolManager.cpp
+    src/PluginPoolManager.h
 )
 
 # ==============================================================================
@@ -251,22 +277,29 @@ target_compile_definitions(Pedalboard3 PRIVATE
     JUCE_PLUGINHOST_AU=0
     JUCE_PLUGINHOST_LADSPA=1
 
-    # Audio Settings
-    JUCE_ASIO=1
-    JUCE_WASAPI=1
-    JUCE_DIRECTSOUND=1
-    JUCE_ALSA=1
-    JUCE_JACK_AUDIO_DEVICES=1
+    # Audio Settings (platform-specific below)
     JUCE_USE_FLAC=1
     JUCE_USE_OGGVORBIS=1
-
-    # Graphics - Enable HiDPI
-    JUCE_WIN_PER_MONITOR_DPI_AWARE=1
 
     # Modern features
     JUCE_MODAL_LOOPS_PERMITTED=1
     JUCE_STRICT_REFCOUNTEDPOINTER=1
 )
+
+# Platform-specific audio backends
+if(WIN32)
+    target_compile_definitions(Pedalboard3 PRIVATE
+        JUCE_ASIO=1
+        JUCE_WASAPI=1
+        JUCE_DIRECTSOUND=1
+        JUCE_WIN_PER_MONITOR_DPI_AWARE=1
+    )
+else()
+    target_compile_definitions(Pedalboard3 PRIVATE
+        JUCE_ALSA=1
+        JUCE_JACK_AUDIO_DEVICES=1
+    )
+endif()
 
 # ==============================================================================
 # Link Libraries
@@ -308,9 +341,54 @@ if(WIN32)
 endif()
 
 # ==============================================================================
-# Out-of-Process Plugin Scanner (added in Phase 4)
+# Out-of-Process Plugin Scanner
 # ==============================================================================
-# TODO: Pedalboard3Scanner console app - added in Phase 4
+juce_add_console_app(Pedalboard3Scanner
+    PRODUCT_NAME "Pedalboard3Scanner"
+    COMPANY_NAME "Pedalboard3 Project"
+    BUNDLE_ID "com.pedalboard3.scanner"
+)
+
+juce_generate_juce_header(Pedalboard3Scanner)
+
+target_sources(Pedalboard3Scanner PRIVATE
+    src/PluginScannerMain.cpp
+)
+
+target_compile_definitions(Pedalboard3Scanner PRIVATE
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0
+    JUCE_PLUGINHOST_VST3=1
+    JUCE_PLUGINHOST_LADSPA=1
+    JUCE_MODAL_LOOPS_PERMITTED=1
+)
+
+if(WIN32)
+    target_compile_definitions(Pedalboard3Scanner PRIVATE
+        JUCE_ASIO=1
+        JUCE_WASAPI=1
+        JUCE_DIRECTSOUND=1
+    )
+else()
+    target_compile_definitions(Pedalboard3Scanner PRIVATE
+        JUCE_ALSA=1
+        JUCE_JACK_AUDIO_DEVICES=1
+    )
+endif()
+
+target_link_libraries(Pedalboard3Scanner PRIVATE
+    juce::juce_audio_basics
+    juce::juce_audio_devices
+    juce::juce_audio_formats
+    juce::juce_audio_processors
+    juce::juce_core
+    juce::juce_data_structures
+    juce::juce_events
+    juce::juce_graphics
+    juce::juce_gui_basics
+    fmt::fmt
+    spdlog::spdlog
+)
 
 # ==============================================================================
 # Tests (added in Phase 6)
