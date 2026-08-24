@@ -1,0 +1,64 @@
+# Build directories
+build/
+build_*/
+out/
+cmake-build-*/
+
+# Build artifacts
+*.obj
+*.o
+*.lib
+*.a
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.idb
+*.suo
+*.user
+*.log
+build_log*.txt
+
+# CMake generated
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+!cmake/
+
+# Visual Studio
+.vs/
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+x64/
+Debug/
+Release/
+
+# IDE/Editor files
+*.swp
+*.swo
+*~
+.idea/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# JUCE generated (JUCE/ is a submodule, intentionally tracked)
+JuceLibraryCode/
+*.jucer.bak
+
+# Crash dumps
+crashdumps/
+*.dmp
+
+# Reference codebases (not part of this project's source)
+pedalboard2-OLD/
+pedalboard3-VST3/

@@ -1,0 +1,232 @@
+# ==============================================================================
+# Pedalboard3 - CMake Build Configuration
+#
+# A modern VST3 plugin host preserving the original Pedalboard2 UI.
+# Built on JUCE 8.0.15 with C++20.
+# ==============================================================================
+
+cmake_minimum_required(VERSION 3.24)
+
+project(Pedalboard3
+    VERSION 3.0.0
+    DESCRIPTION "Modern VST3 Pedalboard Software for Live Performance"
+    LANGUAGES C CXX
+)
+
+# ==============================================================================
+# CPM.cmake - Dependency Manager
+# ==============================================================================
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
+
+# ==============================================================================
+# C++ Standard
+# ==============================================================================
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# ==============================================================================
+# Modern C++ Libraries (via CPM)
+# ==============================================================================
+
+# fmt - Modern string formatting
+CPMAddPackage(
+    NAME fmt
+    GITHUB_REPOSITORY fmtlib/fmt
+    GIT_TAG 12.2.0
+    OPTIONS "FMT_INSTALL OFF"
+)
+
+# spdlog - Fast async logging (uses fmt)
+CPMAddPackage(
+    NAME spdlog
+    GITHUB_REPOSITORY gabime/spdlog
+    GIT_TAG v1.17.0
+    OPTIONS "SPDLOG_FMT_EXTERNAL ON" "SPDLOG_INSTALL OFF"
+)
+
+# nlohmann_json - JSON parsing
+CPMAddPackage(
+    NAME nlohmann_json
+    GITHUB_REPOSITORY nlohmann/json
+    GIT_TAG v3.12.0
+    OPTIONS "JSON_BuildTests OFF" "JSON_Install OFF"
+)
+
+# ==============================================================================
+# Testing Framework
+# ==============================================================================
+option(Pedalboard3_BUILD_TESTS "Build tests" ON)
+
+if(Pedalboard3_BUILD_TESTS)
+    CPMAddPackage(
+        NAME Catch2
+        GITHUB_REPOSITORY catchorg/Catch2
+        GIT_TAG v3.15.3
+    )
+    if(Catch2_ADDED)
+        list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/extras)
+    endif()
+    enable_testing()
+endif()
+
+# ==============================================================================
+# Compiler Warnings
+# ==============================================================================
+if(MSVC)
+    add_compile_options(/W4 /WX-)  # High warnings, don't treat as errors yet
+    add_compile_options(/wd4100)   # Unreferenced formal parameter (common in JUCE)
+    add_compile_options(/wd4244)   # Conversion warnings (JUCE has many)
+    add_compile_options(/wd4267)   # Size_t conversion (JUCE has many)
+    add_compile_options(/FS)       # Force synchronous PDB writes
+else()
+    add_compile_options(-Wall -Wextra -Wpedantic)
+    add_compile_options(-Wno-unused-parameter)
+endif()
+
+# ==============================================================================
+# JUCE - Audio Framework (submodule at tag 8.0.15)
+# ==============================================================================
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/JUCE/CMakeLists.txt)
+    message(FATAL_ERROR
+        "JUCE submodule not found. Run:\n"
+        "  git submodule update --init --recursive\n"
+        "Or clone JUCE manually:\n"
+        "  git clone --depth 1 --branch 8.0.15 https://github.com/juce-framework/JUCE.git JUCE\n"
+        "JUCE must be at tag 8.0.15 (NOT master/9.x - breaking API changes)."
+    )
+endif()
+
+add_subdirectory(JUCE)
+
+# ==============================================================================
+# Main Application
+# ==============================================================================
+juce_add_gui_app(Pedalboard3
+    PRODUCT_NAME "Pedalboard3"
+    COMPANY_NAME "Pedalboard3 Project"
+    BUNDLE_ID "com.pedalboard3.app"
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/icon/icon-512.png"
+    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/icon/icon-48.png"
+)
+
+# Generate JUCE header
+juce_generate_juce_header(Pedalboard3)
+
+# ==============================================================================
+# Source Files
+# ==============================================================================
+# Phase 1: Core Audio/Graph Engine
+target_sources(Pedalboard3 PRIVATE
+    # Application
+    src/App.cpp
+    src/App.h
+
+    # Audio Core
+    src/AudioSingletons.cpp
+    src/AudioSingletons.h
+    src/FilterGraph.cpp
+    src/FilterGraph.h
+    src/InternalFilters.cpp
+    src/InternalFilters.h
+    src/BypassableInstance.cpp
+    src/BypassableInstance.h
+    src/MainTransport.cpp
+    src/MainTransport.h
+
+    # MIDI/OSC Infrastructure
+    src/MidiAppFifo.cpp
+    src/MidiAppFifo.h
+
+    # OSC (Phase 2: juce_osc replacement for NiallsOSCLib)
+    src/Mapping.cpp
+    src/Mapping.h
+    src/OscMappingManager.cpp
+    src/OscMappingManager.h
+    src/TapTempoHelper.cpp
+    src/TapTempoHelper.h
+)
+
+# ==============================================================================
+# Compile Definitions
+# ==============================================================================
+target_compile_definitions(Pedalboard3 PRIVATE
+    # JUCE Settings
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0
+    JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:Pedalboard3,JUCE_PRODUCT_NAME>"
+    JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:Pedalboard3,JUCE_VERSION>"
+
+    # Plugin Hosting
+    JUCE_PLUGINHOST_VST3=1
+    JUCE_PLUGINHOST_VST=0
+    JUCE_PLUGINHOST_AU=0
+    JUCE_PLUGINHOST_LADSPA=1
+
+    # Audio Settings
+    JUCE_ASIO=1
+    JUCE_WASAPI=1
+    JUCE_DIRECTSOUND=1
+    JUCE_ALSA=1
+    JUCE_JACK_AUDIO_DEVICES=1
+    JUCE_USE_FLAC=1
+    JUCE_USE_OGGVORBIS=1
+
+    # Graphics - Enable HiDPI
+    JUCE_WIN_PER_MONITOR_DPI_AWARE=1
+
+    # Modern features
+    JUCE_MODAL_LOOPS_PERMITTED=1
+    JUCE_STRICT_REFCOUNTEDPOINTER=1
+)
+
+# ==============================================================================
+# Link Libraries
+# ==============================================================================
+target_link_libraries(Pedalboard3 PRIVATE
+    # JUCE modules
+    juce::juce_audio_basics
+    juce::juce_audio_devices
+    juce::juce_audio_formats
+    juce::juce_audio_processors
+    juce::juce_audio_utils
+    juce::juce_core
+    juce::juce_cryptography
+    juce::juce_data_structures
+    juce::juce_dsp
+    juce::juce_events
+    juce::juce_graphics
+    juce::juce_gui_basics
+    juce::juce_gui_extra
+    juce::juce_opengl
+    juce::juce_osc
+
+    # Recommended flags
+    juce::juce_recommended_config_flags
+    juce::juce_recommended_warning_flags
+
+    # Modern C++ libraries
+    fmt::fmt
+    spdlog::spdlog
+    nlohmann_json::nlohmann_json
+)
+
+# Windows-specific settings
+if(WIN32)
+    target_compile_definitions(Pedalboard3 PRIVATE
+        _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+    )
+    target_link_libraries(Pedalboard3 PRIVATE ws2_32)
+endif()
+
+# ==============================================================================
+# Out-of-Process Plugin Scanner (added in Phase 4)
+# ==============================================================================
+# TODO: Pedalboard3Scanner console app - added in Phase 4
+
+# ==============================================================================
+# Tests (added in Phase 6)
+# ==============================================================================
+if(Pedalboard3_BUILD_TESTS)
+    # TODO: add_subdirectory(tests) - added in Phase 6
+endif()

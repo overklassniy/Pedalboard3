@@ -1,0 +1,176 @@
+// MidiAppFifo.cpp - Lock-free FIFO for audio-to-message-thread communication.
+//
+// This file is part of Pedalboard3, an audio plugin host.
+// Copyright (c) 2011 Niall Moody.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+#include "MidiAppFifo.h"
+
+//------------------------------------------------------------------------------
+MidiAppFifo::MidiAppFifo()
+    : idFifo(BufferSize)
+    , tempoFifo(BufferSize)
+    , patchChangeFifo(BufferSize)
+    , paramChangeFifo(BufferSize)
+{
+    for (int i = 0; i < BufferSize; ++i)
+    {
+        idBuffer[i] = 0;
+        tempoBuffer[i] = 0;
+        patchChangeBuffer[i] = 0;
+        paramChangeBuffer[i] = {};
+    }
+}
+
+//------------------------------------------------------------------------------
+MidiAppFifo::~MidiAppFifo() = default;
+
+//------------------------------------------------------------------------------
+void MidiAppFifo::writeID(CommandID id)
+{
+    const juce::SpinLock::ScopedLockType sl(writeLock);
+    int start1, size1, start2, size2;
+
+    idFifo.prepareToWrite(1, start1, size1, start2, size2);
+
+    if (size1 > 0)
+        idBuffer[start1] = id;
+    else if (size2 > 0)
+        idBuffer[start2] = id;
+
+    idFifo.finishedWrite(size1 + size2);
+}
+
+//------------------------------------------------------------------------------
+CommandID MidiAppFifo::readID()
+{
+    int start1, size1, start2, size2;
+    CommandID retval = static_cast<CommandID>(-1);
+
+    idFifo.prepareToRead(1, start1, size1, start2, size2);
+
+    if (size1 > 0)
+        retval = idBuffer[start1];
+    else if (size2 > 0)
+        retval = idBuffer[start2];
+
+    idFifo.finishedRead(size1 + size2);
+
+    return retval;
+}
+
+//------------------------------------------------------------------------------
+void MidiAppFifo::writeTempo(double tempo)
+{
+    const juce::SpinLock::ScopedLockType sl(writeLock);
+    int start1, size1, start2, size2;
+
+    tempoFifo.prepareToWrite(1, start1, size1, start2, size2);
+
+    if (size1 > 0)
+        tempoBuffer[start1] = tempo;
+    else if (size2 > 0)
+        tempoBuffer[start2] = tempo;
+
+    tempoFifo.finishedWrite(size1 + size2);
+}
+
+//------------------------------------------------------------------------------
+double MidiAppFifo::readTempo()
+{
+    int start1, size1, start2, size2;
+    double retval = 120.0;
+
+    tempoFifo.prepareToRead(1, start1, size1, start2, size2);
+
+    if (size1 > 0)
+        retval = tempoBuffer[start1];
+    else if (size2 > 0)
+        retval = tempoBuffer[start2];
+
+    tempoFifo.finishedRead(size1 + size2);
+
+    return retval;
+}
+
+//------------------------------------------------------------------------------
+void MidiAppFifo::writePatchChange(int index)
+{
+    const juce::SpinLock::ScopedLockType sl(writeLock);
+    int start1, size1, start2, size2;
+
+    patchChangeFifo.prepareToWrite(1, start1, size1, start2, size2);
+
+    if (size1 > 0)
+        patchChangeBuffer[start1] = index;
+    else if (size2 > 0)
+        patchChangeBuffer[start2] = index;
+
+    patchChangeFifo.finishedWrite(size1 + size2);
+}
+
+//------------------------------------------------------------------------------
+int MidiAppFifo::readPatchChange()
+{
+    int start1, size1, start2, size2;
+    int retval = 0;
+
+    patchChangeFifo.prepareToRead(1, start1, size1, start2, size2);
+
+    if (size1 > 0)
+        retval = patchChangeBuffer[start1];
+    else if (size2 > 0)
+        retval = patchChangeBuffer[start2];
+
+    patchChangeFifo.finishedRead(size1 + size2);
+
+    return retval;
+}
+
+//------------------------------------------------------------------------------
+void MidiAppFifo::writeParamChange(FilterGraph* graph, uint32 pluginId, int paramIndex, float value)
+{
+    const juce::SpinLock::ScopedLockType sl(writeLock);
+    int start1, size1, start2, size2;
+
+    paramChangeFifo.prepareToWrite(1, start1, size1, start2, size2);
+
+    if (size1 > 0)
+        paramChangeBuffer[start1] = {graph, pluginId, paramIndex, value};
+    else if (size2 > 0)
+        paramChangeBuffer[start2] = {graph, pluginId, paramIndex, value};
+
+    paramChangeFifo.finishedWrite(size1 + size2);
+}
+
+//------------------------------------------------------------------------------
+bool MidiAppFifo::readParamChange(PendingParamChange& out)
+{
+    if (paramChangeFifo.getNumReady() <= 0)
+        return false;
+
+    int start1, size1, start2, size2;
+
+    paramChangeFifo.prepareToRead(1, start1, size1, start2, size2);
+
+    if (size1 > 0)
+        out = paramChangeBuffer[start1];
+    else if (size2 > 0)
+        out = paramChangeBuffer[start2];
+
+    paramChangeFifo.finishedRead(size1 + size2);
+
+    return (size1 + size2) > 0;
+}
