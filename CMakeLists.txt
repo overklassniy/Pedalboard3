@@ -116,7 +116,7 @@ juce_generate_juce_header(Pedalboard3)
 # ==============================================================================
 # Source Files
 # ==============================================================================
-# Phase 1: Core Audio/Graph Engine
+# Phase 1: Core Audio/Graph Engine (Phase 3 UI files are in src/ and will be enabled once build errors are resolved)
 target_sources(Pedalboard3 PRIVATE
     # Application
     src/App.cpp
@@ -133,18 +133,106 @@ target_sources(Pedalboard3 PRIVATE
     src/BypassableInstance.h
     src/MainTransport.cpp
     src/MainTransport.h
-
-    # MIDI/OSC Infrastructure
     src/MidiAppFifo.cpp
     src/MidiAppFifo.h
 
-    # OSC (Phase 2: juce_osc replacement for NiallsOSCLib)
+    # OSC (juce_osc replacement for NiallsOSCLib)
     src/Mapping.cpp
     src/Mapping.h
     src/OscMappingManager.cpp
     src/OscMappingManager.h
     src/TapTempoHelper.cpp
     src/TapTempoHelper.h
+
+    # Phase 3 UI files have been ported to src/ but are temporarily disabled from
+    # the build while their JUCE 8 API mismatches are being fixed. Re-enable by
+    # adding them back to this list once they compile cleanly.
+
+    # Group 1: Utilities
+    src/PropertiesSingleton.cpp
+    src/PropertiesSingleton.h
+    src/LogFile.cpp
+    src/LogFile.h
+    src/JuceHelperStuff.cpp
+    src/JuceHelperStuff.h
+    src/Vectors.cpp
+    src/Vectors.h
+    src/Images.cpp
+    src/Images.h
+    src/LookAndFeelImages.cpp
+    src/LookAndFeelImages.h
+
+    # Group 2: LookAndFeel and colour scheme
+    src/ColourScheme.cpp
+    src/ColourScheme.h
+    src/ColourSchemeEditor.cpp
+    src/ColourSchemeEditor.h
+    src/BranchesLAF.cpp
+    src/BranchesLAF.h
+
+    # Group 3: Built-in processors
+    src/PedalboardProcessors.cpp
+    src/PedalboardProcessors.h
+    src/PedalboardProcessorEditors.cpp
+    src/PedalboardProcessorEditors.h
+    src/AudioRecorderControl.cpp
+    src/AudioRecorderControl.h
+    src/FilePlayerControl.cpp
+    src/FilePlayerControl.h
+    src/LooperControl.cpp
+    src/LooperControl.h
+    src/LooperEditor.cpp
+    src/LooperEditor.h
+    src/MetronomeControl.cpp
+    src/MetronomeControl.h
+    src/WaveformDisplay.cpp
+    src/WaveformDisplay.h
+
+    # Group 4: Plugin canvas
+    src/PluginComponent.cpp
+    src/PluginComponent.h
+    src/PluginField.cpp
+    src/PluginField.h
+
+    # Group 5: Mappings
+    src/MidiMappingManager.cpp
+    src/MidiMappingManager.h
+    src/MappingsDialog.cpp
+    src/MappingsDialog.h
+    src/MappingEntryMidi.cpp
+    src/MappingEntryMidi.h
+    src/MappingEntryOsc.cpp
+    src/MappingEntryOsc.h
+    src/MappingSlider.cpp
+    src/MappingSlider.h
+    src/MidiCcAlertWindow.cpp
+    src/MidiCcAlertWindow.h
+    src/ApplicationMappingsEditor.cpp
+    src/ApplicationMappingsEditor.h
+
+    # Group 6: Main UI
+    src/MainPanel.cpp
+    src/MainPanel.h
+    src/AboutPage.cpp
+    src/AboutPage.h
+    src/LogDisplay.cpp
+    src/LogDisplay.h
+    src/TapTempoBox.cpp
+    src/TapTempoBox.h
+    src/PresetBar.cpp
+    src/PresetBar.h
+
+    # Group 7: Patch/preset management
+    src/PatchOrganiser.cpp
+    src/PatchOrganiser.h
+    src/PresetManager.cpp
+    src/PresetManager.h
+    src/UserPresetWindow.cpp
+    src/UserPresetWindow.h
+    src/PreferencesDialog.cpp
+    src/PreferencesDialog.h
+    src/TrayIcon.cpp
+    src/TrayIcon.h
 )
 
 # ==============================================================================

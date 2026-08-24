@@ -17,20 +17,23 @@
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "App.h"
+#include "MainPanel.h"
+#include "BranchesLAF.h"
+#include "ColourScheme.h"
+#include "AudioSingletons.h"
+#include "PropertiesSingleton.h"
 
-/// Placeholder main window. Will be replaced by the full MainPanel in Phase 3.
+/// Main application window holding the top-level MainPanel.
 class MainWindow : public juce::DocumentWindow
 {
   public:
     MainWindow(juce::String name)
-        : DocumentWindow(name, juce::Desktop::getInstance().getDefaultLookAndFeel().findColour(
-                                  juce::ResizableWindow::backgroundColourId),
-                         DocumentWindow::allButtons)
+        : DocumentWindow(name, juce::Colours::black, DocumentWindow::allButtons)
     {
         setUsingNativeTitleBar(true);
-        setContentOwned(new juce::Label({}, "Pedalboard3 - Phase 0 build verification"), true);
+        setContentOwned(new MainPanel(&commandManager), true);
 
-        centreWithSize(600, 400);
+        centreWithSize(1024, 768);
         setVisible(true);
     }
 
@@ -40,6 +43,8 @@ class MainWindow : public juce::DocumentWindow
     }
 
   private:
+    juce::ApplicationCommandManager commandManager;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)
 };
 
@@ -47,12 +52,19 @@ void Pedalboard3App::initialise(const juce::String& commandLine)
 {
     juce::ignoreUnused(commandLine);
 
+    // Set up application properties storage before the UI is created.
+    PropertiesSingleton::getInstance();
+
     mainWindow = std::make_unique<MainWindow>(getApplicationName());
 }
 
 void Pedalboard3App::shutdown()
 {
     mainWindow = nullptr;
+    AudioPluginFormatManagerSingleton::killInstance();
+    AudioFormatManagerSingleton::killInstance();
+    AudioThumbnailCacheSingleton::killInstance();
+    PropertiesSingleton::killInstance();
 }
 
 void Pedalboard3App::anotherInstanceStarted(const juce::String& commandLine)

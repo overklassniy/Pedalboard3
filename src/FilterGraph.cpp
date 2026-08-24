@@ -125,6 +125,28 @@ void FilterGraph::addFilter(std::unique_ptr<AudioPluginInstance> plugin, double 
 }
 
 //------------------------------------------------------------------------------
+void FilterGraph::addFilter(std::unique_ptr<AudioProcessor> plugin, double x, double y)
+{
+    if (plugin == nullptr)
+        return;
+
+    auto node = graph.addNode(std::move(plugin));
+
+    if (node != nullptr)
+    {
+        node->properties.set("x", x);
+        node->properties.set("y", y);
+        changed();
+    }
+    else
+    {
+        AlertWindow::showMessageBox(AlertWindow::WarningIcon,
+                                     TRANS("Couldn't create filter"),
+                                     "Failed to add plugin to graph");
+    }
+}
+
+//------------------------------------------------------------------------------
 void FilterGraph::removeFilter(AudioProcessorGraph::NodeID id)
 {
     if (graph.removeNode(id))

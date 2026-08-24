@@ -48,6 +48,8 @@ class FilterGraph : public FileBasedDocument
     void addFilter(const PluginDescription* desc, double x, double y);
     /// Adds an already-created plugin instance at the given canvas position.
     void addFilter(std::unique_ptr<AudioPluginInstance> plugin, double x, double y);
+    /// Adds an already-created internal processor at the given canvas position.
+    void addFilter(std::unique_ptr<AudioProcessor> plugin, double x, double y);
 
     /// Removes the plugin with the given node ID.
     void removeFilter(AudioProcessorGraph::NodeID filterUID);

@@ -1,0 +1,106 @@
+// PresetManager.cpp - A class used to keep track of user-saved plugin presets.
+//
+// This file is part of Pedalboard3, an audio plugin host.
+// Copyright (c) 2012 Niall Moody.
+// Copyright (c) 2026 Pedalboard3 Project.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+#include "PresetManager.h"
+
+//------------------------------------------------------------------------------
+
+PresetManager::PresetManager()
+{
+    File presetDir = File::getSpecialLocation(File::userApplicationDataDirectory)
+                         .getChildFile("Pedalboard3")
+                         .getChildFile("presets");
+
+    if (!presetDir.exists())
+        presetDir.createDirectory();
+}
+
+//------------------------------------------------------------------------------
+
+PresetManager::~PresetManager()
+{
+}
+
+//------------------------------------------------------------------------------
+
+void PresetManager::importPreset(const File& inFile, AudioProcessor* plugin)
+{
+    FileInputStream inStream(inFile);
+    MemoryBlock memBlock(static_cast<size_t>(inStream.getTotalLength()));
+
+    inStream.read(memBlock.getData(), static_cast<size_t>(inStream.getTotalLength()));
+
+    plugin->setCurrentProgramStateInformation(memBlock.getData(),
+                                              static_cast<int>(memBlock.getSize()));
+}
+
+//------------------------------------------------------------------------------
+
+void PresetManager::importPreset(const String& presetName,
+                                 AudioProcessor* plugin)
+{
+    File presetPath;
+
+    presetPath = getPluginPresetDir(plugin->getName())
+                     .getChildFile(presetName)
+                     .withFileExtension("fxp");
+    importPreset(presetPath, plugin);
+}
+
+//------------------------------------------------------------------------------
+
+void PresetManager::savePreset(const MemoryBlock& block,
+                               const String& presetName,
+                               const String& pluginName)
+{
+    File presetDir = getPluginPresetDir(pluginName);
+
+    if (!presetDir.exists())
+        presetDir.createDirectory();
+
+    FileOutputStream outStream(presetDir.getChildFile(presetName).withFileExtension(".fxp"));
+
+    outStream.write(block.getData(), block.getSize());
+}
+
+//------------------------------------------------------------------------------
+
+void PresetManager::getListOfUserPresets(const String& pluginName,
+                                         StringArray& presetList)
+{
+    File presetDir = getPluginPresetDir(pluginName);
+    Array<File> presets;
+
+    if (presetDir.exists())
+    {
+        presetDir.findChildFiles(presets, File::findFiles, false, "*.fxp");
+        for (const auto& preset : presets)
+            presetList.add(preset.getFileNameWithoutExtension());
+    }
+}
+
+//------------------------------------------------------------------------------
+
+File PresetManager::getPluginPresetDir(const String& pluginName)
+{
+    return File::getSpecialLocation(File::userApplicationDataDirectory)
+        .getChildFile("Pedalboard3")
+        .getChildFile("presets")
+        .getChildFile(pluginName);
+}
