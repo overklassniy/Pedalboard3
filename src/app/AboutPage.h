@@ -26,10 +26,12 @@
 ///
 /// Displays the application title, description, credits, author, license,
 /// hyperlinks to niallmoody.com and the JUCE website, version information,
-/// and the current IP address.
+/// the current IP address, and a live update-status label that queries the
+/// GitHub releases API for overklassniy/Pedalboard3 in a background thread.
 class AboutPage : public juce::Component {
   public:
-    /// Constructs the about page, populating all labels and links.
+    /// Constructs the about page, populating all labels and links, and
+    /// starts a background thread that checks GitHub for a newer release.
     ///
     /// @param ip The current local IP address shown in the dialog.
     explicit AboutPage(const juce::String& ip);
@@ -42,6 +44,19 @@ class AboutPage : public juce::Component {
 
     /// Lays out all labels, links, and the version display.
     void resized() override;
+
+    /// Updates the update-status display.
+    ///
+    /// Called on the message thread via MessageManager::callAsync after the
+    /// background GitHub check completes. When showLink is true the status
+    /// text is shown as a clickable hyperlink to the GitHub releases page
+    /// (used when an update is available); otherwise it is shown as a
+    /// plain label.
+    ///
+    /// @param text The status message to display.
+    /// @param colour The colour to use for the status text.
+    /// @param showLink True to show the text as a hyperlink; false for a label.
+    void setUpdateStatus(const juce::String& text, const juce::Colour& colour, bool showLink);
 
   private:
     /// The current computer's IP address.
@@ -56,6 +71,8 @@ class AboutPage : public juce::Component {
     std::unique_ptr<juce::Label> versionLabel;
     std::unique_ptr<juce::Label> juceVersionLabel;
     std::unique_ptr<juce::Label> ipAddressLabel;
+    std::unique_ptr<juce::Label> updateStatusLabel;
+    std::unique_ptr<juce::HyperlinkButton> githubLink;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AboutPage)
 };

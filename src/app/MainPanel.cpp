@@ -790,7 +790,7 @@ bool MainPanel::perform(const InvocationInfo& info) {
     case HelpAbout: {
         AboutPage dlg(IPAddress::getLocalAddress().toString());
 
-        dlg.setSize(400, 250);
+        dlg.setSize(400, 310);
 
         JuceHelperStuff::showModalDialog("About", &dlg, 0, ColourScheme::getInstance().colours["Window Background"],
                                          true, true);
