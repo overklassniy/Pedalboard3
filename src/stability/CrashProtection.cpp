@@ -84,8 +84,10 @@ static int exceptionFilter(unsigned int code, struct _EXCEPTION_POINTERS* ep) {
     spdlog::critical("[CrashProtection] SEH caught exception: {} (0x{:08X})", exceptionName, code);
 
     if (ep && ep->ContextRecord) {
-    #ifdef _M_X64
+    #if defined(_M_X64)
         spdlog::critical("[CrashProtection] RIP: 0x{:016X}", ep->ContextRecord->Rip);
+    #elif defined(_M_ARM64)
+        spdlog::critical("[CrashProtection] PC: 0x{:016X}", ep->ContextRecord->Pc);
     #else
         spdlog::critical("[CrashProtection] EIP: 0x{:08X}", ep->ContextRecord->Eip);
     #endif

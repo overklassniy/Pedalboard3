@@ -17,4 +17,10 @@ target_compile_definitions(Pedalboard3_Tests PRIVATE
 
 include(CTest)
 include(Catch)
-catch_discover_tests(Pedalboard3_Tests)
+# When cross-compiling, catch_discover_tests tries to run the test
+# executable on the build host, which fails because the binary targets a
+# foreign architecture. Skip test discovery in that case; tests can still
+# be run manually on the target system.
+if(NOT CMAKE_CROSSCOMPILING)
+    catch_discover_tests(Pedalboard3_Tests)
+endif()
