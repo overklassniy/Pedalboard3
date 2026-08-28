@@ -47,7 +47,7 @@ jobs:
   # Pedalboard3.exe application and the Pedalboard3Scanner.exe helper.
   # -----------------------------------------------------------------
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -187,12 +187,18 @@ jobs:
 
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          # Architecture-specific packages: install the :arm64 variant so
+          # the cross-compiler finds the arm64 libraries and headers.
           sudo apt-get install -y \
-            libasound2-dev:arm64 libjack-jackd2-dev:arm64 ladspa-sdk:arm64 \
+            libasound2-dev:arm64 libjack-jackd2-dev:arm64 \
             libfreetype-dev:arm64 libfontconfig1-dev:arm64 \
             libx11-dev:arm64 libxcomposite-dev:arm64 libxcursor-dev:arm64 libxext-dev:arm64 \
             libxinerama-dev:arm64 libxrandr-dev:arm64 libxrender-dev:arm64 \
             libglu1-mesa-dev:arm64 mesa-common-dev:arm64
+          # Architecture-independent packages (headers only): install
+          # without the :arm64 suffix. ladspa-sdk is Architecture: all, so
+          # the :arm64 variant does not exist and would fail to install.
+          sudo apt-get install -y ladspa-sdk
 
       - name: Configure
         run: |
