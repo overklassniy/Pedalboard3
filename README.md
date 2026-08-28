@@ -6,6 +6,7 @@
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows-0078D4.svg)](docs/build.md)
 [![Platform: Linux](https://img.shields.io/badge/Platform-Linux-FCC624.svg)](docs/build.md)
 [![CMake 3.24+](https://img.shields.io/badge/CMake-3.24%2B-064F8C.svg)](CMakeLists.txt)
+[![Release](https://img.shields.io/github/actions/workflow/status/overklassniy/Pedalboard3/release.yml?label=release)](.github/workflows/release.yml)
 
 Pedalboard3 is a free, open-source **VST3 plugin host for live
 performance**. It is a modernized rebuild of Pedalboard2 that preserves

@@ -1,0 +1,270 @@
+# Release workflow that builds Pedalboard3 for all supported Windows and
+# Linux architectures and publishes distributable artifacts.
+#
+# Windows targets build natively on windows-latest with Visual Studio 2022
+# and produce a .zip containing the Pedalboard3 executable and the
+# Pedalboard3Scanner helper.
+# Linux targets build on ubuntu-latest: x64 natively with gcc/Ninja, arm64
+# cross-compiled with the aarch64-linux-gnu toolchain and multiarch
+# development libraries. Each produces a .tar.gz with the same binaries.
+#
+# The workflow runs on tag pushes matching "v*" and on manual dispatch.
+# On tag pushes (or when create_release is set on manual dispatch), a GitHub
+# Release is created with all artifacts attached.
+#
+# The build is driven by the CMake presets in CMakePresets.json. The JUCE
+# 8.0.15 submodule is checked out recursively. CPM fetches fmt, spdlog,
+# nlohmann_json, and Catch2 during configure, so no system copies are
+# required. The application version is taken from the tag (or the manual
+# dispatch input) via Pedalboard3_VERSION_OVERRIDE so the About dialog's
+# update check reports the release version.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version without v prefix (e.g. 3.0.0)'
+        required: true
+        default: '0.0.0-dev'
+      create_release:
+        description: 'Create a GitHub release'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  # -----------------------------------------------------------------
+  # Windows builds: native on windows-latest using Visual Studio 2022.
+  # Produces Pedalboard3-<version>-windows-<arch>.zip containing the
+  # Pedalboard3.exe application and the Pedalboard3Scanner.exe helper.
+  # -----------------------------------------------------------------
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            preset: windows-default
+            build_dir: build
+          - arch: arm64
+            preset: windows-arm64
+            build_dir: build-arm64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure
+        run: >
+          cmake --preset ${{ matrix.preset }}
+          -DPedalboard3_VERSION_OVERRIDE=${{ steps.version.outputs.version }}
+
+      - name: Build
+        run: cmake --build ${{ matrix.build_dir }} --config Release
+
+      - name: Package Windows artifact
+        shell: bash
+        run: |
+          # JUCE places the application and the scanner in
+          # <build_dir>/Pedalboard3_artefacts/Release/. The post-build
+          # step in CMakeLists.txt copies Pedalboard3Scanner next to the
+          # application executable, so both binaries live in the same
+          # folder.
+          src="${{ matrix.build_dir }}/Pedalboard3_artefacts/Release"
+          mkdir -p staging
+          cp "$src/Pedalboard3.exe" staging/
+          cp "$src/Pedalboard3Scanner.exe" staging/
+          cd staging
+          7z a "../Pedalboard3-${{ steps.version.outputs.version }}-windows-${{ matrix.arch }}.zip" \
+            Pedalboard3.exe Pedalboard3Scanner.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pedalboard3-windows-${{ matrix.arch }}
+          path: Pedalboard3-*.zip
+          if-no-files-found: error
+
+  # -----------------------------------------------------------------
+  # Linux builds: x64 native, arm64 cross-compiled with the
+  # aarch64-linux-gnu toolchain and multiarch development libraries.
+  # Produces Pedalboard3-<version>-linux-<arch>.tar.gz containing the
+  # Pedalboard3 application and the Pedalboard3Scanner helper.
+  # -----------------------------------------------------------------
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            preset: linux-default
+            build_dir: build
+            cross: false
+          - arch: arm64
+            preset: linux-arm64
+            build_dir: build-arm64
+            cross: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          # JUCE 8 Linux dependencies (see JUCE docs/Linux Dependencies.md)
+          # for the modules Pedalboard3 uses: juce_gui_basics, juce_graphics,
+          # juce_audio_devices (ALSA + JACK), juce_opengl, and LADSPA hosting.
+          # JUCE_USE_CURL=0 and JUCE_WEB_BROWSER=0, so libcurl and webkit are
+          # not required.
+          sudo apt-get install -y ninja-build cmake \
+            libasound2-dev libjack-jackd2-dev ladspa-sdk \
+            libfreetype-dev libfontconfig1-dev \
+            libx11-dev libxcomposite-dev libxcursor-dev libxext-dev \
+            libxinerama-dev libxrandr-dev libxrender-dev \
+            libglu1-mesa-dev mesa-common-dev
+
+      - name: Install cross-compiler and multiarch libraries (arm64)
+        if: matrix.cross
+        run: |
+          sudo dpkg --add-architecture arm64
+
+          # On Ubuntu 24.04 the default apt sources only carry amd64
+          # packages. For arm64 the package indices must be fetched from
+          # ports.ubuntu.com instead. Restrict the existing deb822 sources
+          # to amd64 so apt-get update does not 404 on the foreign
+          # architecture, then add the arm64 ports sources.
+          if [[ -f /etc/apt/sources.list.d/ubuntu.sources ]]; then
+            sudo sed -i '/^Architectures:/d' /etc/apt/sources.list.d/ubuntu.sources
+            sudo sed -i '/^Types: deb/a Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources
+          fi
+
+          sudo tee /etc/apt/sources.list.d/ports.sources > /dev/null <<'EOF'
+          Types: deb
+          Architectures: arm64
+          URIs: http://ports.ubuntu.com/ubuntu-ports/
+          Suites: noble noble-updates noble-backports
+          Components: main universe restricted multiverse
+          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+          Types: deb
+          Architectures: arm64
+          URIs: http://ports.ubuntu.com/ubuntu-ports/
+          Suites: noble-security
+          Components: main universe restricted multiverse
+          Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+          EOF
+
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          sudo apt-get install -y \
+            libasound2-dev:arm64 libjack-jackd2-dev:arm64 ladspa-sdk:arm64 \
+            libfreetype-dev:arm64 libfontconfig1-dev:arm64 \
+            libx11-dev:arm64 libxcomposite-dev:arm64 libxcursor-dev:arm64 libxext-dev:arm64 \
+            libxinerama-dev:arm64 libxrandr-dev:arm64 libxrender-dev:arm64 \
+            libglu1-mesa-dev:arm64 mesa-common-dev:arm64
+
+      - name: Configure and build
+        run: |
+          # For the arm64 cross-compile, point pkg-config at the aarch64
+          # multiarch libraries so JUCE's find_package(PkgConfig) calls
+          # resolve the foreign-architecture dependencies. The native x64
+          # build leaves pkg-config at its defaults.
+          if [[ "${{ matrix.cross }}" == "true" ]]; then
+            export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
+            export PKG_CONFIG_LIBDIR=/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/share/pkgconfig
+          fi
+
+          cmake --preset ${{ matrix.preset }} \
+            -DPedalboard3_VERSION_OVERRIDE=${{ steps.version.outputs.version }}
+          cmake --build ${{ matrix.build_dir }}
+
+      - name: Package Linux artifact
+        run: |
+          # JUCE places the application in
+          # <build_dir>/Pedalboard3_artefacts/Release/. The post-build
+          # step in CMakeLists.txt copies the scanner next to the
+          # application, so both binaries live in the same folder. The
+          # scanner IPC is Windows-specific, so on Linux the helper is a
+          # stub; it is still packaged for completeness.
+          src="${{ matrix.build_dir }}/Pedalboard3_artefacts/Release"
+          mkdir -p staging
+          cp "$src/Pedalboard3" staging/
+          cp "$src/Pedalboard3Scanner.exe" staging/ 2>/dev/null || true
+          cd staging
+          tar czf "../Pedalboard3-${{ steps.version.outputs.version }}-linux-${{ matrix.arch }}.tar.gz" \
+            Pedalboard3 Pedalboard3Scanner.exe 2>/dev/null || \
+          tar czf "../Pedalboard3-${{ steps.version.outputs.version }}-linux-${{ matrix.arch }}.tar.gz" Pedalboard3
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pedalboard3-linux-${{ matrix.arch }}
+          path: Pedalboard3-*.tar.gz
+          if-no-files-found: error
+
+  # -----------------------------------------------------------------
+  # Release job: collects all artifacts and creates a GitHub Release.
+  # Only runs on tag pushes or when explicitly requested via
+  # workflow_dispatch with create_release=true.
+  # -----------------------------------------------------------------
+  release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: >-
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'workflow_dispatch' && inputs.create_release)
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: List artifacts
+        run: find artifacts -type f | sort
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('v{0}', steps.version.outputs.version) }}
+          name: Pedalboard3 ${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: |
+            artifacts/Pedalboard3-*.zip
+            artifacts/Pedalboard3-*.tar.gz

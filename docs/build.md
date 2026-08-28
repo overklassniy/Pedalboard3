@@ -48,14 +48,23 @@ or 9.x; the JUCE 8 API has breaking changes that the codebase relies on
 
 ## Configure and build
 
-The project ships four CMake presets (defined in `CMakePresets.json`):
+The project ships six CMake presets (defined in `CMakePresets.json`):
 
 | Preset | Platform | Generator | Build type | Binary dir |
 | --- | --- | --- | --- | --- |
-| `windows-default` | Windows | Visual Studio 17 2022 x64 | Release | `build/` |
-| `windows-debug` | Windows | Visual Studio 17 2022 x64 | Debug | `build-debug/` |
-| `linux-default` | Linux | Ninja + gcc/g++ | Release | `build/` |
-| `linux-debug` | Linux | Ninja + gcc/g++ | Debug | `build-debug/` |
+| `windows-default` | Windows x64 | Visual Studio 17 2022 x64 | Release | `build/` |
+| `windows-debug` | Windows x64 | Visual Studio 17 2022 x64 | Debug | `build-debug/` |
+| `windows-arm64` | Windows arm64 | Visual Studio 17 2022 ARM64 | Release | `build-arm64/` |
+| `linux-default` | Linux x64 | Ninja + gcc/g++ | Release | `build/` |
+| `linux-debug` | Linux x64 | Ninja + gcc/g++ | Debug | `build-debug/` |
+| `linux-arm64` | Linux arm64 | Ninja + aarch64-linux-gnu cross | Release | `build-arm64/` |
+
+The `windows-arm64` preset requires the MSVC v143 ARM64 build tools
+(`Microsoft.VisualStudio.Component.VC.Tools.ARM64`), included in the Visual
+Studio 2022 "Desktop development with C++" workload. The `linux-arm64`
+preset cross-compiles with `aarch64-linux-gnu-gcc` / `g++` and requires the
+matching cross-compiler package plus the `:arm64` multiarch development
+libraries listed in [Linux dependencies](#dependencies).
 
 ### Windows (Release)
 
@@ -131,9 +140,33 @@ required; CPM downloads them into the build tree.
 ## Scanner binary placement
 
 The `Pedalboard3Scanner` console application communicates with the host
-over a Windows named pipe. `PluginScannerClient::getScannerExecutable()`
-looks for the scanner binary in the same directory as the main
-executable at runtime. The root `CMakeLists.txt` does not include a
-post-build copy command, so when distributing a build, place the scanner
-binary alongside the host executable manually or through your packaging
-step.
+over a Windows named pipe (the IPC protocol is Windows-specific; on Linux
+the scanner is built but is a stub). `PluginScannerClient` looks for the
+scanner binary in the same directory as the main executable at runtime.
+The root `CMakeLists.txt` includes a post-build command that copies
+`Pedalboard3Scanner` next to the `Pedalboard3` executable, so both
+binaries end up in `<build_dir>/Pedalboard3_artefacts/<config>/`. When
+distributing a build, ship both binaries from that folder.
+
+## Application version
+
+The application version reported by `JUCEApplication::getApplicationVersion()`
+(and shown in the About dialog's update check) is taken from the CMake
+project version, which defaults to `3.0.0`. To build a specific release
+version, pass the `Pedalboard3_VERSION_OVERRIDE` cache variable:
+
+```bash
+cmake --preset windows-default -DPedalboard3_VERSION_OVERRIDE=3.1.0
+```
+
+This is what the release workflow uses to stamp tagged builds with the tag
+version.
+
+## Release workflow
+
+The [release workflow](../.github/workflows/release.yml) builds Pedalboard3
+for Windows x64, Windows arm64, Linux x64, and Linux arm64, then attaches
+the artifacts to a GitHub Release. It runs on tag pushes matching `v*` and
+on manual dispatch. See
+[`.github/workflows/README.md`](../.github/workflows/README.md) for the
+full trigger, matrix, and dependency details.

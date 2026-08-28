@@ -5,11 +5,23 @@
 
 cmake_minimum_required(VERSION 3.24)
 
+# The project version is used by JUCE as the application version, which the
+# About dialog's GitHub update check compares against the latest release tag.
+# CI release builds pass -DPedalboard3_VERSION_OVERRIDE=<version> so that a
+# tagged build reports the tag version instead of the hardcoded default.
+if(DEFINED Pedalboard3_VERSION_OVERRIDE)
+    set(_pedalboard3_project_version "${Pedalboard3_VERSION_OVERRIDE}")
+else()
+    set(_pedalboard3_project_version "3.0.0")
+endif()
+
 project(Pedalboard3
-    VERSION 3.0.0
+    VERSION "${_pedalboard3_project_version}"
     DESCRIPTION "Modern VST3 Pedalboard Software for Live Performance"
     LANGUAGES C CXX
 )
+
+unset(_pedalboard3_project_version)
 
 # CPM.cmake - Dependency Manager
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)

@@ -33,6 +33,19 @@
             }
         },
         {
+            "name": "windows-arm64",
+            "displayName": "Windows (Visual Studio 2022 ARM64)",
+            "generator": "Visual Studio 17 2022",
+            "architecture": {
+                "value": "ARM64",
+                "strategy": "set"
+            },
+            "binaryDir": "${sourceDir}/build-arm64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
             "name": "linux-default",
             "displayName": "Linux (Ninja Release)",
             "generator": "Ninja",
@@ -53,6 +66,19 @@
                 "CMAKE_C_COMPILER": "gcc",
                 "CMAKE_CXX_COMPILER": "g++"
             }
+        },
+        {
+            "name": "linux-arm64",
+            "displayName": "Linux (Ninja Release, aarch64 cross-compile)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-arm64",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_SYSTEM_NAME": "Linux",
+                "CMAKE_SYSTEM_PROCESSOR": "aarch64",
+                "CMAKE_C_COMPILER": "aarch64-linux-gnu-gcc",
+                "CMAKE_CXX_COMPILER": "aarch64-linux-gnu-g++"
+            }
         }
     ],
     "buildPresets": [
@@ -67,12 +93,21 @@
             "configuration": "Debug"
         },
         {
+            "name": "windows-arm64",
+            "configurePreset": "windows-arm64",
+            "configuration": "Release"
+        },
+        {
             "name": "linux-default",
             "configurePreset": "linux-default"
         },
         {
             "name": "linux-debug",
             "configurePreset": "linux-debug"
+        },
+        {
+            "name": "linux-arm64",
+            "configurePreset": "linux-arm64"
         }
     ]
 }
