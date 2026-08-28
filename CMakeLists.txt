@@ -9,19 +9,30 @@ cmake_minimum_required(VERSION 3.24)
 # About dialog's GitHub update check compares against the latest release tag.
 # CI release builds pass -DPedalboard3_VERSION_OVERRIDE=<version> so that a
 # tagged build reports the tag version instead of the hardcoded default.
+#
+# CMake's project(VERSION ...) requires a numeric MAJOR.MINOR.PATCH[.TWEAK]
+# format. Version strings with a pre-release suffix (e.g., "0.0.0-test",
+# "3.0.0-beta1") are rejected. To support such suffixes, the numeric prefix
+# is extracted for project(VERSION ...), and the full string is stored in
+# _pedalboard3_display_version for later use as the JUCE_VERSION target
+# property (see the set_target_properties call after juce_add_gui_app).
 if(DEFINED Pedalboard3_VERSION_OVERRIDE)
-    set(_pedalboard3_project_version "${Pedalboard3_VERSION_OVERRIDE}")
+    string(REGEX MATCH "^([0-9]+(\\.[0-9]+)*)"
+           _pedalboard3_cmake_version "${Pedalboard3_VERSION_OVERRIDE}")
+    if(NOT _pedalboard3_cmake_version)
+        set(_pedalboard3_cmake_version "0.0.0")
+    endif()
+    set(_pedalboard3_display_version "${Pedalboard3_VERSION_OVERRIDE}")
 else()
-    set(_pedalboard3_project_version "3.0.0")
+    set(_pedalboard3_cmake_version "3.0.0")
+    set(_pedalboard3_display_version "3.0.0")
 endif()
 
 project(Pedalboard3
-    VERSION "${_pedalboard3_project_version}"
+    VERSION "${_pedalboard3_cmake_version}"
     DESCRIPTION "Modern VST3 Pedalboard Software for Live Performance"
     LANGUAGES C CXX
 )
-
-unset(_pedalboard3_project_version)
 
 # CPM.cmake - Dependency Manager
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
@@ -105,6 +116,16 @@ juce_add_gui_app(Pedalboard3
     ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/icon-512.png"
     ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/icon-48.png"
 )
+
+# Override the JUCE version with the full display version, which may include
+# a pre-release suffix (e.g., "0.0.0-test") that CMake's project(VERSION)
+# rejects. JUCE sets JUCE_VERSION from PROJECT_VERSION via
+# _juce_set_property_if_not_set, so this override takes effect. The
+# JUCE_APPLICATION_VERSION_STRING compile definition reads this property at
+# build time via a generator expression, so the About dialog shows the
+# complete version string.
+set_target_properties(Pedalboard3 PROPERTIES
+    JUCE_VERSION "${_pedalboard3_display_version}")
 
 # Generate JUCE header
 juce_generate_juce_header(Pedalboard3)
@@ -442,3 +463,6 @@ add_custom_command(TARGET Pedalboard3 POST_BUILD
 if(Pedalboard3_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
+
+unset(_pedalboard3_cmake_version)
+unset(_pedalboard3_display_version)
