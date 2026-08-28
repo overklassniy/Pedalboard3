@@ -1,7 +1,7 @@
 // SafePluginScanner.cpp - Safe plugin scanning with out-of-process isolation.
 //
 // This file is part of Pedalboard3, an audio plugin host.
-// Ported from the Pedalboard3-VST3 fork by Project12x.
+// Ported and modified from the Pedalboard3 fork by Project12x.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -276,19 +276,33 @@ void SafePluginListComponent::startScan() {
     scanProgress = 0.0;
     progressLabel->setText("Starting scan...", juce::dontSendNotification);
 
-    for (int i = 0; i < formatManager.getNumFormats(); ++i) {
-        auto* format = formatManager.getFormat(i);
-        if (format->getName() == "VST3") {
+    // Scan all registered formats (VST, VST3, LADSPA) in a single
+    // unified pass. We iterate formats and scan each one sequentially.
+    // The first format that can scan is started now; when it finishes,
+    // timerCallback moves to the next format.
+    currentFormatIndex = 0;
+    startNextFormatScan();
+}
+
+void SafePluginListComponent::startNextFormatScan() {
+    scanner.reset();
+
+    while (currentFormatIndex < formatManager.getNumFormats()) {
+        auto* format = formatManager.getFormat(currentFormatIndex);
+
+        if (format->canScanForPlugins()) {
             auto searchPaths = format->getDefaultLocationsToSearch();
             scanner = std::make_unique<SafePluginScanner>(pluginList, *format, searchPaths, true, deadMansPedal, true);
-            break;
+            progressLabel->setText("Scanning " + format->getName() + " plugins...", juce::dontSendNotification);
+            startTimer(100);
+            return;
         }
+
+        ++currentFormatIndex;
     }
 
-    if (scanner)
-        startTimer(100);
-    else
-        scanFinished();
+    // No more formats to scan.
+    scanFinished();
 }
 
 void SafePluginListComponent::cancelScan() {
@@ -297,12 +311,15 @@ void SafePluginListComponent::cancelScan() {
 
     stopTimer();
     scanner.reset();
+    currentFormatIndex = 0;
     scanFinished();
 }
 
 void SafePluginListComponent::timerCallback() {
     if (!scanner) {
-        scanFinished();
+        // Current format finished, move to the next one.
+        ++currentFormatIndex;
+        startNextFormatScan();
         return;
     }
 
@@ -313,7 +330,11 @@ void SafePluginListComponent::timerCallback() {
     progressLabel->setText("Scanning: " + pluginName, juce::dontSendNotification);
 
     if (!hasMore) {
-        scanFinished();
+        // Current format done, advance to the next format.
+        stopTimer();
+        scanner.reset();
+        ++currentFormatIndex;
+        startNextFormatScan();
     }
 
     updateList();
@@ -328,6 +349,7 @@ void SafePluginListComponent::scanFinished() {
     scanning = false;
     scanner.reset();
     stopTimer();
+    currentFormatIndex = 0;
 
     scanButton->setButtonText("Scan for new plugins...");
     progressBar->setVisible(false);

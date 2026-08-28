@@ -1,7 +1,7 @@
 // PluginScannerMain.cpp - Out-of-process plugin scanner entry point.
 //
 // This file is part of Pedalboard3, an audio plugin host.
-// Ported from the Pedalboard3-VST3 fork by Project12x.
+// Ported and modified from the Pedalboard3 fork by Project12x.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -58,7 +58,9 @@ class PluginScannerApplication : public juce::JUCEApplicationBase {
         std::cerr << "[Scanner] Starting Pedalboard3 Plugin Scanner" << std::endl;
 
         // JUCE 8 requires explicit format registration.
-        formatManager.addFormat(std::make_unique<juce::VST3PluginFormat>());
+        // Register all available formats (VST3, VST, LADSPA) so the
+        // scanner can handle any plugin type the host supports.
+        addDefaultFormatsToManager(formatManager);
 
         std::cerr << "[Scanner] Registered " << formatManager.getNumFormats() << " plugin formats" << std::endl;
 

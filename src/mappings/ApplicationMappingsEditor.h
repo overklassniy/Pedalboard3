@@ -448,6 +448,10 @@ class ApplicationMappingsEditor : public Component, public juce::Button::Listene
         RootItem(ApplicationCommandManager* app, MidiMappingManager* midi, OscMappingManager* osc)
             : appManager(app), midiManager(midi), oscManager(osc) {
             setLinesDrawnForSubItems(false);
+            // The root item is invisible (setRootItemVisible(false)) so
+            // JUCE never calls itemOpennessChanged automatically. Force
+            // it open so categories are populated.
+            setOpen(true);
         }
 
         ~RootItem() override = default;

@@ -1,5 +1,3 @@
-// (Auto-generated binary data file).
-
 #pragma once
 #ifndef BINARY_VECTORS_H
     #define BINARY_VECTORS_H

@@ -1,7 +1,7 @@
 // VuMeterDsp.h - True VU meter DSP with 300ms integration time.
 //
 // This file is part of Pedalboard3, an audio plugin host.
-// Ported from the Pedalboard3-VST3 fork by Project12x.
+// Ported and modified from the Pedalboard3 fork by Project12x.
 // Inspired by Fons Adriaensen's Vumeterdsp (GPL-2, used in Ardour).
 //
 // This program is free software: you can redistribute it and/or modify

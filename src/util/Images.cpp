@@ -1,5 +1,3 @@
-// (Auto-generated binary data file).
-
 #include "Images.h"
 
 static const unsigned char temp1[] = {

@@ -22,6 +22,7 @@
 
 #include <JuceHeader.h>
 
+class BranchesLAF;
 class TrayIcon;
 
 /// Main JUCE application class. Bootstraps the main window and audio engine.
@@ -66,4 +67,7 @@ class Pedalboard3App : public juce::JUCEApplication {
 
     /// The optional system tray icon (not used on macOS).
     std::unique_ptr<TrayIcon> trayIcon;
+
+    /// The custom LookAndFeel applied to the whole application.
+    std::unique_ptr<BranchesLAF> lookAndFeel;
 };

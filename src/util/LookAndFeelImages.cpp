@@ -1,5 +1,3 @@
-// (Auto-generated binary data file).
-
 #include "LookAndFeelImages.h"
 
 static const unsigned char temp1[] = {

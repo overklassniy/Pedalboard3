@@ -25,7 +25,9 @@ which is the central coordinator for the entire application.
 `mappings/` (`ApplicationMappingsEditor.h`, `TapTempoBox.h`), `preset/`
 (`PatchOrganiser.h`, `PreferencesDialog.h`, `UserPresetWindow.h`),
 `processors/` (`PedalboardProcessors.h`), and `util/` (`Images.h`,
-`JuceHelperStuff.h`, `LogFile.h`, `PropertiesSingleton.h`, `Vectors.h`).
+`JuceHelperStuff.h`, `LogFile.h`, `PropertiesSingleton.h`, `Vectors.h`). It
+also includes the generated `HelpData.h` header produced by
+`juce_add_binary_data` from `assets/help/help.html`.
 
 `MainPanel` accesses the `MidiMappingManager` and `OscMappingManager`
 through `PluginField` (in `canvas/`) rather than including their headers
@@ -40,3 +42,4 @@ application target.
 
 - `TrayIcon.h` and `TrayIcon.cpp` are guarded by `#ifndef JUCE_MAC` — the system tray icon is not built on macOS.
 - `MainPanel` inherits `juce::FileBasedDocument` and uses `.pdl` as the patch document extension; individual graph saves use `.filtergraph` (defined in `audio/FilterGraph.h`).
+- The `HelpDocumentation` command (F1, Help -> Documentation) writes the embedded help HTML (`HelpData::help_html`, embedded via `juce_add_binary_data` from `assets/help/help.html`) to the application data folder and launches it in the default browser. No on-disk `documentation/` folder next to the executable is required; the help works regardless of where the `.exe` is located, on all platforms.

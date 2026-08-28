@@ -28,6 +28,7 @@
 #include "MidiAppFifo.h"
 #include "PluginField.h"
 #include "PropertiesSingleton.h"
+#include "SafePluginScanner.h"
 
 #include <JuceHeader.h>
 
@@ -297,7 +298,43 @@ class MainPanel : public juce::Component,
     juce::TooltipWindow tooltips;
 
     /// The sound card settings.
-    juce::AudioDeviceManager deviceManager;
+    ///
+    /// Subclassed to override createAudioDeviceTypes so that all
+    /// platform-appropriate audio device types are registered. This
+    /// lets the user select between them in the Audio Settings dialog
+    /// (e.g. WASAPI shared/exclusive/sharedLowLatency, DirectSound,
+    /// and ASIO on Windows). Registering ASIO also enables the
+    /// "Control Panel" button in the Audio Settings dialog, which
+    /// only appears for devices whose hasControlPanel() returns true.
+    class DeviceManager : public juce::AudioDeviceManager {
+      public:
+        void createAudioDeviceTypes(juce::OwnedArray<juce::AudioIODeviceType>& types) override {
+#if JUCE_WINDOWS
+            addIfNotNull(types, juce::AudioIODeviceType::createAudioIODeviceType_WASAPI(juce::WASAPIDeviceMode::shared));
+            addIfNotNull(types, juce::AudioIODeviceType::createAudioIODeviceType_WASAPI(juce::WASAPIDeviceMode::exclusive));
+            addIfNotNull(types, juce::AudioIODeviceType::createAudioIODeviceType_WASAPI(juce::WASAPIDeviceMode::sharedLowLatency));
+            addIfNotNull(types, juce::AudioIODeviceType::createAudioIODeviceType_DirectSound());
+            addIfNotNull(types, juce::AudioIODeviceType::createAudioIODeviceType_ASIO());
+#elif JUCE_MAC || JUCE_IOS
+            addIfNotNull(types, juce::AudioIODeviceType::createAudioIODeviceType_CoreAudio());
+#elif JUCE_LINUX
+            addIfNotNull(types, juce::AudioIODeviceType::createAudioIODeviceType_ALSA());
+            addIfNotNull(types, juce::AudioIODeviceType::createAudioIODeviceType_JACK());
+#endif
+        }
+
+      private:
+        /// Adds the device type to the list if it is not null.
+        ///
+        /// @param list The owned array to add the device type to.
+        /// @param device The device type to add, or nullptr.
+        static void addIfNotNull(juce::OwnedArray<juce::AudioIODeviceType>& list, juce::AudioIODeviceType* device) {
+            if (device != nullptr)
+                list.add(device);
+        }
+    };
+
+    DeviceManager deviceManager;
     /// The graph representing the audio signal path.
     FilterGraph signalPath;
     /// Object used to 'play' the signalPath object.
@@ -415,7 +452,7 @@ class PluginListWindow : public juce::DocumentWindow {
             PropertiesSingleton::getInstance().getUserSettings()->getFile().getSiblingFile(
                 "RecentlyCrashedPluginsList"));
 
-        setContentOwned(new juce::PluginListComponent(AudioPluginFormatManagerSingleton::getInstance(), knownPluginList,
+        setContentOwned(new UnifiedPluginListComponent(AudioPluginFormatManagerSingleton::getInstance(), knownPluginList,
                                                       deadMansPedalFile,
                                                       PropertiesSingleton::getInstance().getUserSettings()),
                         true);
@@ -440,7 +477,14 @@ class PluginListWindow : public juce::DocumentWindow {
     }
 
     /// Closes the window.
-    void closeButtonPressed() override { delete this; }
+    ///
+    /// Defers self-deletion to the next message loop iteration to
+    /// avoid destroying the component while JUCE is still dispatching
+    /// the close callback from it.
+    void closeButtonPressed() override {
+        auto* self = this;
+        juce::MessageManager::callAsync([self] { delete self; });
+    }
 
   private:
     /// The 'parent' main panel.

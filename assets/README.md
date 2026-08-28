@@ -9,6 +9,10 @@ binary data; the files are not read from disk at runtime.
 - `icons/` – application icons: PNG rasters at multiple resolutions, a Windows
   `.ico` file, and the source `vectorIcon.svg`
 - `vectors/` – SVG vector graphics for UI buttons and controls
+- `help/` – single self-contained HTML file for the in-application F1 help,
+  embedded via `juce_add_binary_data` (see `help/README.md`)
+- `readme/` – visual assets for the root `README.md` (not embedded into the
+  application; see `readme/README.md`)
 
 ## Integration
 
@@ -26,6 +30,13 @@ resource data embedded into the application at build time:
   `JuceHelperStuff::loadSVGFromMemory` (defined in
   `src/util/JuceHelperStuff.cpp`), which wraps
   `juce::Drawable::createFromSVG`.
+- `help/help.html` is embedded via `juce_add_binary_data` (namespace
+  `HelpData`, header `HelpData.h`) in `CMakeLists.txt`. At runtime the
+  `HelpDocumentation` command in `src/app/MainPanel.cpp` writes the
+  embedded HTML to the application data folder and launches it in the
+  default browser on F1.
+- `readme/` is not embedded into the application and is not referenced by
+  the build system. It holds visual assets for the root `README.md` only.
 
 ## Constraints
 

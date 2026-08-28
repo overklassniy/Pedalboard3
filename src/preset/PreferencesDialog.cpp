@@ -95,7 +95,7 @@ PreferencesDialog::PreferencesDialog(MainPanel* panel, const String& port, const
 
     midiInputButton = std::make_unique<ToggleButton>("midiInputButton");
     addAndMakeVisible(*midiInputButton);
-    midiInputButton->setButtonText("Midi Input");
+    midiInputButton->setButtonText("MIDI Input");
     midiInputButton->addListener(this);
     midiInputButton->setToggleState(true, false);
 

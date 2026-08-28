@@ -1,7 +1,7 @@
 // SafePluginScanner.h - Safe plugin scanning with out-of-process isolation.
 //
 // This file is part of Pedalboard3, an audio plugin host.
-// Ported from the Pedalboard3-VST3 fork by Project12x.
+// Ported and modified from the Pedalboard3 fork by Project12x.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -129,6 +129,8 @@ class SafePluginListComponent : public juce::Component,
     void updateList();
     /// Resets the scan UI and releases the scanner after a scan completes.
     void scanFinished();
+    /// Starts scanning the next format in the format manager.
+    void startNextFormatScan();
 
     juce::AudioPluginFormatManager& formatManager;
     juce::KnownPluginList& pluginList;
@@ -144,6 +146,7 @@ class SafePluginListComponent : public juce::Component,
     std::unique_ptr<SafePluginScanner> scanner;
     double scanProgress = 0.0;
     bool scanning = false;
+    int currentFormatIndex = 0;
 
     juce::StringArray pluginNames;
     juce::Array<int> sortedIndices;
@@ -151,4 +154,281 @@ class SafePluginListComponent : public juce::Component,
     bool sortForward = true;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SafePluginListComponent)
+};
+
+/// Subclass of FileSearchPathListComponent that opens the folder in
+/// the system file manager on double-click instead of showing a
+/// "Change folder..." file chooser dialog.
+class ScanPathListComponent : public juce::FileSearchPathListComponent {
+  public:
+    void listBoxItemDoubleClicked(int row, const juce::MouseEvent&) override {
+        if (row >= 0 && row < getPath().getNumPaths()) {
+            juce::File dir(getPath().getRawString(row));
+            if (dir.exists())
+                dir.startAsProcess();
+        }
+    }
+};
+
+/// Content component for the plugin scan path selection dialog.
+///
+/// Contains a ScanPathListComponent and Scan/Cancel buttons. When
+/// either button is clicked, the parent DialogWindow's modal state is
+/// ended with the corresponding result code (1 for Scan, 0 for
+/// Cancel). The dialog window itself uses a native OS title bar with
+/// a close button, so no custom close button is needed here.
+class ScanPathDialogContent : public juce::Component,
+                              public juce::Button::Listener {
+  public:
+    /// Creates the dialog content with the given initial search path.
+    ///
+    /// @param initialPath The search path to pre-populate the path list with.
+    ScanPathDialogContent(const juce::FileSearchPath& initialPath) {
+        pathList.setPath(initialPath);
+        addAndMakeVisible(pathList);
+
+        scanButton.setButtonText("Scan");
+        scanButton.addListener(this);
+        scanButton.addShortcut(juce::KeyPress(juce::KeyPress::returnKey));
+        addAndMakeVisible(scanButton);
+
+        cancelButton.setButtonText("Cancel");
+        cancelButton.addListener(this);
+        cancelButton.addShortcut(juce::KeyPress(juce::KeyPress::escapeKey));
+        addAndMakeVisible(cancelButton);
+    }
+
+    /// Lays out the path list and buttons.
+    void resized() override {
+        auto bounds = getLocalBounds().reduced(8);
+
+        auto buttonRow = bounds.removeFromBottom(28);
+        scanButton.setBounds(buttonRow.removeFromRight(80).withTrimmedRight(8));
+        cancelButton.setBounds(buttonRow.removeFromRight(80).withTrimmedRight(8));
+
+        pathList.setBounds(bounds);
+    }
+
+    /// Returns the current search path shown in the path list.
+    const juce::FileSearchPath& getPath() const { return pathList.getPath(); }
+
+    /// Ends the parent DialogWindow's modal state with the clicked
+    /// button's result code.
+    void buttonClicked(juce::Button* button) override {
+        if (auto* dw = findParentComponentOfClass<juce::DialogWindow>())
+            dw->exitModalState(button == &scanButton ? 1 : 0);
+    }
+
+  private:
+    ScanPathListComponent pathList;
+    juce::TextButton scanButton;
+    juce::TextButton cancelButton;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScanPathDialogContent)
+};
+
+/// Subclass of juce::PluginListComponent that adds a single unified
+/// "Scan for all plugins" menu entry alongside the standard JUCE options.
+///
+/// Inherits all JUCE functionality (path selection dialog, table display,
+/// theme-aware colours, remove/clear options). The options button shows
+/// the standard JUCE menu plus a unified scan entry that scans all
+/// registered formats sequentially.
+class UnifiedPluginListComponent : public juce::PluginListComponent,
+                                   private juce::Timer {
+  public:
+    UnifiedPluginListComponent(juce::AudioPluginFormatManager& formatManager,
+                               juce::KnownPluginList& listToRepresent,
+                               const juce::File& deadMansPedalFile,
+                               juce::PropertiesFile* propertiesToUse)
+        : juce::PluginListComponent(formatManager, listToRepresent, deadMansPedalFile,
+                                    propertiesToUse, true),
+          storedFormatManager(formatManager),
+          storedPluginList(listToRepresent),
+          storedProperties(propertiesToUse) {
+        // Replace the default options button handler with our unified menu.
+        getOptionsButton().onClick = [this] { showUnifiedOptionsMenu(); };
+    }
+
+  private:
+    /// Shows the options menu with a single unified scan entry instead
+    /// of per-format scan entries.
+    void showUnifiedOptionsMenu() {
+        juce::PopupMenu menu;
+
+        menu.addItem(juce::PopupMenu::Item("Clear list")
+                        .setAction([this] { storedPluginList.clear(); }));
+
+        menu.addSeparator();
+
+        menu.addItem(juce::PopupMenu::Item("Remove selected plug-in from list")
+                        .setEnabled(getTableListBox().getNumSelectedRows() > 0)
+                        .setAction([this] { removeSelectedPlugins(); }));
+
+        menu.addItem(juce::PopupMenu::Item("Remove any plug-ins whose files no longer exist")
+                        .setAction([this] {
+                            auto types = storedPluginList.getTypes();
+                            for (auto pd : types) {
+                                if (!juce::File::isAbsolutePath(pd.fileOrIdentifier) ||
+                                    !juce::File(pd.fileOrIdentifier).existsAsFile())
+                                    storedPluginList.removeType(pd);
+                            }
+                        }));
+
+        menu.addSeparator();
+
+        auto selectedRow = getTableListBox().getSelectedRow();
+        menu.addItem(juce::PopupMenu::Item("Show folder containing selected plug-in")
+                        .setEnabled(selectedRow >= 0)
+                        .setAction([this, selectedRow] {
+                            if (selectedRow >= 0) {
+                                auto types = storedPluginList.getTypes();
+                                if (selectedRow < types.size()) {
+                                    auto pd = types[selectedRow];
+                                    if (juce::File::isAbsolutePath(pd.fileOrIdentifier)) {
+                                        juce::File(pd.fileOrIdentifier).getParentDirectory().startAsProcess();
+                                    }
+                                }
+                            }
+                        }));
+
+        menu.addSeparator();
+
+        // Single unified scan entry for all formats.
+        menu.addItem(juce::PopupMenu::Item("Scan for new or updated VST/VST3/LADSPA")
+                        .setAction([this] { startUnifiedScan(); }));
+
+        menu.showMenuAsync(juce::PopupMenu::Options()
+                               .withDeletionCheck(*this)
+                               .withTargetComponent(getOptionsButton()));
+    }
+
+    /// Starts scanning all registered formats sequentially.
+    /// Shows a single path selection dialog, then scans all formats
+    /// using the selected path.
+    void startUnifiedScan() {
+        formatsToScan.clear();
+
+        for (int i = 0; i < storedFormatManager.getNumFormats(); ++i) {
+            auto* format = storedFormatManager.getFormat(i);
+            if (format->canScanForPlugins())
+                formatsToScan.add(format);
+        }
+
+        if (formatsToScan.isEmpty())
+            return;
+
+        // Show a single path selection dialog using the first format's
+        // default search locations as the initial path.
+        auto* firstFormat = formatsToScan[0];
+        auto defaultPath = firstFormat->getDefaultLocationsToSearch();
+
+        // Load the saved path directly. If the key exists (even if empty),
+        // use the saved value so that an explicitly empty path is
+        // respected instead of falling back to defaults.
+        if (storedProperties) {
+            auto key = "lastPluginScanPath_" + firstFormat->getName();
+            if (storedProperties->containsKey(key)) {
+                auto saved = juce::FileSearchPath(storedProperties->getValue(key));
+                defaultPath = saved;
+            }
+        }
+
+        auto* content = new ScanPathDialogContent(defaultPath);
+        content->setSize(500, 300);
+
+        juce::DialogWindow::LaunchOptions options;
+        options.dialogTitle = "Plugin Scanning";
+        options.dialogBackgroundColour = juce::Colour(0xffeeece1);
+        options.content.setOwned(content);
+        options.componentToCentreAround = this;
+        options.escapeKeyTriggersCloseButton = true;
+        options.useNativeTitleBar = true;
+        options.resizable = true;
+        options.useBottomRightCornerResizer = false;
+
+        // Use create() instead of launchAsync() so we can attach our
+        // own modal callback. launchAsync() calls enterModalState
+        // internally with a null callback, which would prevent us from
+        // attaching one. The DialogWindow owns the content and
+        // auto-deletes when modal state ends; the content is still
+        // alive when the callback runs, so we can read the path from
+        // it before the DialogWindow deletes it.
+        auto* dw = options.create();
+        dw->enterModalState(true, juce::ModalCallbackFunction::create(
+            [this, content](int result) {
+                auto searchPath = content->getPath();
+
+                // Always save the path for all formats, even if the user
+                // cancelled, so folder add/remove edits persist.
+                // Save directly instead of using setLastSearchPath, which
+                // removes the key when the path is empty — that would
+                // cause getLastSearchPath to fall back to defaults.
+                if (storedProperties) {
+                    for (auto* fmt : formatsToScan) {
+                        auto key = "lastPluginScanPath_" + fmt->getName();
+                        storedProperties->setValue(key, searchPath.toString());
+                    }
+                    storedProperties->saveIfNeeded();
+                }
+
+                if (result == 0)
+                    return;
+
+                // Find plugin files for each format in the selected path
+                // and collect them so we can scan without showing the
+                // path dialog again. Use recursive search so plugins
+                // in subfolders are found.
+                pendingScans.clear();
+                for (auto* fmt : formatsToScan) {
+                    auto files = fmt->searchPathsForPlugins(searchPath, true, false);
+                    if (!files.isEmpty())
+                        pendingScans.add({fmt, files});
+                }
+
+                if (pendingScans.isEmpty())
+                    return;
+
+                currentFormatScanIndex = 0;
+                scanNextFormat();
+            }), true);
+    }
+
+    /// Scans the next format in the queue using the pre-collected file
+    /// list, so no path dialog is shown.
+    void scanNextFormat() {
+        if (currentFormatScanIndex >= pendingScans.size()) {
+            stopTimer();
+            return;
+        }
+
+        auto entry = pendingScans[currentFormatScanIndex];
+        scanFor(*entry.format, entry.files);
+        startTimer(50);
+    }
+
+    /// Polls isScanning() and advances to the next format when the
+    /// current scan completes.
+    void timerCallback() override {
+        if (!isScanning()) {
+            stopTimer();
+            ++currentFormatScanIndex;
+            scanNextFormat();
+        }
+    }
+
+    /// A format plus the files to scan for that format.
+    struct FormatScanEntry {
+        juce::AudioPluginFormat* format;
+        juce::StringArray files;
+    };
+
+    juce::AudioPluginFormatManager& storedFormatManager;
+    juce::KnownPluginList& storedPluginList;
+    juce::PropertiesFile* storedProperties;
+    juce::Array<juce::AudioPluginFormat*> formatsToScan;
+    juce::Array<FormatScanEntry> pendingScans;
+    int currentFormatScanIndex = 0;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UnifiedPluginListComponent)
 };

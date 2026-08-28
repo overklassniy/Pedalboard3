@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pedalboard3 Documentation</title>
+<style>
+body {
+	font-family: georgia, "times new roman", serif;
+	font-size: 16px;
+	color: #4A4B56;
+	background-color: #FAFAF7;
+	margin: 0;
+	padding: 0;
+	line-height: 1.55;
+}
+a {
+	color: #5A5E82;
+	text-decoration: none;
+}
+a:hover {
+	color: #2F3035;
+	text-decoration: underline;
+}
+h1 {
+	font-size: 32px;
+	font-weight: normal;
+	color: #5A5E82;
+	margin: 0 0 8px 0;
+}
+h2 {
+	font-size: 24px;
+	font-weight: normal;
+	color: #5A5E82;
+	margin: 32px 0 12px 0;
+	padding-bottom: 4px;
+	border-bottom: 1px solid #D8D6E0;
+}
+h3 {
+	font-size: 18px;
+	font-weight: normal;
+	color: #5A5E82;
+	margin: 24px 0 8px 0;
+}
+p {
+	margin: 0 0 12px 0;
+}
+ul, ol {
+	margin: 0 0 12px 0;
+	padding-left: 24px;
+}
+li {
+	margin-bottom: 4px;
+}
+code {
+	font-family: "consolas", "courier new", monospace;
+	font-size: 14px;
+	background-color: #ECEAF2;
+	padding: 1px 4px;
+	border-radius: 3px;
+}
+strong {
+	color: #2F3035;
+}
+em {
+	color: #4A4B56;
+}
+#page {
+	max-width: 920px;
+	margin: 0 auto;
+	padding: 24px 32px 64px 32px;
+}
+#header {
+	margin-bottom: 24px;
+}
+#toc {
+	background-color: #F2F0F8;
+	border: 1px solid #D8D6E0;
+	border-radius: 6px;
+	padding: 16px 20px;
+	margin-bottom: 32px;
+}
+#toc h2 {
+	margin: 0 0 12px 0;
+	padding: 0;
+	border: none;
+	font-size: 18px;
+}
+#toc ol {
+	margin: 0;
+	padding-left: 20px;
+}
+#toc li {
+	margin-bottom: 2px;
+}
+#footer {
+	margin-top: 48px;
+	padding-top: 16px;
+	border-top: 1px solid #D8D6E0;
+	color: #989BB8;
+	font-size: 14px;
+}
+.section {
+	scroll-margin-top: 16px;
+}
+</style>
+</head>
+<body>
+<div id="page">
+
+<div id="header">
+<h1>Pedalboard3 Documentation</h1>
+<p>A free, open-source VST3 and LADSPA plugin host for live performance,
+built on JUCE 8 and C++20. Pedalboard3 is a modernized rebuild of the
+original Pedalboard2 that preserves the familiar UI while running on
+modern audio frameworks.</p>
+</div>
+
+<div id="toc">
+<h2>Contents</h2>
+<ol>
+<li><a href="#getting-started">Getting Started</a></li>
+<li><a href="#canvas">The Canvas</a></li>
+<li><a href="#patches">Patches and Pedalboard Files</a></li>
+<li><a href="#plugins">Plugins</a></li>
+<li><a href="#plugin-presets">Plugin Presets</a></li>
+<li><a href="#midi-mapping">MIDI Mapping</a></li>
+<li><a href="#osc-mapping">OSC Mapping</a></li>
+<li><a href="#application-mappings">Application Mappings</a></li>
+<li><a href="#tap-tempo">Tap Tempo</a></li>
+<li><a href="#built-in-processors">Built-in Processors</a></li>
+<li><a href="#colour-schemes">Colour Schemes</a></li>
+<li><a href="#audio-settings">Audio Settings</a></li>
+<li><a href="#preferences">Preferences</a></li>
+<li><a href="#system-tray">System Tray</a></li>
+<li><a href="#log-display">Log Display</a></li>
+<li><a href="#stability">Stability Features</a></li>
+</ol>
+</div>
+
+<div class="section" id="getting-started">
+<h2>Getting Started</h2>
+
+<p>Assuming this is the first time you have used the app, there are a few
+things you will want to set up before you can get the most out of it:</p>
+
+<ul>
+<li><a href="#audio-settings">Audio Settings</a></li>
+<li><a href="#plugins">Plugin List and Scanning</a></li>
+<li><a href="#canvas">Your First Patch</a></li>
+<li><a href="#midi-mapping">A Basic MIDI Mapping</a></li>
+<li><a href="#patches">Switching Between Patches</a></li>
+</ul>
+
+<h3>Audio Settings</h3>
+
+<p>To start off, check that your audio settings are configured the way you
+want. Open the <strong>Audio Settings</strong> dialog from the
+<strong>Options</strong> menu. See the <a href="#audio-settings">Audio
+Settings</a> section below for the full list of options.</p>
+
+<p>Because Pedalboard3 is intended for realtime use, a buffer size no
+larger than 256 samples is recommended (about 10 ms total latency). On
+Windows, ASIO drivers generally offer the best low-latency performance.
+On Linux, ALSA or JACK backends are available. On macOS, CoreAudio is
+used.</p>
+
+<h3>Plugin List and Scanning</h3>
+
+<p>Next, tell the app where to find your plugins. Open the
+<strong>Plugin List</strong> dialog from the <strong>Options</strong>
+menu. You will see a list of all available plugins on your system,
+including Pedalboard3's built-in processors.</p>
+
+<p>To add your own plugins, click the <strong>Options...</strong> button
+and select <strong>Scan for new or Updated VST plugins...</strong>. This
+opens a window where you can add and remove plugin directories with the
+<strong>+</strong> and <strong>-</strong> buttons. Clicking
+<strong>Scan</strong> loads each plugin found in the selected directories,
+one after another, to verify they are valid. Once the scan is complete,
+your plugins appear in the <strong>Available Plugins</strong> list.</p>
+
+<p>Plugin scanning runs in a separate out-of-process scanner
+(<code>Pedalboard3Scanner.exe</code>) with crash isolation. If a plugin
+crashes during scanning, it is automatically added to the plugin
+blacklist and skipped on future scans, so a single bad plugin cannot
+take down the host.</p>
+
+<h3>Your First Patch</h3>
+
+<p>All Pedalboard patches start with an audio input node, an audio output
+node, and an empty canvas between them. To add a plugin, double-click in
+the main plugin field. A popup menu lists the available plugins. Click
+the one you want to add it to the patch.</p>
+
+<p>All plugins are represented the same way: input ports on the left of
+the node, output ports on the right. The buttons along the bottom of each
+node are:</p>
+
+<ul>
+<li><strong>Edit</strong> — opens the plugin's editor window.</li>
+<li><strong>Mappings</strong> — opens the plugin's mappings window.</li>
+<li><strong>Delete (x)</strong> — removes the plugin from the patch.</li>
+</ul>
+
+<p>To connect the plugin to your soundcard's input, drag from the
+relevant port on the <strong>Audio Input</strong> node to your desired
+port on the plugin. To delete a connection, click it to select it, then
+press the <strong>Delete</strong> or <strong>Backspace</strong> key.</p>
+
+<h3>A Basic MIDI Mapping</h3>
+
+<p>One of the key features of Pedalboard3 is mapping plugin parameters to
+physical MIDI controllers. Drag a connection from the <strong>Midi
+Input</strong> node to the plugin's parameter input. By default this
+opens the plugin's Mappings window automatically.</p>
+
+<p>In the Mappings window, click <strong>add MIDI</strong> to create a
+new mapping. The left combo box selects the MIDI CC, and the right combo
+box selects the parameter it will be mapped to. Play with your MIDI
+controller and the plugin's parameter will change accordingly. See the
+<a href="#midi-mapping">MIDI Mapping</a> section for the other controls.</p>
+
+<h3>Switching Between Patches</h3>
+
+<p>Pedalboard3 is designed to make it easy to set up multiple patches and
+quickly switch between them. The main patch controls are at the bottom
+left of the main screen. To add a new patch, click the combo box's drop
+down button and select <strong>&lt;new patch&gt;</strong>. Switch between
+patches via the combo box or the <strong>+/-</strong> buttons to its
+right. Patch switching can also be mapped to MIDI CCs or OSC messages;
+see <a href="#application-mappings">Application Mappings</a>.</p>
+</div>
+
+<div class="section" id="canvas">
+<h2>The Canvas</h2>
+
+<p>The main canvas (<code>PluginField</code>) shows the plugin nodes and
+the audio cables connecting them. Each plugin is a
+<code>PluginComponent</code> with a bypass button, a preset bar, and an
+editor window.</p>
+
+<ul>
+<li>Audio connections are drawn in the audio connection colour.</li>
+<li>Parameter connections are drawn in the parameter connection
+colour.</li>
+<li>Each node has an <strong>Edit</strong> button to open the plugin
+editor, a <strong>Mappings</strong> button to open the mappings dialog,
+and a <strong>Delete (x)</strong> button to remove it from the
+patch.</li>
+<li>The <strong>bypass</strong> button silences the plugin without
+removing it from the signal chain.</li>
+<li>To delete a connection, click it to select it, then press
+<strong>Delete</strong> or <strong>Backspace</strong>.</li>
+</ul>
+</div>
+
+<div class="section" id="patches">
+<h2>Patches and Pedalboard Files</h2>
+
+<p>A Pedalboard3 document is a multi-patch <code>.pdl</code> file. Each
+patch is a complete plugin signal chain (a <code>FilterGraph</code>).
+Individual graph saves use the <code>.filtergraph</code> extension.</p>
+
+<h3>Patch Selection</h3>
+
+<p>Switching between patches is done with the patch controls at the
+bottom left of the main window:</p>
+
+<ul>
+<li>The <strong>-/+</strong> buttons iterate through the available
+patches one by one.</li>
+<li>The <strong>Patches:</strong> combo box lets you select from a list
+of all available patches. The combo box text is editable; to rename the
+current patch, click its text in the combo box.</li>
+<li>To add a new patch, select <strong>&lt;new patch&gt;</strong> from
+the end of the combo box list.</li>
+</ul>
+
+<h3>Patch Organiser</h3>
+
+<p>For more control over patch organisation, open the
+<strong>Patch Organiser</strong> from the <strong>Edit</strong> menu
+(<strong>Organise patches</strong>). The Patch Organiser window lists the
+patches in the current document with buttons to add, copy, remove,
+reorder, and import patches from other <code>.pdl</code> files. To rename
+a patch, double-click its entry in the list.</p>
+
+<h3>Plugin Pool and Near-Instant Switching</h3>
+
+<p>Patch switching is designed to be near-instant via the
+<code>PluginPoolManager</code>, which preloads plugin instances for the
+current patch plus N patches ahead or behind. This avoids the latency of
+loading plugins from disk at the moment of switching.</p>
+</div>
+
+<div class="section" id="plugins">
+<h2>Plugins</h2>
+
+<p>Pedalboard3 hosts <strong>VST3</strong> and <strong>LADSPA</strong>
+plugins. The available plugins are listed in the <strong>Plugin
+List</strong> dialog (Options menu).</p>
+
+<h3>Scanning</h3>
+
+<p>To populate the plugin list, click <strong>Options...</strong> in the
+Plugin List dialog and select <strong>Scan for new or Updated VST
+plugins...</strong>. Add the directories containing your plugins, then
+click <strong>Scan</strong>. Each plugin is loaded in turn to verify it
+is valid.</p>
+
+<p>Scanning is performed by a separate out-of-process scanner
+(<code>Pedalboard3Scanner</code>) so that a crashing plugin cannot take
+down the main application. If a plugin crashes during scanning, it is
+automatically added to the plugin blacklist.</p>
+
+<h3>Blacklist</h3>
+
+<p>The plugin blacklist skips known-bad plugins during scanning. It is
+auto-populated when the scanner crashes on a plugin. Manage it through
+the <strong>Blacklist Window</strong>, where you can review and remove
+entries if a plugin has been fixed or updated.</p>
+</div>
+
+<div class="section" id="plugin-presets">
+<h2>Plugin Presets</h2>
+
+<p>Per-plugin presets use the <code>.fxp</code> format.</p>
+
+<ul>
+<li>The <strong>Preset Bar</strong> above each plugin editor shows
+factory and user-saved presets with import and save buttons.</li>
+<li>The <strong>User Preset Window</strong> (Options menu) is the full
+preset manager: a tree view of plugin directories and their
+<code>.fxp</code> presets with buttons to copy, remove, import, export,
+and rename. User presets are stored under
+<code>&lt;user data&gt;/Pedalboard3/presets/&lt;plugin name&gt;/</code>.</li>
+</ul>
+</div>
+
+<div class="section" id="midi-mapping">
+<h2>MIDI Mapping</h2>
+
+<p>MIDI CC messages can drive plugin parameters and application
+commands.</p>
+
+<ul>
+<li>Open the <strong>Mappings Dialog</strong> from a plugin node to view
+and edit the MIDI and OSC mappings for that single plugin. Each MIDI row
+has a CC combo, a latch toggle, a parameter combo, and a
+<code>MappingSlider</code> for the bound range.</li>
+<li>Use <strong>MIDI Learn</strong> to capture the next received CC for
+a mapping.</li>
+<li>The <strong>latch</strong> toggle controls whether the mapping
+holds its value or returns to a default when the controller is
+released.</li>
+<li>The <strong>MappingSlider</strong> defines the range of the
+parameter that the MIDI CC drives.</li>
+<li><code>MidiInterceptor</code> is a no-audio plugin that intercepts
+MIDI messages in the graph and forwards them to the
+<code>MidiMappingManager</code>.</li>
+</ul>
+</div>
+
+<div class="section" id="osc-mapping">
+<h2>OSC Mapping</h2>
+
+<p>OSC messages can drive plugin parameters and application commands over
+the network.</p>
+
+<ul>
+<li>Configure the OSC port and multicast address in the
+<strong>Preferences</strong> dialog.</li>
+<li><code>OscInput</code> appears on the canvas as a visual placeholder
+so you can see which plugins have OSC mappings; actual reception is
+handled by a <code>juce::OSCReceiver</code> in the main panel.</li>
+<li>OSC mappings bind an OSC address to a plugin parameter
+(<code>OscMapping</code>) or to an application command
+(<code>OscAppMapping</code>). Float and MIDI arguments are dispatched to
+the registered mappings.</li>
+</ul>
+
+<h3>OSC Primer</h3>
+
+<p>OSC (Open Sound Control) is a network protocol for sending messages
+between computers and multimedia devices. It uses UDP and addresses
+messages to URL-like paths (for example,
+<code>/pedalboard/patch/next</code>). Arguments can be floats, integers,
+strings, or MIDI messages. To use OSC with Pedalboard3, configure the
+receiving port in Preferences, then send OSC messages from your
+controller software to the computer running Pedalboard3.</p>
+</div>
+
+<div class="section" id="application-mappings">
+<h2>Application Mappings</h2>
+
+<p>The <strong>Application Mappings Editor</strong> (Options menu) edits
+application-level key, MIDI, and OSC mappings via a tree view of command
+categories. This lets you bind physical controllers to application
+commands such as patch switching, transport play/stop, and tap tempo,
+independent of any single plugin.</p>
+</div>
+
+<div class="section" id="tap-tempo">
+<h2>Tap Tempo</h2>
+
+<p>Tap tempo is shared between the MIDI and OSC mapping systems. The
+<strong>Tap Tempo Box</strong> calculates the tempo from repeated taps
+and sends the result to the canvas. <code>TapTempoHelper</code> averages
+the intervals between the last four taps and returns BPM, resetting below
+30 BPM.</p>
+</div>
+
+<div class="section" id="built-in-processors">
+<h2>Built-in Processors</h2>
+
+<p>Pedalboard3 ships with built-in processors in addition to hosted VST3
+and LADSPA plugins. Each processor has an on-canvas control component
+and, where applicable, a full editor window opened from the plugin
+node.</p>
+
+<h3>Level</h3>
+<p>Volume control. Adjusts the gain of the audio passing through it.</p>
+
+<h3>File Player</h3>
+<p>Plays an audio file from disk, with a waveform display and transport
+controls (play, loop, return-to-zero, sync).</p>
+
+<h3>Output Toggle</h3>
+<p>Toggles between two output destinations. Useful for routing audio to
+different outputs during a performance.</p>
+
+<h3>VU Meter</h3>
+<p>Shows the level of the passing audio. A monitoring tool with no
+effect on the signal.</p>
+
+<h3>Audio Recorder</h3>
+<p>Writes the incoming audio to disk. Provides record and sync
+controls.</p>
+
+<h3>Metronome</h3>
+<p>Generates click samples in sync with the playhead tempo. Provides
+play, sync, and measure controls.</p>
+
+<h3>Looper</h3>
+<p>Records input to disk and memory and plays it back. Provides
+autoplay, bar length, input level, loop level, and stop-after-bar
+controls.</p>
+
+<h3>Safety Limiter and Crossfade Mixer</h3>
+<p>These are DSP safety modules. The <strong>Safety Limiter</strong>
+prevents signal spikes from reaching damaging levels. The
+<strong>Crossfade Mixer</strong> provides smooth transitions between
+signals.</p>
+</div>
+
+<div class="section" id="colour-schemes">
+<h2>Colour Schemes</h2>
+
+<p>The application uses a custom LookAndFeel (<code>BranchesLAF</code>)
+fed by a named-colour palette (<code>ColourScheme</code>). The default
+scheme is a warm light beige palette.</p>
+
+<ul>
+<li>Open the <strong>Colour Scheme Editor</strong> (Options menu) to
+choose, save, and delete <code>.colourscheme</code> presets. The editor
+has a colour selector, a colour list, and a combo box plus buttons for
+managing presets.</li>
+<li>Colour scheme presets are stored as <code>.colourscheme</code> files
+in the application data folder and loaded at startup.</li>
+</ul>
+</div>
+
+<div class="section" id="audio-settings">
+<h2>Audio Settings</h2>
+
+<p>The <strong>Audio Settings</strong> dialog (Options menu) configures
+the audio interface used by Pedalboard3:</p>
+
+<ul>
+<li><strong>Audio device type</strong> — selects the audio backend. On
+Windows the available types are WASAPI (shared), WASAPI (exclusive),
+WASAPI (shared low latency), DirectSound, and ASIO. On Linux the
+available types are ALSA and JACK. On macOS the available type is
+CoreAudio.</li>
+<li><strong>Output / Input device</strong> — selects the physical audio
+interface. The <strong>Test</strong> button plays a short test tone
+through the selected output device.</li>
+<li><strong>Sample rate / Buffer size</strong> — advanced settings shown
+when the "Show advanced settings..." button is toggled.</li>
+<li><strong>Control Panel</strong> — opens the selected device's own
+control panel. This button only appears for devices that provide a
+control panel (e.g. ASIO devices). It is hidden for WASAPI and
+DirectSound.</li>
+<li><strong>Reset Device</strong> — restarts the audio device, sometimes
+needed after changing properties in the device's custom control
+panel.</li>
+</ul>
+
+<p>Audio settings are saved to the application properties and restored on
+the next launch. When the "save audio settings in <code>.pdl</code>
+files" preference is enabled, the audio device state is also embedded in
+the <code>.pdl</code> document.</p>
+</div>
+
+<div class="section" id="preferences">
+<h2>Preferences</h2>
+
+<p>The <strong>Preferences</strong> dialog (Options menu) configures:</p>
+
+<ul>
+<li>OSC port and multicast address</li>
+<li>Visible I/O nodes (audio, MIDI, OSC)</li>
+<li>MIDI options (program change, MMC transport)</li>
+<li>Window options (auto mappings window, loop patches, windows on top,
+ignore pin names, tray icon, start in tray, fixed-size windows)</li>
+<li>Whether to save audio settings in <code>.pdl</code> files</li>
+</ul>
+
+<p>Preferences are read and written through the
+<code>PropertiesSingleton</code> (JUCE <code>PropertiesFile</code>).</p>
+</div>
+
+<div class="section" id="system-tray">
+<h2>System Tray</h2>
+
+<p>On Windows and Linux, <code>TrayIcon</code> provides a system tray
+icon with a right-click popup menu and double-click window toggle. The
+tray icon is not built on macOS.</p>
+</div>
+
+<div class="section" id="log-display">
+<h2>Log Display</h2>
+
+<p>The <strong>Log Display</strong> is a component with a read-only text
+editor, start/stop logging button, and event-type filter toggles. It
+displays events from the <code>LogFile</code> singleton, which is useful
+for diagnosing audio, MIDI, OSC, and plugin issues during a session.</p>
+</div>
+
+<div class="section" id="stability">
+<h2>Stability Features</h2>
+
+<p>Several stability features protect the host during live use:</p>
+
+<ul>
+<li><strong>Crash protection</strong> wraps risky operations (notably
+plugin scanning) with SEH on Windows and a worker-thread timeout, with an
+auto-save callback hook and a watchdog thread for UI hangs.</li>
+<li><strong>Plugin blacklist</strong> skips known-bad plugins during
+scanning and is auto-populated when the scanner crashes on a plugin.
+Manage it through the <strong>Blacklist Window</strong>.</li>
+<li><strong>Undo/redo</strong> actions for filter graph editing
+(add/remove plugin, add/remove connection) are defined and designed for a
+<code>juce::UndoManager</code>.</li>
+</ul>
+</div>
+
+<div id="footer">
+<p>Documentation version: 3.0 — Pedalboard3</p>
+</div>
+
+</div>
+</body>
+</html>

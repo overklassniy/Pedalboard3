@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Pedalboard3 README hero - title-only minimal.
+
+  Visual system derived from the application's real colour scheme
+  (src/lookandfeel/ColourScheme.cpp, default preset):
+    Window Background     #EEECE1  (beige cream)
+    Plugin Border         #B0B0FF  (periwinkle)
+    Slider / muted        #9A9181  (warm taupe)
+    Text                  #000000
+
+  No diagram, no illustration. The name is the hero. A single thin
+  periwinkle accent line provides the only colour cue, echoing the
+  plugin border colour from the application's canvas.
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1200 280"
+     width="100%"
+     role="img"
+     aria-label="Pedalboard3 - a free, open-source VST3 plugin host for live performance, built on JUCE 8 and C++20.">
+  <title>Pedalboard3</title>
+  <desc>A free, open-source VST3 plugin host for live performance. A modernized rebuild of Pedalboard2 on JUCE 8 and C++20.</desc>
+
+  <!-- Background: Window Background beige -->
+  <rect x="0" y="0" width="1200" height="280" fill="#EEECE1"/>
+
+  <g font-family="'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-rendering="geometricPrecision">
+
+    <!-- Eyebrow -->
+    <text x="600" y="80" font-size="16" letter-spacing="3"
+          font-family="'SF Mono', 'Consolas', 'Liberation Mono', Menlo, monospace"
+          fill="#9A9181" text-anchor="middle">VST3 PLUGIN HOST &#8212; LIVE PERFORMANCE</text>
+
+    <!-- Title -->
+    <text x="600" y="160" font-size="72" font-weight="700" fill="#000000" text-anchor="middle">Pedalboard3</text>
+
+    <!-- Value line -->
+    <text x="600" y="200" font-size="20" fill="#2A2A2A" text-anchor="middle">A free, open-source VST3 plugin host for live performance.</text>
+
+    <!-- Metadata -->
+    <text x="600" y="262" font-size="14" letter-spacing="1.2"
+          font-family="'SF Mono', 'Consolas', 'Liberation Mono', Menlo, monospace"
+          fill="#9A9181" text-anchor="middle">JUCE 8.0.15 &#8212; C++20 &#8212; GPL-3.0</text>
+  </g>
+</svg>

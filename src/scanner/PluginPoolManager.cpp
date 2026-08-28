@@ -1,8 +1,7 @@
 // PluginPoolManager.cpp - Sliding window plugin pool for instant patch switching.
 //
 // This file is part of Pedalboard3, an audio plugin host.
-// Copyright (c) 2024-2026 Antigravity.
-// Ported from the Pedalboard3-VST3 fork by Project12x.
+// Ported and modified from the Pedalboard3 fork by Project12x.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

@@ -78,7 +78,7 @@ PluginField::PluginField(FilterGraph* filterGraph, juce::KnownPluginList* list,
             AudioProcessorGraph::NodeID midiInterceptor;
 
             for (i = 0; i < signalPath->getNumFilters(); ++i) {
-                if (signalPath->getNode(i)->getProcessor()->getName() == "Midi Input")
+                if (signalPath->getNode(i)->getProcessor()->getName() == "MIDI Input")
                     midiInput = signalPath->getNode(i)->nodeID;
                 else if (signalPath->getNode(i)->getProcessor()->getName() == "Midi Interceptor") {
                     midiInterceptor = signalPath->getNode(i)->nodeID;
@@ -126,8 +126,19 @@ void PluginField::paint(juce::Graphics& g) {
 
     if (displayDoubleClickMessage) {
         g.setColour(ColourScheme::getInstance().colours["Text Colour"].withAlpha(0.5f));
-        g.drawText("<double-click to add processor>", 400, 230, 300, 30,
-                   juce::Justification(juce::Justification::centredLeft), false);
+
+        // Centre the text in the visible portion of the field. Because
+        // PluginField lives inside a Viewport, its own size may be larger
+        // than the visible area after the window has been enlarged and
+        // then shrunk. Use the Viewport's view area (in field
+        // coordinates) if available.
+        juce::Rectangle<int> visibleArea(0, 0, getWidth(), getHeight());
+
+        if (auto* vp = findParentComponentOfClass<juce::Viewport>())
+            visibleArea = vp->getViewArea();
+
+        g.drawText("<double-click to add processor>", visibleArea,
+                   juce::Justification(juce::Justification::centred), false);
     }
 }
 
@@ -369,7 +380,7 @@ void PluginField::enableMidiInput(bool val) {
         {
             // Delete filter.
             for (i = (signalPath->getNumFilters() - 1); i >= 0; --i) {
-                if (signalPath->getNode(i)->getProcessor()->getName() == "Midi Input") {
+                if (signalPath->getNode(i)->getProcessor()->getName() == "MIDI Input") {
                     tempNode = signalPath->getNode(i);
                     deleteFilter(tempNode);
                 }
@@ -417,7 +428,7 @@ void PluginField::enableMidiInput(bool val) {
                 AudioProcessorGraph::NodeID midiInterceptor;
 
                 for (i = 0; i < signalPath->getNumFilters(); ++i) {
-                    if (signalPath->getNode(i)->getProcessor()->getName() == "Midi Input")
+                    if (signalPath->getNode(i)->getProcessor()->getName() == "MIDI Input")
                         midiInput = signalPath->getNode(i)->nodeID;
                     else if (signalPath->getNode(i)->getProcessor()->getName() == "Midi Interceptor") {
                         midiInterceptor = signalPath->getNode(i)->nodeID;
@@ -681,7 +692,7 @@ void PluginField::deleteConnection() {
 
                     // It's a Midi connection, so delete any associated Midi
                     // mappings for the destination plugin.
-                    if (tempstr == "Midi Input") {
+                    if (tempstr == "MIDI Input") {
                         std::multimap<uint32, Mapping*>::iterator it;
 
                         for (it = mappings.lower_bound(destId.uid); it != mappings.upper_bound(destId.uid);) {
@@ -723,12 +734,12 @@ void PluginField::enableMidiForNode(AudioProcessorGraph::Node::Ptr node, bool va
     for (i = 0; i < signalPath->getNumFilters(); ++i) {
         midiInput = signalPath->getNode(i);
 
-        if (midiInput->getProcessor()->getName() == "Midi Input")
+        if (midiInput->getProcessor()->getName() == "MIDI Input")
             break;
     }
     // Validate that we actually found the Midi Input node.
     if (midiInput) {
-        if (midiInput->getProcessor()->getName() != "Midi Input")
+        if (midiInput->getProcessor()->getName() != "MIDI Input")
             return;
     } else
         return;
@@ -755,7 +766,7 @@ bool PluginField::getMidiEnabledForNode(AudioProcessorGraph::Node::Ptr node) con
     for (i = 0; i < signalPath->getNumFilters(); ++i) {
         midiInput = signalPath->getNode(i);
 
-        if (midiInput->getProcessor()->getName() == "Midi Input")
+        if (midiInput->getProcessor()->getName() == "MIDI Input")
             break;
         else
             midiInput = nullptr;
@@ -1036,7 +1047,7 @@ void PluginField::loadFromXml(juce::XmlElement* patch) {
             if (comp) {
                 juce::String tempstr = comp->getNode()->getProcessor()->getName();
 
-                if (tempstr == "Midi Input")
+                if (tempstr == "MIDI Input")
                     midiInput = comp->getParamPin(0);
                 else if (tempstr == "OSC Input")
                     oscInput = comp->getParamPin(0);
@@ -1191,7 +1202,7 @@ void PluginField::clear() {
             AudioProcessorGraph::NodeID midiInterceptor;
 
             for (i = 0; i < signalPath->getNumFilters(); ++i) {
-                if (signalPath->getNode(i)->getProcessor()->getName() == "Midi Input")
+                if (signalPath->getNode(i)->getProcessor()->getName() == "MIDI Input")
                     midiInput = signalPath->getNode(i)->nodeID;
                 else if (signalPath->getNode(i)->getProcessor()->getName() == "Midi Interceptor") {
                     midiInterceptor = signalPath->getNode(i)->nodeID;

@@ -70,10 +70,16 @@ void FilterGraph::addFilter(const PluginDescription* desc, double x, double y) {
     }
 
     // AudioGraphIOProcessor nodes are not wrapped in BypassableInstance.
-    // MidiInterceptor and OscInput will also bypass wrapping when they are ported.
+    // MidiInterceptor and OscInput also bypass wrapping: they are accessed
+    // directly via dynamic_cast from their concrete type elsewhere, and
+    // neither needs bypass ramping.
     std::unique_ptr<AudioPluginInstance> instance;
 
-    if (dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor*>(tempInstance.get()) != nullptr)
+    const String pluginName = tempInstance->getName();
+    const bool isIO = dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor*>(tempInstance.get()) != nullptr;
+    const bool bypassWrapping = isIO || pluginName == "Midi Interceptor" || pluginName == "OSC Input";
+
+    if (bypassWrapping)
         instance = std::move(tempInstance);
     else
         instance = std::make_unique<BypassableInstance>(std::move(tempInstance));
@@ -325,7 +331,13 @@ void FilterGraph::restoreFromXml(const XmlElement& xml) {
                 continue;
 
             std::unique_ptr<AudioPluginInstance> instance;
-            if (dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor*>(tempInstance.get()) != nullptr)
+            const String restoredName = tempInstance->getName();
+            const bool restoredIsIO =
+                dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor*>(tempInstance.get()) != nullptr;
+            const bool restoredBypassWrapping =
+                restoredIsIO || restoredName == "Midi Interceptor" || restoredName == "OSC Input";
+
+            if (restoredBypassWrapping)
                 instance = std::move(tempInstance);
             else
                 instance = std::make_unique<BypassableInstance>(std::move(tempInstance));

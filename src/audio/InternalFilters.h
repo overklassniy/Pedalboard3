@@ -27,9 +27,9 @@
 /// Manages the internal plugin types (built-in processors).
 ///
 /// Provides an AudioPluginFormat for the app's built-in processors:
-/// audio input, audio output, MIDI input, and the various internal
-/// processors (level, file player, output toggle, VU meter, recorder,
-/// metronome, looper). Additional processors will be added in Phase 3.
+/// audio input, audio output, MIDI input, OSC input, the MIDI
+/// interceptor, and the pedalboard processors (level, file player,
+/// output toggle, VU meter, recorder, metronome, looper).
 class InternalPluginFormat : public AudioPluginFormat {
   public:
     /// Constructor. Initializes plugin descriptions for all internal filter types.
@@ -42,11 +42,14 @@ class InternalPluginFormat : public AudioPluginFormat {
         audioOutputFilter,
         midiInputFilter,
         oscInputFilter,
-
-        // Additional processors will be added in Phase 3:
-        // midiInterceptorFilter, levelProcFilter,
-        // filePlayerProcFilter, outputToggleProcFilter, vuMeterProcFilter,
-        // recorderProcFilter, metronomeProcFilter, looperProcFilter,
+        midiInterceptorFilter,
+        levelProcFilter,
+        filePlayerProcFilter,
+        outputToggleProcFilter,
+        vuMeterProcFilter,
+        recorderProcFilter,
+        metronomeProcFilter,
+        looperProcFilter,
 
         endOfFilterTypes
     };
@@ -106,6 +109,22 @@ class InternalPluginFormat : public AudioPluginFormat {
     PluginDescription midiInDesc;
     /// Plugin description for the OSC input processor.
     PluginDescription oscInputDesc;
+    /// Plugin description for the MIDI interceptor processor.
+    PluginDescription midiInterceptorDesc;
+    /// Plugin description for the level processor.
+    PluginDescription levelProcDesc;
+    /// Plugin description for the file player processor.
+    PluginDescription filePlayerProcDesc;
+    /// Plugin description for the output toggle processor.
+    PluginDescription outputToggleProcDesc;
+    /// Plugin description for the VU meter processor.
+    PluginDescription vuMeterProcDesc;
+    /// Plugin description for the recorder processor.
+    PluginDescription recorderProcDesc;
+    /// Plugin description for the metronome processor.
+    PluginDescription metronomeProcDesc;
+    /// Plugin description for the looper processor.
+    PluginDescription looperProcDesc;
 };
 
 #endif

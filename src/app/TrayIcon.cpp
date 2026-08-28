@@ -21,6 +21,7 @@
 #include "TrayIcon.h"
 
 #include "Images.h"
+#include "MainPanel.h"
 
 #ifndef JUCE_MAC
 
@@ -50,8 +51,18 @@ void TrayIcon::mouseDown(const MouseEvent& e) {
                 window->setVisible(false);
             else
                 window->setVisible(true);
-        } else if (result == 2)
-            window->closeButtonPressed();
+        } else if (result == 2) {
+            // Quit directly rather than calling closeButtonPressed(),
+            // which would hide the window instead of quitting when the
+            // tray icon is enabled and the window is visible.
+            auto* panel = dynamic_cast<MainPanel*>(window->getContentComponent());
+            if (panel) {
+                auto saveResult = panel->saveIfNeededAndUserAgrees();
+                if (saveResult == juce::FileBasedDocument::savedOk)
+                    juce::JUCEApplication::quit();
+            } else
+                juce::JUCEApplication::quit();
+        }
     }
 }
 

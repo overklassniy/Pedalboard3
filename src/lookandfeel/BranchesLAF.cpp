@@ -27,12 +27,40 @@
 #include <map>
 
 BranchesLAF::BranchesLAF() {
-    std::map<String, Colour>& colours = ColourScheme::getInstance().colours;
+    // LookAndFeel_V4 defaults to the dark colour scheme. Switch to the
+    // light scheme so that widgets not explicitly overridden below
+    // (PropertyPanel, ComboBox, AudioDeviceSelectorComponent, etc.) use
+    // light colours consistent with the Pedalboard2 beige theme.
+    setColourScheme(getLightColourScheme());
+
+    // Use native OS message boxes instead of JUCE's AlertWindow.
+    //
+    // JUCE 8's AlertWindow constructor calls
+    // WindowUtils::areThereAnyAlwaysOnTopWindows(), which on Windows
+    // invokes EnumWindows() — a system-wide enumeration of all top-level
+    // windows. This is significantly slower than the Desktop component
+    // loop used by JUCE 2.x/3.x (which the old Pedalboard2 project was
+    // built against), causing a noticeable delay before alert dialogs
+    // such as the "Closing document..." confirmation appear.
+    //
+    // Native message boxes (TaskDialog on Windows) bypass JUCE's
+    // AlertWindow entirely, restoring the near-instant dialog appearance
+    // that the old project had.
+    setUsingNativeAlertWindows(true);
+
+    std::map<String, Colour>& colours = ::ColourScheme::getInstance().colours;
 
     setColour(TextButton::buttonColourId, colours["Button Colour"]);
     setColour(TextButton::buttonOnColourId, colours["Button Colour"]);
     setColour(PopupMenu::highlightedBackgroundColourId, colours["Menu Selection Colour"]);
     setColour(PopupMenu::backgroundColourId, colours["Window Background"]);
+    // LookAndFeel_V4 defaults to the dark colour scheme where menuText is
+    // white. Since we override the popup background to the beige Window
+    // Background, we must also set the text colour to black so menu items
+    // are readable.
+    setColour(PopupMenu::textColourId, colours["Text Colour"]);
+    setColour(PopupMenu::headerTextColourId, colours["Text Colour"]);
+    setColour(PopupMenu::highlightedTextColourId, colours["Text Colour"]);
     setColour(AlertWindow::backgroundColourId, colours["Window Background"]);
     setColour(ComboBox::buttonColourId, colours["Button Colour"]);
     setColour(TextEditor::highlightColourId, colours["Button Highlight"]);
@@ -44,11 +72,31 @@ BranchesLAF::BranchesLAF() {
 
 BranchesLAF::~BranchesLAF() {}
 
+Font BranchesLAF::getTextButtonFont(TextButton& button, int buttonHeight) {
+    juce::ignoreUnused(button, buttonHeight);
+    return Font(juce::FontOptions().withHeight(15.0f));
+}
+
+Font BranchesLAF::getComboBoxFont(ComboBox& box) {
+    juce::ignoreUnused(box);
+    return Font(juce::FontOptions().withHeight(15.0f));
+}
+
+Font BranchesLAF::getLabelFont(Label& label) {
+    juce::ignoreUnused(label);
+    return Font(juce::FontOptions().withHeight(15.0f));
+}
+
 void BranchesLAF::drawButtonBackground(Graphics& g, Button& button, const Colour& backgroundColour,
                                        bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) {
     Path highlight, shadow;
-    Colour buttonCol = ColourScheme::getInstance().colours["Button Colour"];
-    ColourGradient grad(buttonCol.brighter(0.8f), 0.0f, 0.0f, buttonCol.darker(0.05f), 0.0f,
+    Colour buttonCol = ::ColourScheme::getInstance().colours["Button Colour"];
+
+    // Darken the gradient fill when the button is pressed so the
+    // pressed state is clearly visible, not just the edge strokes.
+    Colour gradTop = shouldDrawButtonAsDown ? buttonCol.darker(0.2f) : buttonCol.brighter(0.8f);
+    Colour gradBottom = shouldDrawButtonAsDown ? buttonCol.darker(0.3f) : buttonCol.darker(0.05f);
+    ColourGradient grad(gradTop, 0.0f, 0.0f, gradBottom, 0.0f,
                         static_cast<float>(button.getHeight()), false);
 
     g.setColour(Colours::black);
@@ -60,7 +108,7 @@ void BranchesLAF::drawButtonBackground(Graphics& g, Button& button, const Colour
 
     // Draw mouse over highlight.
     if (shouldDrawButtonAsHighlighted) {
-        g.setColour(ColourScheme::getInstance().colours["Button Highlight"]);
+        g.setColour(::ColourScheme::getInstance().colours["Button Highlight"]);
         g.drawRoundedRectangle(2.0f, 2.0f, static_cast<float>(button.getWidth() - 4),
                                static_cast<float>(button.getHeight() - 4), 4.0f, 3.0f);
     }
@@ -106,7 +154,7 @@ void BranchesLAF::drawButtonText(Graphics& g, TextButton& button, bool shouldDra
     auto buttonFont = getTextButtonFont(button, button.getHeight());
     g.setFont(buttonFont);
     g.setColour(
-        ColourScheme::getInstance().colours["Text Colour"].withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f));
+        ::ColourScheme::getInstance().colours["Text Colour"].withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f));
 
     const int yIndent = jmin(4, button.proportionOfHeight(0.3f));
     const int cornerSize = jmin(button.getHeight(), button.getWidth()) / 2;
@@ -129,7 +177,7 @@ void BranchesLAF::drawScrollbarButton(Graphics& g, ScrollBar& scrollbar, int wid
                                       bool isScrollbarVertical, bool isMouseOverButton, bool isButtonDown) {
     float inc;
     Path highlight, shadow, tri;
-    std::map<String, Colour>& colours = ColourScheme::getInstance().colours;
+    std::map<String, Colour>& colours = ::ColourScheme::getInstance().colours;
 
     if (!isScrollbarVertical) {
         // Background behind the button.
@@ -299,7 +347,7 @@ void BranchesLAF::drawScrollbarButton(Graphics& g, ScrollBar& scrollbar, int wid
 void BranchesLAF::drawScrollbar(Graphics& g, ScrollBar& scrollbar, int x, int y, int width, int height,
                                 bool isScrollbarVertical, int thumbStartPosition, int thumbSize, bool isMouseOver,
                                 bool isMouseDown) {
-    std::map<String, Colour>& colours = ColourScheme::getInstance().colours;
+    std::map<String, Colour>& colours = ::ColourScheme::getInstance().colours;
 
     if (!isScrollbarVertical) {
         ColourGradient grad(colours["Window Background"].darker(0.25f), 0.0f, static_cast<float>(y),
@@ -348,7 +396,7 @@ void BranchesLAF::drawScrollbar(Graphics& g, ScrollBar& scrollbar, int x, int y,
 
 void BranchesLAF::drawMenuBarBackground(Graphics& g, int width, int height, bool isMouseOverBar,
                                         MenuBarComponent& menuBar) {
-    Colour col = ColourScheme::getInstance().colours["Window Background"];
+    Colour col = ::ColourScheme::getInstance().colours["Window Background"];
 
     ColourGradient grad(col.brighter(0.8f), 0.0f, 0.0f, col.darker(0.05f), 0.0f, static_cast<float>(height), false);
 
@@ -366,7 +414,7 @@ Font BranchesLAF::getMenuBarFont(MenuBarComponent& menuBar, int itemIndex, const
 void BranchesLAF::drawMenuBarItem(Graphics& g, int width, int height, int itemIndex, const String& itemText,
                                   bool isMouseOverItem, bool isMenuOpen, bool isMouseOverBar,
                                   MenuBarComponent& menuBar) {
-    std::map<String, Colour>& colours = ColourScheme::getInstance().colours;
+    std::map<String, Colour>& colours = ::ColourScheme::getInstance().colours;
 
     if (!menuBar.isEnabled()) {
         g.setColour(colours["Text Colour"].withMultipliedAlpha(0.5f));
@@ -389,7 +437,7 @@ int BranchesLAF::getMenuBarItemWidth(MenuBarComponent& menuBar, int itemIndex, c
 void BranchesLAF::drawPopupMenuBackground(Graphics& g, int width, int height) {
     Path highlight, shadow;
 
-    g.fillAll(ColourScheme::getInstance().colours["Window Background"]);
+    g.fillAll(::ColourScheme::getInstance().colours["Window Background"]);
 
     highlight.startNewSubPath(2.0f, static_cast<float>(height - 3));
     highlight.lineTo(2.0f, 2.0f);
@@ -421,7 +469,7 @@ const Drawable* BranchesLAF::getDefaultFolderImage() {
 void BranchesLAF::drawComboBox(Graphics& g, int width, int height, bool isButtonDown, int buttonX, int buttonY,
                                int buttonW, int buttonH, ComboBox& box) {
     float inc;
-    std::map<String, Colour>& colours = ColourScheme::getInstance().colours;
+    std::map<String, Colour>& colours = ::ColourScheme::getInstance().colours;
 
     g.setColour(colours["Text Editor Colour"]);
     g.fillRect(0, 0, width - buttonW + 3, height);
@@ -471,7 +519,7 @@ void BranchesLAF::drawComboBox(Graphics& g, int width, int height, bool isButton
 
 void BranchesLAF::drawProgressBar(Graphics& g, ProgressBar& progressBar, int width, int height, double progress,
                                   const String& textToShow) {
-    std::map<String, Colour>& colours = ColourScheme::getInstance().colours;
+    std::map<String, Colour>& colours = ::ColourScheme::getInstance().colours;
     ColourGradient grad(colours["Window Background"].darker(0.2f), 0.0f, 0.0f, colours["Window Background"], 0.0f,
                         static_cast<float>(height), false);
 
@@ -501,7 +549,7 @@ void BranchesLAF::drawProgressBar(Graphics& g, ProgressBar& progressBar, int wid
 
 void BranchesLAF::drawKeymapChangeButton(Graphics& g, int width, int height, Button& button,
                                          const String& keyDescription) {
-    std::map<String, Colour>& colours = ColourScheme::getInstance().colours;
+    std::map<String, Colour>& colours = ::ColourScheme::getInstance().colours;
 
     if (keyDescription.isNotEmpty()) {
         drawButtonBackground(g, button, colours["Button Colour"], button.isOver(), button.isDown());
@@ -532,7 +580,15 @@ void BranchesLAF::drawLabel(Graphics& g, Label& label) {
     if (!label.isBeingEdited()) {
         const float alpha = label.isEnabled() ? 1.0f : 0.5f;
 
-        g.setColour(ColourScheme::getInstance().colours["Text Colour"]);
+        // Use the label's explicitly-set text colour if one is set;
+        // otherwise fall back to the ColourScheme "Text Colour".
+        // This ensures labels that set a transparent text colour
+        // (e.g. AlertWindow's accessibleMessageLabel) are not drawn
+        // visibly on top of the alert's textLayout.
+        Colour textCol = label.isColourSpecified(Label::textColourId)
+                             ? label.findColour(Label::textColourId)
+                             : ::ColourScheme::getInstance().colours["Text Colour"];
+        g.setColour(textCol);
         g.setFont(label.getFont());
         auto labelBorder = label.getBorderSize();
         g.drawFittedText(label.getText(), labelBorder.getLeft(), labelBorder.getTop(),
@@ -552,7 +608,7 @@ void BranchesLAF::drawLabel(Graphics& g, Label& label) {
 void BranchesLAF::drawToggleButton(Graphics& g, ToggleButton& button, bool shouldDrawButtonAsHighlighted,
                                    bool shouldDrawButtonAsDown) {
     if (button.hasKeyboardFocus(true)) {
-        g.setColour(ColourScheme::getInstance().colours["List Selected Colour"]);
+        g.setColour(::ColourScheme::getInstance().colours["List Selected Colour"]);
         g.drawRect(0, 0, button.getWidth(), button.getHeight());
     }
 
@@ -562,7 +618,7 @@ void BranchesLAF::drawToggleButton(Graphics& g, ToggleButton& button, bool shoul
     drawTickBox(g, button, 4.0f, (static_cast<float>(button.getHeight()) - tickWidth) * 0.5f, tickWidth, tickWidth,
                 button.getToggleState(), button.isEnabled(), shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
 
-    g.setColour(ColourScheme::getInstance().colours["Text Colour"]);
+    g.setColour(::ColourScheme::getInstance().colours["Text Colour"]);
     g.setFont(fontSize);
 
     if (!button.isEnabled())
@@ -580,12 +636,12 @@ void BranchesLAF::drawTickBox(Graphics& g, Component& component, float x, float 
 
     juce::LookAndFeel_V2::drawGlassSphere(
         g, x, y + (h - boxSize) * 0.5f, boxSize,
-        ColourScheme::getInstance().colours["Tick Box Colour"].withMultipliedAlpha(isEnabled ? 1.0f : 0.5f),
+        ::ColourScheme::getInstance().colours["Tick Box Colour"].withMultipliedAlpha(isEnabled ? 1.0f : 0.5f),
         isEnabled ? ((shouldDrawButtonAsDown || shouldDrawButtonAsHighlighted) ? 1.1f : 0.5f) : 0.3f);
 
     if (ticked) {
         Path tick;
-        Colour tempCol = ColourScheme::getInstance().colours["Vector Colour"];
+        Colour tempCol = ::ColourScheme::getInstance().colours["Vector Colour"];
         tick.startNewSubPath(1.5f, 3.0f);
         tick.lineTo(3.0f, 6.0f);
         tick.lineTo(6.0f, 0.0f);
@@ -599,7 +655,7 @@ void BranchesLAF::drawTickBox(Graphics& g, Component& component, float x, float 
 }
 
 void BranchesLAF::fillTextEditorBackground(Graphics& g, int /*width*/, int /*height*/, TextEditor& textEditor) {
-    g.fillAll(ColourScheme::getInstance().colours["Text Editor Colour"]);
+    g.fillAll(::ColourScheme::getInstance().colours["Text Editor Colour"]);
 }
 
 void BranchesLAF::drawCallOutBoxBackground(CallOutBox& box, Graphics& g, const Path& path, Image& cachedImage) {
@@ -608,7 +664,7 @@ void BranchesLAF::drawCallOutBoxBackground(CallOutBox& box, Graphics& g, const P
     {
         Graphics g2(content);
 
-        g2.setColour(ColourScheme::getInstance().colours["Window Background"].withAlpha(0.9f));
+        g2.setColour(::ColourScheme::getInstance().colours["Window Background"].withAlpha(0.9f));
         g2.fillPath(path);
 
         g2.setColour(Colours::black.withAlpha(0.8f));
@@ -619,4 +675,23 @@ void BranchesLAF::drawCallOutBoxBackground(CallOutBox& box, Graphics& g, const P
     DropShadow shad(Colours::black.withAlpha(0.5f), 5, Point<int>(2, 2));
     shadow.setShadowProperties(shad);
     shadow.applyEffect(content, g, 1.0f, 1.0f);
+}
+
+AlertWindow* BranchesLAF::createAlertWindow(const String& title, const String& message, const String& button1,
+                                            const String& button2, const String& button3,
+                                            MessageBoxIconType iconType, int numButtons,
+                                            Component* associatedComponent) {
+    // Delegate to LookAndFeel_V2 to avoid LookAndFeel_V4's 50px size offset
+    // and button shift (25, 40) which causes text overlap and misaligned
+    // buttons in the alert dialogs.
+    return LookAndFeel_V2::createAlertWindow(title, message, button1, button2, button3, iconType, numButtons,
+                                             associatedComponent);
+}
+
+void BranchesLAF::drawAlertBox(Graphics& g, AlertWindow& alert, const Rectangle<int>& textArea,
+                               TextLayout& textLayout) {
+    // Delegate to LookAndFeel_V2 which draws text at the textArea position
+    // set by AlertWindow::updateLayout, instead of LookAndFeel_V4's fixed
+    // y=30 which assumes the V4 50px offset.
+    LookAndFeel_V2::drawAlertBox(g, alert, textArea, textLayout);
 }

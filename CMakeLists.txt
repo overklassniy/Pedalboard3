@@ -97,6 +97,15 @@ juce_add_gui_app(Pedalboard3
 # Generate JUCE header
 juce_generate_juce_header(Pedalboard3)
 
+# Embedded user documentation (F1 help).
+# Single self-contained HTML file; written to the app data folder on F1
+# and launched in the default browser. See assets/help/README.md.
+juce_add_binary_data(Pedalboard3Help
+    NAMESPACE HelpData
+    HEADER_NAME HelpData.h
+    SOURCES assets/help/help.html
+)
+
 # Source Files
 target_sources(Pedalboard3 PRIVATE
     # Application shell
@@ -288,7 +297,7 @@ target_compile_definitions(Pedalboard3 PRIVATE
 
     # Plugin Hosting
     JUCE_PLUGINHOST_VST3=1
-    JUCE_PLUGINHOST_VST=0
+    JUCE_PLUGINHOST_VST=1
     JUCE_PLUGINHOST_AU=0
     JUCE_PLUGINHOST_LADSPA=1
 
@@ -343,6 +352,9 @@ target_link_libraries(Pedalboard3 PRIVATE
     fmt::fmt
     spdlog::spdlog
     nlohmann_json::nlohmann_json
+
+    # Embedded user documentation (F1 help)
+    Pedalboard3Help
 )
 
 # Windows-specific settings
@@ -374,6 +386,7 @@ target_compile_definitions(Pedalboard3Scanner PRIVATE
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_PLUGINHOST_VST3=1
+    JUCE_PLUGINHOST_VST=1
     JUCE_PLUGINHOST_LADSPA=1
     JUCE_MODAL_LOOPS_PERMITTED=1
 )
@@ -403,6 +416,14 @@ target_link_libraries(Pedalboard3Scanner PRIVATE
     juce::juce_gui_basics
     fmt::fmt
     spdlog::spdlog
+)
+
+# Copy the scanner binary next to the main executable so that
+# PluginScannerClient can find it at runtime.
+add_custom_command(TARGET Pedalboard3 POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:Pedalboard3Scanner>
+        $<TARGET_FILE_DIR:Pedalboard3>/Pedalboard3Scanner.exe
 )
 
 # Tests

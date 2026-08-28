@@ -24,11 +24,14 @@
 #include "ApplicationMappingsEditor.h"
 #include "AudioSingletons.h"
 #include "ColourSchemeEditor.h"
+#include "HelpData.h"
 #include "Images.h"
 #include "JuceHelperStuff.h"
 #include "LogDisplay.h"
 #include "LogFile.h"
 #include "MainTransport.h"
+#include "MidiMappingManager.h"
+#include "OscMappingManager.h"
 #include "PatchOrganiser.h"
 #include "PedalboardProcessors.h"
 #include "PluginField.h"
@@ -247,6 +250,46 @@ MainPanel::MainPanel(ApplicationCommandManager* appManager)
     // focused.
     appManager->setFirstCommandTarget(this);
 
+    // Register all commands so that menu items created via addCommandItem
+    // can be dispatched by the command manager.
+    appManager->registerAllCommandsForTarget(this);
+    appManager->registerAllCommandsForTarget(juce::JUCEApplication::getInstance());
+
+    // Reset key mappings to defaults before loading saved mappings so
+    // that stale assignments from previous versions are cleared.
+    appManager->getKeyMappings()->resetToDefaultMappings();
+
+    // Restore saved key mappings from the application properties file.
+    if (auto* settings = PropertiesSingleton::getInstance().getUserSettings())
+        if (auto keyMapXml = settings->getXmlValue("keyMappings"))
+            appManager->getKeyMappings()->restoreFromXml(*keyMapXml);
+
+    // Load MIDI and OSC application mappings from AppMappings.xml.
+    {
+        File mappingsFile = JuceHelperStuff::getAppDataFolder().getChildFile("AppMappings.xml");
+
+        if (mappingsFile.existsAsFile()) {
+            if (auto rootXml = XmlDocument::parse(mappingsFile)) {
+                if (auto* midiMappings = rootXml->getChildByName("MidiMappings")) {
+                    MidiMappingManager* midiManager = field->getMidiManager();
+                    for (int i = 0; i < midiMappings->getNumChildElements(); ++i) {
+                        XmlElement* el = midiMappings->getChildElement(i);
+                        if (el->hasTagName("MidiAppMapping"))
+                            midiManager->registerAppMapping(new MidiAppMapping(midiManager, el));
+                    }
+                }
+                if (auto* oscMappings = rootXml->getChildByName("OscMappings")) {
+                    OscMappingManager* oscManager = field->getOscManager();
+                    for (int i = 0; i < oscMappings->getNumChildElements(); ++i) {
+                        XmlElement* el = oscMappings->getChildElement(i);
+                        if (el->hasTagName("OscAppMapping"))
+                            oscManager->registerAppMapping(new OscAppMapping(oscManager, el));
+                    }
+                }
+            }
+        }
+    }
+
     setSize(1024, 570);
 
     // Setup the program change warning.
@@ -265,6 +308,46 @@ MainPanel::MainPanel(ApplicationCommandManager* appManager)
 }
 
 MainPanel::~MainPanel() {
+    // Save key mappings to the application properties file so they
+    // persist across restarts.
+    if (commandManager) {
+        if (auto keyMapXml = commandManager->getKeyMappings()->createXml(false))
+            if (auto* settings = PropertiesSingleton::getInstance().getUserSettings())
+                settings->setValue("keyMappings", keyMapXml.get());
+    }
+
+    // Save MIDI and OSC application mappings to AppMappings.xml.
+    // Must happen before removeAllChildren() destroys the PluginField
+    // and its mapping managers.
+    {
+        MidiMappingManager* midiManager = getMidiMappingManager();
+        OscMappingManager* oscManager = getOscMappingManager();
+
+        if (midiManager || oscManager) {
+            File mappingsFile = JuceHelperStuff::getAppDataFolder().getChildFile("AppMappings.xml");
+            XmlElement rootXml("Pedalboard3AppMappings");
+            auto midiXml = std::make_unique<XmlElement>("MidiMappings");
+            auto oscXml = std::make_unique<XmlElement>("OscMappings");
+
+            if (midiManager) {
+                for (int i = 0; i < midiManager->getNumAppMappings(); ++i)
+                    if (auto* mapping = midiManager->getAppMapping(i))
+                        if (auto* xml = mapping->getXml())
+                            midiXml->addChildElement(xml);
+            }
+            if (oscManager) {
+                for (int i = 0; i < oscManager->getNumAppMappings(); ++i)
+                    if (auto* mapping = oscManager->getAppMapping(i))
+                        if (auto* xml = mapping->getXml())
+                            oscXml->addChildElement(xml);
+            }
+
+            rootXml.addChildElement(midiXml.release());
+            rootXml.addChildElement(oscXml.release());
+            rootXml.writeToFile(mappingsFile, "");
+        }
+    }
+
     removeAllChildren();
 
     MainTransport::getInstance()->unregisterTransport(this);
@@ -276,6 +359,12 @@ MainPanel::~MainPanel() {
 
     graphPlayer.setProcessor(nullptr);
     signalPath.clear(false, false, false);
+
+    // Close the audio device explicitly so the WASAPI thread is joined
+    // now rather than during the AudioDeviceManager destructor, which
+    // would call closeAudioDevice() -> stopThread(5000) and block for
+    // up to 5 seconds waiting for the audio thread to exit.
+    deviceManager.closeAudioDevice();
 
     oscReceiver.disconnect();
     oscReceiver.removeListener(this);
@@ -656,7 +745,7 @@ bool MainPanel::perform(const InvocationInfo& info) {
     case OptionsPreferences: {
         PreferencesDialog dlg(this, String(oscPortNumber), oscMulticastAddress);
 
-        dlg.setSize(560, 500);
+        dlg.setSize(560, 530);
 
         JuceHelperStuff::showModalDialog("Misc Settings", &dlg, 0,
                                          ColourScheme::getInstance().colours["Window Background"], true, true);
@@ -707,26 +796,18 @@ bool MainPanel::perform(const InvocationInfo& info) {
                                          true, true);
     } break;
     case HelpDocumentation: {
-        File docDir;
-#ifdef JUCE_WINDOWS
-        docDir =
-            File::getSpecialLocation(File::currentApplicationFile).getParentDirectory().getChildFile("documentation");
-#elif JUCE_LINUX
-        // No Linux-specific documentation path is configured.
-#elif JUCE_MAC
-        docDir = File::getSpecialLocation(File::currentApplicationFile)
-                     .getChildFile("Contents")
-                     .getChildFile("Resources")
-                     .getChildFile("documentation");
-#endif
-        File docIndex(docDir.getChildFile("index.html"));
+        // The help HTML is embedded in the binary (HelpData::help_html) and
+        // written to the app data folder so it works regardless of where the
+        // executable is located. See assets/help/README.md.
+        File helpFile = JuceHelperStuff::getAppDataFolder().getChildFile("help.html");
 
-        if (docIndex.existsAsFile()) {
-            URL docUrl(docIndex.getFullPathName());
-            docUrl.launchInDefaultBrowser();
-        } else {
-            AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Documentation Missing",
-                                        "Could not find documentation/index.html");
+        helpFile.replaceWithData(HelpData::help_html, (size_t) HelpData::help_htmlSize);
+
+        URL helpUrl(helpFile.getFullPathName());
+
+        if (!helpUrl.launchInDefaultBrowser()) {
+            AlertWindow::showMessageBox(AlertWindow::WarningIcon, "Help Unavailable",
+                                        "Could not open the documentation in a browser.");
         }
     } break;
     case HelpLog: {

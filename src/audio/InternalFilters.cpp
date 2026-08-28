@@ -21,7 +21,9 @@
 
 #include "InternalFilters.h"
 
+#include "MidiMappingManager.h"
 #include "OscMappingManager.h"
+#include "PedalboardProcessors.h"
 
 InternalPluginFormat::InternalPluginFormat() {
     {
@@ -44,8 +46,45 @@ InternalPluginFormat::InternalPluginFormat() {
         p.fillInPluginDescription(oscInputDesc);
     }
 
-    // Additional processor descriptions will be added in Phase 3
-    // when the built-in processors are ported.
+    {
+        MidiInterceptor p;
+        p.fillInPluginDescription(midiInterceptorDesc);
+    }
+
+    {
+        LevelProcessor p;
+        p.fillInPluginDescription(levelProcDesc);
+    }
+
+    {
+        FilePlayerProcessor p;
+        p.fillInPluginDescription(filePlayerProcDesc);
+    }
+
+    {
+        OutputToggleProcessor p;
+        p.fillInPluginDescription(outputToggleProcDesc);
+    }
+
+    {
+        VuMeterProcessor p;
+        p.fillInPluginDescription(vuMeterProcDesc);
+    }
+
+    {
+        RecorderProcessor p;
+        p.fillInPluginDescription(recorderProcDesc);
+    }
+
+    {
+        MetronomeProcessor p;
+        p.fillInPluginDescription(metronomeProcDesc);
+    }
+
+    {
+        LooperProcessor p;
+        p.fillInPluginDescription(looperProcDesc);
+    }
 }
 
 void InternalPluginFormat::createPluginInstance(const PluginDescription& desc, double initialSampleRate,
@@ -65,8 +104,22 @@ void InternalPluginFormat::createPluginInstance(const PluginDescription& desc, d
             AudioProcessorGraph::AudioGraphIOProcessor::midiInputNode);
     else if (desc.name == oscInputDesc.name)
         instance = std::make_unique<OscInput>();
-
-    // Additional processor creation will be added in Phase 3
+    else if (desc.name == midiInterceptorDesc.name)
+        instance = std::make_unique<MidiInterceptor>();
+    else if (desc.name == levelProcDesc.name)
+        instance = std::make_unique<LevelProcessor>();
+    else if (desc.name == filePlayerProcDesc.name)
+        instance = std::make_unique<FilePlayerProcessor>();
+    else if (desc.name == outputToggleProcDesc.name)
+        instance = std::make_unique<OutputToggleProcessor>();
+    else if (desc.name == vuMeterProcDesc.name)
+        instance = std::make_unique<VuMeterProcessor>();
+    else if (desc.name == recorderProcDesc.name)
+        instance = std::make_unique<RecorderProcessor>();
+    else if (desc.name == metronomeProcDesc.name)
+        instance = std::make_unique<MetronomeProcessor>();
+    else if (desc.name == looperProcDesc.name)
+        instance = std::make_unique<LooperProcessor>();
 
     const String error = (instance == nullptr) ? "Could not create internal plugin" : String();
     callback(std::move(instance), error);
@@ -82,6 +135,22 @@ const PluginDescription* InternalPluginFormat::getDescriptionFor(const InternalF
         return &midiInDesc;
     case oscInputFilter:
         return &oscInputDesc;
+    case midiInterceptorFilter:
+        return &midiInterceptorDesc;
+    case levelProcFilter:
+        return &levelProcDesc;
+    case filePlayerProcFilter:
+        return &filePlayerProcDesc;
+    case outputToggleProcFilter:
+        return &outputToggleProcDesc;
+    case vuMeterProcFilter:
+        return &vuMeterProcDesc;
+    case recorderProcFilter:
+        return &recorderProcDesc;
+    case metronomeProcFilter:
+        return &metronomeProcDesc;
+    case looperProcFilter:
+        return &looperProcDesc;
     default:
         return nullptr;
     }

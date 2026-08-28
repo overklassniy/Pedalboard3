@@ -61,7 +61,7 @@ PluginComponent::PluginComponent(AudioProcessorGraph::Node::Ptr n)
     titleLabel->addListener(this);
     addAndMakeVisible(*titleLabel);
 
-    if ((pluginName != "Audio Input") && (pluginName != "Midi Input") && (pluginName != "Audio Output") &&
+    if ((pluginName != "Audio Input") && (pluginName != "MIDI Input") && (pluginName != "Audio Output") &&
         (pluginName != "OSC Input")) {
         std::unique_ptr<juce::Drawable> closeUp(
             JuceHelperStuff::loadSVGFromMemory(Vectors::closefilterbutton_svg, Vectors::closefilterbutton_svgSize));
@@ -120,6 +120,16 @@ PluginComponent::PluginComponent(AudioProcessorGraph::Node::Ptr n)
 }
 
 PluginComponent::~PluginComponent() {
+    // Release unique_ptr-managed children before deleteAllChildren.
+    // Otherwise deleteAllChildren would delete them, and the unique_ptr
+    // destructors would delete the same pointers again — a double-free
+    // that corrupts the heap.
+    titleLabel.reset();
+    editButton.reset();
+    mappingsButton.reset();
+    bypassButton.reset();
+    deleteButton.reset();
+
     deleteAllChildren();
     if (pluginWindow)
         delete pluginWindow;
@@ -249,7 +259,12 @@ void PluginComponent::buttonClicked(juce::Button* button) {
         if (parent)
             parent->deleteFilter(node);
 
-        delete this;
+        // Defer self-deletion to the next message loop iteration.
+        // Deleting this component synchronously here would destroy the
+        // button that JUCE is still dispatching the click callback from,
+        // causing a use-after-free crash.
+        auto* self = this;
+        juce::MessageManager::callAsync([self] { delete self; });
     }
 }
 
@@ -372,7 +387,7 @@ void PluginComponent::determineSize(bool onlyUpdateWidth) {
     nameWidth = bounds.getWidth();
 
     // Add on space for the close button if necessary.
-    if ((pluginName != "Audio Input") && (pluginName != "Midi Input") && (pluginName != "Audio Output") &&
+    if ((pluginName != "Audio Input") && (pluginName != "MIDI Input") && (pluginName != "Audio Output") &&
         (pluginName != "OSC Input")) {
         nameWidth += 20.0f;
     } else
@@ -500,7 +515,7 @@ void PluginComponent::determineSize(bool onlyUpdateWidth) {
         h = juce::jmax(numInputPins, numOutputPins);
         h *= 13;
 
-        if ((pluginName != "Audio Input") && (pluginName != "Midi Input") && (pluginName != "Audio Output") &&
+        if ((pluginName != "Audio Input") && (pluginName != "MIDI Input") && (pluginName != "Audio Output") &&
             (pluginName != "OSC Input")) {
             h += 60;
         } else
@@ -671,7 +686,8 @@ PluginEditorWindow::~PluginEditorWindow() {
 
 void PluginEditorWindow::closeButtonPressed() {
     component->setWindow(nullptr);
-    delete this;
+    auto* self = this;
+    juce::MessageManager::callAsync([self] { delete self; });
 }
 
 PluginEditorWindow::EditorWrapper::EditorWrapper(juce::AudioProcessorEditor* ed, PluginComponent* comp)

@@ -30,6 +30,8 @@ PropertiesSingleton::PropertiesSingleton() {
     options.folderName = "Pedalboard3";
     options.filenameSuffix = ".settings";
     options.osxLibrarySubFolder = "Application Support";
+    options.millisecondsBeforeSaving = 1000;
+    options.storageFormat = PropertiesFile::storeAsXML;
 
     instance->setStorageParameters(options);
 }

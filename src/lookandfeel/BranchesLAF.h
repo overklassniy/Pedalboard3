@@ -25,7 +25,11 @@
 #include <JuceHeader.h>
 
 /// LookAndFeel class implementing custom buttons, scrollbars, menus, and other widgets.
-class BranchesLAF : public juce::LookAndFeel {
+///
+/// Subclasses LookAndFeel_V4 so the many JUCE 8 widget methods that
+/// BranchesLAF does not customise fall back to the default V4
+/// implementation instead of remaining pure virtual.
+class BranchesLAF : public juce::LookAndFeel_V4 {
   public:
     /// Configures the widget colours from the current ColourScheme.
     BranchesLAF();
@@ -117,6 +121,21 @@ class BranchesLAF : public juce::LookAndFeel {
     int getMenuBarItemWidth(juce::MenuBarComponent& menuBar, int itemIndex, const juce::String& itemText) override;
     /// Returns the popup menu font.
     juce::Font getPopupMenuFont() override { return juce::Font(juce::FontOptions().withHeight(15.0f)); }
+    /// Returns the font used for TextButton labels.
+    ///
+    /// Overrides LookAndFeel_V4 which returns up to 16px; 15px keeps
+    /// button text consistent with labels and menus.
+    juce::Font getTextButtonFont(juce::TextButton& button, int buttonHeight) override;
+    /// Returns the font used for ComboBox labels.
+    ///
+    /// Overrides LookAndFeel_V4 which returns up to 16px; 15px keeps
+    /// combo box text consistent with the rest of the UI.
+    juce::Font getComboBoxFont(juce::ComboBox& box) override;
+    /// Returns the font used for Label components.
+    ///
+    /// Overrides LookAndFeel_V4 which returns the JUCE default 14px;
+    /// 15px keeps labels consistent with the rest of the UI.
+    juce::Font getLabelFont(juce::Label& label) override;
     /// Draws the popup menu background.
     ///
     /// @param g The graphics context to draw with.
@@ -211,6 +230,40 @@ class BranchesLAF : public juce::LookAndFeel {
     /// @param cachedImage The cached image to draw into.
     void drawCallOutBoxBackground(juce::CallOutBox& box, juce::Graphics& g, const juce::Path& path,
                                   juce::Image& cachedImage) override;
+
+    /// Creates the alert window.
+    ///
+    /// Overrides LookAndFeel_V4 which adds a 50px size offset and shifts
+    /// buttons by (25, 40), causing text overlap and misaligned buttons.
+    /// Delegates to LookAndFeel_V2 which sizes the window correctly via
+    /// AlertWindow::updateLayout without any post-creation adjustments.
+    ///
+    /// @param title The title of the alert window.
+    /// @param message The message text to display.
+    /// @param button1 The text for the first button.
+    /// @param button2 The text for the second button (empty if none).
+    /// @param button3 The text for the third button (empty if none).
+    /// @param iconType The icon type to display.
+    /// @param numButtons The number of buttons to create.
+    /// @param associatedComponent The component the alert is associated with.
+    /// @return The created AlertWindow.
+    juce::AlertWindow* createAlertWindow(const juce::String& title, const juce::String& message,
+                                         const juce::String& button1, const juce::String& button2,
+                                         const juce::String& button3, juce::MessageBoxIconType iconType,
+                                         int numButtons, juce::Component* associatedComponent) override;
+    /// Draws the alert box.
+    ///
+    /// Overrides LookAndFeel_V4 which draws text at a fixed y=30 position
+    /// that assumes the V4 50px offset. Delegates to LookAndFeel_V2 which
+    /// draws text at the textArea position set by updateLayout, ensuring
+    /// the text and buttons are correctly aligned.
+    ///
+    /// @param g The graphics context to draw with.
+    /// @param alert The alert window being drawn.
+    /// @param textArea The area where text should be drawn.
+    /// @param textLayout The pre-laid-out text to draw.
+    void drawAlertBox(juce::Graphics& g, juce::AlertWindow& alert, const juce::Rectangle<int>& textArea,
+                      juce::TextLayout& textLayout) override;
 };
 
 #endif

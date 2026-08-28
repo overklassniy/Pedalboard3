@@ -43,7 +43,7 @@ class TempDialogWindow : public DialogWindow {
     TempDialogWindow(const String& title, Component* contentComponent_, Component* componentToCentreAround,
                      const Colour& colour, const bool escapeKeyTriggersCloseButton_, const bool shouldBeResizable,
                      const bool useBottomRightCornerResizer, const bool deleteContent = false)
-        : DialogWindow(title, colour, escapeKeyTriggersCloseButton_, true), deleteDialog(deleteContent) {
+        : DialogWindow(title, colour, escapeKeyTriggersCloseButton_, false), deleteDialog(deleteContent) {
         if (!juce::JUCEApplication::isStandaloneApp())
             setAlwaysOnTop(true);
 
@@ -58,8 +58,10 @@ class TempDialogWindow : public DialogWindow {
     void closeButtonPressed() override {
         setVisible(false);
 
-        if (deleteDialog)
-            delete this;
+        if (deleteDialog) {
+            auto* self = this;
+            juce::MessageManager::callAsync([self] { delete self; });
+        }
     }
 
   private:
@@ -75,7 +77,11 @@ int JuceHelperStuff::showModalDialog(const String& dialogTitle, Component* conte
                                      bool useBottomRightCornerResizer) {
     TempDialogWindow dw(dialogTitle, contentComponent, componentToCentreAround, backgroundColour,
                         escapeKeyTriggersCloseButton, shouldBeResizable, useBottomRightCornerResizer);
+    // Set the native title bar before adding to desktop. Calling
+    // setUsingNativeTitleBar after addToDesktop triggers a peer
+    // recreation that crashes in JUCE 8.
     dw.setUsingNativeTitleBar(true);
+    dw.addToDesktop();
     if (auto* peer = dw.getPeer())
         peer->setIcon(ImageCache::getFromMemory(Images::icon512_png, Images::icon512_pngSize));
 
