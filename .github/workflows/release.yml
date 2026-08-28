@@ -75,27 +75,13 @@ jobs:
 
       - name: Configure
         shell: bash
-        run: |
-          set -o pipefail
-          cmake --preset ${{ matrix.preset }} \
-            -DPedalboard3_VERSION_OVERRIDE=${{ steps.version.outputs.version }} \
-            2>&1 | tee configure.log
+        run: >
+          cmake --preset ${{ matrix.preset }}
+          -DPedalboard3_VERSION_OVERRIDE=${{ steps.version.outputs.version }}
 
       - name: Build
         shell: bash
-        run: |
-          set -o pipefail
-          cmake --build ${{ matrix.build_dir }} --config Release 2>&1 | tee build.log
-
-      - name: Upload logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: logs-windows-${{ matrix.arch }}
-          path: |
-            configure.log
-            build.log
-          if-no-files-found: ignore
+        run: cmake --build ${{ matrix.build_dir }} --config Release
 
       - name: Package Windows artifact
         shell: bash
@@ -216,7 +202,6 @@ jobs:
 
       - name: Configure
         run: |
-          set -o pipefail
           # For the arm64 cross-compile, point pkg-config at the aarch64
           # multiarch libraries so JUCE's find_package(PkgConfig) calls
           # resolve the foreign-architecture dependencies. The native x64
@@ -232,22 +217,10 @@ jobs:
           fi
 
           cmake --preset ${{ matrix.preset }} \
-            -DPedalboard3_VERSION_OVERRIDE=${{ steps.version.outputs.version }} 2>&1 | tee configure.log
+            -DPedalboard3_VERSION_OVERRIDE=${{ steps.version.outputs.version }}
 
       - name: Build
-        run: |
-          set -o pipefail
-          cmake --build ${{ matrix.build_dir }} 2>&1 | tee build.log
-
-      - name: Upload logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: logs-linux-${{ matrix.arch }}
-          path: |
-            configure.log
-            build.log
-          if-no-files-found: ignore
+        run: cmake --build ${{ matrix.build_dir }}
 
       - name: Package Linux artifact
         run: |
